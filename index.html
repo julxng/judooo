@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Judooo | Vietnam Art Scene</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            orange: '#F14C23',
+                            orangeDark: '#D8431E',
+                            soft: '#FFFAF9',
+                            black: '#1A1A1A',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .leaflet-container {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        .judooo-map-pin {
+            background: #F14C23;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 12px !important;
+            height: 12px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "leaflet": "https://esm.sh/leaflet@1.9.4",
+    "react-leaflet": "https://esm.sh/react-leaflet@4.2.1"
+  }
+}
+</script>
+</head>
+<body class="text-brand-black">
+    <div id="root"></div>
+</body>
+</html>
