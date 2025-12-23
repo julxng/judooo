@@ -29,7 +29,7 @@ export const t = (key: string, lang: Language): string => {
     'footer.links.about': { vn: 'Về chúng mình', en: 'About Us' },
     'footer.links.terms': { vn: 'Điều khoản', en: 'Terms' },
     'footer.links.privacy': { vn: 'Bảo mật', en: 'Privacy' },
-    'footer.copy': { vn: '© 2024 Judooo Art Network. Nâng tầm tài năng khu vực.', en: '© 2024 Judooo Art Network. Elevating regional talent.' },
+    'footer.copy': { vn: '© 2026 Judooo Art Network. Nâng tầm tài năng khu vực.', en: '© 2026 Judooo Art Network. Elevating regional talent.' },
     'footer.heading.judooo': { vn: 'Về Judooo', en: 'About Judooo' },
     'footer.heading.social': { vn: 'Mạng xã hội', en: 'Social Media' }
   };
