@@ -14,42 +14,31 @@ interface LayoutProps {
   setLanguage: (lang: Language) => void;
 }
 
-const LogoIcon = () => (
-  <div className="w-10 h-10 bg-brand-orange rounded-full flex flex-col items-center justify-center text-white overflow-hidden shadow-sm">
-    <div className="flex leading-none font-bold text-[8px] tracking-tighter">
-        <span>j</span><span>d</span><span>o</span>
-    </div>
-    <div className="flex leading-none font-bold text-[8px] tracking-tighter -mt-0.5">
-        <span>u</span><span>o</span><span>o</span>
-    </div>
-  </div>
-);
-
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, currentUser, onLogout, onOpenAuth, language, setLanguage }) => {
-  const tabs: {id: TabType, labelKey: string, icon: React.ReactNode}[] = [
+  const tabs: {id: TabType, label: string, icon: React.ReactNode}[] = [
     { 
-      id: 'events', 
-      labelKey: 'nav.exhibitions', 
+      id: 'marketplace', 
+      label: t('nav.marketplace', language), 
       icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z" /></svg> 
     },
     { 
-      id: 'marketplace', 
-      labelKey: 'nav.marketplace', 
+      id: 'events', 
+      label: t('nav.exhibitions', language), 
       icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
     },
     { 
       id: 'saved', 
-      labelKey: 'nav.watchlist', 
+      label: t('nav.watchlist', language), 
       icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
     },
     { 
       id: 'admin', 
-      labelKey: 'nav.admin', 
+      label: t('nav.admin', language), 
       icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
     },
     { 
       id: 'about', 
-      labelKey: 'nav.about', 
+      label: t('nav.about', language), 
       icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
     },
   ];
@@ -57,26 +46,26 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
   return (
     <div className="min-h-screen flex flex-col relative">
       {/* Desktop Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-100">
+      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
-            <div className="flex items-center gap-2 md:gap-3 cursor-pointer group" onClick={() => setActiveTab('events')}>
-              <LogoIcon />
-              <span className="text-xl md:text-2xl font-serif font-black tracking-tighter uppercase group-hover:text-brand-orange transition-colors">Judooo</span>
+            <div className="flex items-center gap-2 md:gap-3 cursor-pointer group" onClick={() => setActiveTab('marketplace')}>
+              <img src="/judooo_Favicon.svg" alt="Judooo icon" className="w-10 h-10 md:w-11 md:h-11" />
+              <img src="/judooo_Logo.svg" alt="Judooo" className="h-6 md:h-8 w-auto" />
             </div>
             
-            <nav className="hidden md:flex items-center space-x-6">
+            <nav className="hidden md:flex items-center space-x-2">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative py-1 text-[10px] font-black tracking-[0.2em] uppercase transition-colors ${
+                  className={`relative py-2 px-3 text-[10px] font-black tracking-[0.14em] uppercase border rounded-sm transition-colors ${
                     activeTab === tab.id 
-                      ? 'text-brand-orange after:absolute after:bottom-[-26px] after:left-0 after:w-full after:h-1 after:bg-brand-orange' 
-                      : 'text-slate-300 hover:text-brand-black'
+                      ? 'text-brand-orange border-brand-orange bg-orange-50' 
+                      : 'text-slate-600 border-transparent hover:border-slate-300 hover:text-brand-black'
                   }`}
                 >
-                  {t(tab.labelKey, language)}
+                  {tab.label}
                 </button>
               ))}
               
@@ -125,18 +114,18 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
       </header>
 
       {/* Mobile Bottom Navigation - STABLE & COMPACT */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t border-slate-100 px-1 py-2 pb-safe flex justify-around items-center shadow-[0_-2px_15px_rgba(0,0,0,0.08)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t border-slate-200 px-1 py-2 pb-safe flex justify-around items-center shadow-[0_-2px_15px_rgba(0,0,0,0.1)]">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex flex-col items-center gap-1 flex-1 min-w-0 ${
-              activeTab === tab.id ? 'text-brand-orange' : 'text-slate-300'
+              activeTab === tab.id ? 'text-brand-orange' : 'text-slate-500'
             }`}
           >
             {tab.icon}
             <span className="text-[6px] font-black uppercase tracking-tighter truncate w-full text-center">
-              {t(tab.labelKey, language)}
+              {tab.label}
             </span>
           </button>
         ))}
@@ -161,8 +150,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, curr
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 text-center md:text-left">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-4 md:mb-8">
-                <LogoIcon />
-                <span className="text-2xl md:text-3xl font-serif font-black italic tracking-tighter">Judooo</span>
+                <img src="/judooo_Favicon.svg" alt="Judooo icon" className="w-10 h-10" />
+                <img src="/judooo_Logo.svg" alt="Judooo" className="h-7 md:h-9 w-auto" />
               </div>
               <p className="mt-2 text-slate-500 max-w-sm mx-auto md:mx-0 text-xs md:text-base leading-relaxed font-medium">
                 {t('footer.desc', language)}

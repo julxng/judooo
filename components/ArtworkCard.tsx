@@ -6,13 +6,25 @@ interface ArtworkCardProps {
   artwork: Artwork;
   onInquire?: (artwork: Artwork) => void;
   onBid?: (artwork: Artwork) => void;
+  onOpen?: (artwork: Artwork) => void;
 }
 
-const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, onInquire, onBid }) => {
+const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, onInquire, onBid, onOpen }) => {
   const isAuction = artwork.saleType === 'auction';
 
   return (
-    <div className="flex flex-col h-full bg-white p-2 rounded-sm group border border-slate-50 hover:border-slate-100 transition-all">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen?.(artwork)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen?.(artwork);
+        }
+      }}
+      className="flex flex-col h-full bg-white p-2 rounded-sm group border border-slate-50 hover:border-slate-100 transition-all text-left"
+    >
       <div className="relative aspect-[4/5] mb-5 bg-slate-50 overflow-hidden">
         <img 
           src={artwork.imageUrl} 
@@ -57,8 +69,12 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({ artwork, onInquire, onBid }) 
         </div>
         
         {artwork.available && (
-          <button 
-            onClick={() => isAuction ? onBid?.(artwork) : onInquire?.(artwork)}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              isAuction ? onBid?.(artwork) : onInquire?.(artwork);
+            }}
             className="w-full py-2.5 bg-brand-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-brand-orange transition-all"
           >
             {isAuction ? 'Place Bid' : 'Inquire'}

@@ -1,18 +1,22 @@
 
 import React, { useState } from 'react';
-import { ArtEvent, Artwork, SaleType, EventMedia } from '../types';
+import { ArtEvent, Artwork, SaleType, EventMedia, User } from '../types';
 
 interface AdminDashboardProps {
   events: ArtEvent[];
   artworks: Artwork[];
+  currentUser: User | null;
   onAddEvent: (event: ArtEvent) => void;
   onAddArtwork: (artwork: Artwork) => void;
   onUploadEvents: (events: ArtEvent[]) => void;
   onUploadArtworks: (artworks: Artwork[]) => void;
+  onUpdateEvent: (id: string, event: Partial<ArtEvent>) => void;
+  onUploadImage: (file: File) => Promise<string | null>;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ events, artworks, onAddEvent, onAddArtwork, onUploadEvents, onUploadArtworks }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ events, artworks, currentUser, onAddEvent, onAddArtwork, onUploadEvents, onUploadArtworks, onUpdateEvent, onUploadImage }) => {
   const [activeForm, setActiveForm] = useState<'none' | 'event' | 'artwork'>('none');
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const [eventForm, setEventForm] = useState<Partial<ArtEvent>>({
     category: 'exhibition',
@@ -20,11 +24,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ events, artworks, onAdd
     lat: 10.7769,
     lng: 106.7009
   });
+  const [eventHeroFile, setEventHeroFile] = useState<File | null>(null);
 
   const [artworkForm, setArtworkForm] = useState<Partial<Artwork>>({
     saleType: 'fixed',
     available: true
   });
+  const [artworkHeroFile, setArtworkHeroFile] = useState<File | null>(null);
 
   const [mediaString, setMediaString] = useState('');
 
@@ -40,34 +46,62 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ events, artworks, onAdd
     }).filter(m => m.url !== '');
   };
 
-  const handleManualEvent = (e: React.FormEvent) => {
+  const handleManualEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newEvent: ArtEvent = {
+    let heroUrl = eventForm.imageUrl;
+    if (eventHeroFile) {
+      const uploaded = await onUploadImage(eventHeroFile);
+      if (uploaded) heroUrl = uploaded;
+    }
+    const base: ArtEvent = {
       ...eventForm as ArtEvent,
-      id: 'manual-e-' + Date.now(),
+      id: editingEventId || 'manual-e-' + Date.now(),
       media: parseMedia(mediaString),
       startDate: eventForm.startDate || new Date().toISOString().split('T')[0],
       endDate: eventForm.endDate || new Date().toISOString().split('T')[0],
+      createdBy: currentUser?.id,
+      imageUrl: heroUrl || eventForm.imageUrl || '',
     };
-    onAddEvent(newEvent);
+
+    if (editingEventId) {
+      onUpdateEvent(editingEventId, base);
+    } else {
+      onAddEvent(base);
+    }
     setActiveForm('none');
+    setEditingEventId(null);
     setEventForm({ category: 'exhibition', location: 'HCMC', lat: 10.7769, lng: 106.7009 });
     setMediaString('');
+    setEventHeroFile(null);
   };
 
-  const handleManualArtwork = (e: React.FormEvent) => {
+  const startEdit = (ev: ArtEvent) => {
+    setEditingEventId(ev.id);
+    setEventForm(ev);
+    setMediaString((ev.media || []).map(m => m.url).join(', '));
+    setActiveForm('event');
+  };
+
+  const handleManualArtwork = async (e: React.FormEvent) => {
     e.preventDefault();
+    let heroUrl = artworkForm.imageUrl;
+    if (artworkHeroFile) {
+      const uploaded = await onUploadImage(artworkHeroFile);
+      if (uploaded) heroUrl = uploaded;
+    }
     const newArtwork: Artwork = {
       ...artworkForm as Artwork,
       id: 'manual-a-' + Date.now(),
       available: true,
       price: Number(artworkForm.price) || 0,
       currentBid: artworkForm.saleType === 'auction' ? Number(artworkForm.price) : undefined,
-      bidCount: artworkForm.saleType === 'auction' ? 0 : undefined
+      bidCount: artworkForm.saleType === 'auction' ? 0 : undefined,
+      imageUrl: heroUrl || artworkForm.imageUrl || '',
     };
     onAddArtwork(newArtwork);
     setActiveForm('none');
     setArtworkForm({ saleType: 'fixed', available: true });
+    setArtworkHeroFile(null);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'events' | 'artworks') => {
@@ -129,7 +163,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ events, artworks, onAdd
           onClick={() => setActiveForm(activeForm === 'event' ? 'none' : 'event')}
           className={`w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-2 transition-all ${activeForm === 'event' ? 'bg-brand-orange border-brand-orange text-white' : 'border-brand-black text-brand-black hover:bg-slate-50'}`}
         >
-          {activeForm === 'event' ? 'Cancel Show' : '+ Create Exhibition'}
+          {editingEventId ? 'Edit Exhibition' : activeForm === 'event' ? 'Cancel Show' : '+ Create Exhibition'}
         </button>
         <button 
           onClick={() => setActiveForm(activeForm === 'artwork' ? 'none' : 'artwork')}
@@ -158,8 +192,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ events, artworks, onAdd
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[8px] md:text-[9px] font-black uppercase tracking-widest text-slate-400">Hero URL</label>
-                  <input required value={eventForm.imageUrl || ''} onChange={e => setEventForm({...eventForm, imageUrl: e.target.value})} className="w-full bg-white border border-slate-200 px-4 py-3 outline-none focus:border-brand-orange font-bold text-sm" placeholder="https://..." />
+                  <label className="block text-[8px] md:text-[9px] font-black uppercase tracking-widest text-slate-400">Hero Image</label>
+                  <input type="file" accept="image/*" onChange={e => setEventHeroFile(e.target.files?.[0] || null)} className="w-full bg-white border border-slate-200 px-4 py-3 outline-none focus:border-brand-orange font-bold text-sm" />
+                  <input value={eventForm.imageUrl || ''} onChange={e => setEventForm({...eventForm, imageUrl: e.target.value})} className="w-full bg-white border border-slate-200 px-4 py-3 outline-none focus:border-brand-orange font-bold text-sm mt-2" placeholder="...or paste URL" />
                 </div>
              </div>
           </div>
@@ -182,10 +217,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ events, artworks, onAdd
              <textarea rows={3} value={eventForm.description || ''} onChange={e => setEventForm({...eventForm, description: e.target.value})} className="w-full bg-white border border-slate-200 px-4 py-3 outline-none focus:border-brand-orange font-bold text-sm" placeholder="Artist's message..." />
           </div>
           <div className="md:col-span-2">
-            <button type="submit" className="w-full bg-brand-orange text-white py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest hover:bg-brand-black transition-all">Publish Live</button>
+            <button type="submit" className="w-full bg-brand-orange text-white py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest hover:bg-brand-black transition-all">
+              {editingEventId ? 'Save Changes' : 'Publish Live'}
+            </button>
           </div>
         </form>
       )}
+
+      <div className="border border-slate-200 p-6 md:p-8 bg-white shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-serif text-2xl font-black text-brand-black">Existing Exhibitions</h3>
+          <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest">{events.length} shows</span>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {events.map(ev => (
+            <div key={ev.id} className="py-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-black text-brand-black">{ev.title}</p>
+                <p className="text-[10px] uppercase text-slate-400 font-black tracking-widest">
+                  {ev.organizer} <span className="mx-2 text-slate-200">|</span> {ev.location}
+                </p>
+              </div>
+              <button
+                onClick={() => startEdit(ev)}
+                className="px-3 py-2 text-[9px] font-black uppercase tracking-widest border border-brand-black text-brand-black hover:bg-brand-orange hover:text-white transition-colors"
+              >
+                Edit
+              </button>
+            </div>
+          ))}
+          {events.length === 0 && (
+            <p className="py-6 text-sm text-slate-400">No exhibitions yet.</p>
+          )}
+        </div>
+      </div>
 
       {activeForm === 'artwork' && (
         <form onSubmit={handleManualArtwork} className="bg-slate-50 p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 animate-in shadow-2xl">
@@ -223,7 +288,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ events, artworks, onAdd
               </div>
               
               <label className="block text-[8px] md:text-[9px] font-black uppercase tracking-widest text-slate-400">High-Res Image</label>
-              <input required value={artworkForm.imageUrl || ''} onChange={e => setArtworkForm({...artworkForm, imageUrl: e.target.value})} className="w-full bg-white border border-slate-200 px-4 py-3 outline-none focus:border-brand-orange font-bold text-sm" placeholder="https://..." />
+              <input type="file" accept="image/*" onChange={e => setArtworkHeroFile(e.target.files?.[0] || null)} className="w-full bg-white border border-slate-200 px-4 py-3 outline-none focus:border-brand-orange font-bold text-sm" />
+              <input value={artworkForm.imageUrl || ''} onChange={e => setArtworkForm({...artworkForm, imageUrl: e.target.value})} className="w-full bg-white border border-slate-200 px-4 py-3 outline-none focus:border-brand-orange font-bold text-sm mt-2" placeholder="...or paste URL" />
 
               <label className="block text-[8px] md:text-[9px] font-black uppercase tracking-widest text-slate-400">Show ID (Link to Event)</label>
               <input value={artworkForm.eventId || ''} onChange={e => setArtworkForm({...artworkForm, eventId: e.target.value})} className="w-full bg-white border border-slate-200 px-4 py-3 outline-none focus:border-brand-orange font-bold text-sm" placeholder="e1" />

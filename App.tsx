@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { TabType, ArtEvent, Artwork, OptimizationResult, User, Language } from './types';
+import { TabType, ArtEvent, Artwork, User, Language } from './types';
 import { INITIAL_EVENTS, INITIAL_ARTWORKS } from './constants';
 import Layout from './components/Layout';
 import EventCard from './components/EventCard';
@@ -10,18 +10,22 @@ import AdminDashboard from './components/AdminDashboard';
 import AuthModal from './components/AuthModal';
 import EventDetail from './components/EventDetail';
 import AboutView from './components/AboutView';
-import { searchArtEvents, optimizeArtRoute } from './services/geminiService';
+import ArtworkDetail from './components/ArtworkDetail';
 import { api } from './services/apiService';
 import { t } from './translations';
+import { supabase } from './services/supabaseClient';
+
+const DEV_USER_STORAGE_KEY = 'judooo_dev_user';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('events');
+  const SAMPLE_ADMIN_ID = 'admin-sample';
+  const [activeTab, setActiveTab] = useState<TabType>('marketplace');
   const [language, setLanguage] = useState<Language>('vn');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   // Dữ liệu ban đầu (Sẽ được thay thế bằng dữ liệu từ API)
-  const [events, setEvents] = useState<ArtEvent[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<ArtEvent[]>(INITIAL_EVENTS.map(e => ({ ...e, createdBy: e.createdBy || SAMPLE_ADMIN_ID })));
   const [artworks, setArtworks] = useState<Artwork[]>(INITIAL_ARTWORKS);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -30,6 +34,7 @@ const App: React.FC = () => {
   const [eventTimeline, setEventTimeline] = useState<'active' | 'past'>('active');
   
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [actionArtwork, setActionArtwork] = useState<Artwork | null>(null);
   const [actionType, setActionType] = useState<'bid' | 'inquire' | null>(null);
   const [bidValue, setBidValue] = useState<number>(0);
@@ -40,24 +45,27 @@ const App: React.FC = () => {
 
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [isDiscovering, setIsDiscovering] = useState(false);
 
   // FETCH DỮ LIỆU THẬT KHI KHỞI CHẠY
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+      const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> => {
+        return Promise.race([
+          promise,
+          new Promise<T>((resolve) => setTimeout(() => resolve(fallback), timeoutMs)),
+        ]);
+      };
+
       try {
         const [fetchedEvents, fetchedArtworks] = await Promise.all([
-          api.getEvents(),
-          api.getArtworks()
+          withTimeout(api.getEvents(), 8000, [] as ArtEvent[]),
+          withTimeout(api.getArtworks(), 8000, [] as Artwork[]),
         ]);
         
         // Chỉ cập nhật nếu backend có dữ liệu thực, nếu không dùng dữ liệu mẫu (INITIAL_...)
         if (fetchedEvents.length > 0) setEvents(fetchedEvents);
         if (fetchedArtworks.length > 0) setArtworks(fetchedArtworks);
-        
-        // Giả lập độ trễ mạng để kiểm tra giao diện loading
-        await new Promise(resolve => setTimeout(resolve, 800));
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu từ server:", error);
       } finally {
@@ -67,31 +75,176 @@ const App: React.FC = () => {
     fetchData();
   }, []);
 
+  const isAdminRole = (role?: User['role']) => role && role !== 'art_lover';
+
+  const handleLoginTestAdmin = () => {
+    const testAdminUser: User = {
+      id: 'test-admin',
+      name: 'Test Admin',
+      email: 'test-admin@local.dev',
+      role: 'gallery',
+      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=TA',
+    };
+    setCurrentUser(testAdminUser);
+    setShowAuthModal(false);
+    localStorage.setItem(DEV_USER_STORAGE_KEY, JSON.stringify(testAdminUser));
+  };
+
   const handleTabChange = (tab: TabType) => {
     if ((tab === 'saved' || tab === 'admin') && !currentUser) {
       setShowAuthModal(true);
       return;
     }
-    if (tab === 'admin' && currentUser && currentUser.role === 'art_lover') {
-      alert("Truy cập bị từ chối: Bạn cần tài khoản Gallery hoặc Artist để vào mục này.");
+    if (tab === 'admin' && currentUser && !isAdminRole(currentUser.role)) {
+      alert("Truy cập bị từ chối: Bạn cần tài khoản Gallery/Artist/Dealer để vào mục này.");
       return;
     }
     setSelectedEventId(null);
+    setSelectedArtwork(null);
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleLogin = (user: User) => {
-    setCurrentUser(user);
-    setShowAuthModal(false);
-    api.syncUser(user); // Đồng bộ profile xuống DB
+  const mapSessionUser = async (sessionUser: any): Promise<User> => {
+    const profile = sessionUser?.id ? await api.getProfile(sessionUser.id) : null;
+    return {
+      id: sessionUser.id,
+      name: profile?.name || sessionUser.user_metadata?.full_name || sessionUser.email || 'User',
+      email: sessionUser.email,
+      role: profile?.role || 'art_lover',
+      avatar: profile?.avatar || sessionUser.user_metadata?.avatar_url || 'https://api.dicebear.com/7.x/initials/svg?seed=JD'
+    };
   };
 
-  const handleLogout = () => {
+  useEffect(() => {
+    const storedDevUser = localStorage.getItem(DEV_USER_STORAGE_KEY);
+    if (storedDevUser) {
+      try {
+        const parsed = JSON.parse(storedDevUser) as User;
+        if (parsed?.id && parsed?.role) {
+          setCurrentUser(parsed);
+        }
+      } catch (error) {
+        console.error('Failed to parse local test user', error);
+      }
+    }
+
+    if (!supabase) return;
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        const user = await mapSessionUser(data.session.user);
+        setCurrentUser(user);
+        api.syncUser(user);
+      }
+    };
+    init();
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const user = await mapSessionUser(session.user);
+        setCurrentUser(user);
+        api.syncUser(user);
+        localStorage.removeItem(DEV_USER_STORAGE_KEY);
+        setShowAuthModal(false);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+    return () => {
+      sub?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setSavedEventIds([]);
+      return;
+    }
+    const loadWatchlist = async () => {
+      const ids = await api.getWatchlist(currentUser.id);
+      if (ids.length > 0) {
+        setSavedEventIds(ids);
+      }
+    };
+    loadWatchlist();
+  }, [currentUser]);
+
+  const handleLogin = async () => {
+    if (!supabase) return;
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+  };
+
+  const handleEmailPasswordLogin = async (email: string, password: string) => {
+    if (!supabase) {
+      alert('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert(`Sign in failed: ${error.message}`);
+      return;
+    }
+    setShowAuthModal(false);
+  };
+
+  const handleEmailPasswordSignUp = async (name: string, email: string, password: string) => {
+    if (!supabase) {
+      alert('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      return;
+    }
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: window.location.origin,
+      }
+    });
+
+    if (error) {
+      alert(`Sign up failed: ${error.message}`);
+      return;
+    }
+
+    alert('Account created. Check your email to confirm your account, then sign in.');
+    setShowAuthModal(false);
+  };
+
+  const handleResetPassword = async (email: string) => {
+    if (!supabase) {
+      alert('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+
+    if (error) {
+      alert(`Password reset failed: ${error.message}`);
+      return;
+    }
+
+    alert('If this email exists, a password reset link has been sent.');
+  };
+
+  const handleLogout = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    localStorage.removeItem(DEV_USER_STORAGE_KEY);
     setCurrentUser(null);
-    setActiveTab('events');
+    setActiveTab('marketplace');
     setSavedEventIds([]);
     setSelectedEventId(null);
+    setSelectedArtwork(null);
   };
 
   const toggleSaveEvent = async (id: string) => {
@@ -100,10 +253,21 @@ const App: React.FC = () => {
       return;
     }
     const isSaved = savedEventIds.includes(id);
-    setSavedEventIds(prev => isSaved ? prev.filter(i => i !== id) : [...prev, id]);
-    
-    // Gọi API để lưu vào bảng watchlist trong database
-    await api.toggleWatchlist(currentUser.id, id);
+    const previous = savedEventIds;
+    const optimistic = isSaved ? previous.filter(i => i !== id) : [...previous, id];
+    setSavedEventIds(optimistic);
+
+    const persistedState = await api.toggleWatchlist(currentUser.id, id);
+    if (persistedState === null) {
+      setSavedEventIds(previous);
+      return;
+    }
+    setSavedEventIds(prev => {
+      const exists = prev.includes(id);
+      if (persistedState && !exists) return [...prev, id];
+      if (!persistedState && exists) return prev.filter(v => v !== id);
+      return prev;
+    });
   };
 
   const handleBidClick = (artwork: Artwork) => {
@@ -115,6 +279,51 @@ const App: React.FC = () => {
     setActionArtwork(artwork);
     setActionType('bid');
     setBidValue(currentPrice + 500000); 
+  };
+
+  const handleAddEvent = async (event: ArtEvent) => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (currentUser.id === 'test-admin') {
+      alert('Test Admin is local-only and cannot write to Supabase. Please sign in with Email/Google.');
+      return;
+    }
+    const payload = { ...event, createdBy: currentUser.id };
+    const created = await api.createEvent(payload);
+    if (!created) {
+      alert('Failed to save event to Supabase. Check that your account role is gallery/artist/art_dealer and that RLS allows inserts.');
+      return;
+    }
+    setEvents(prev => [created, ...prev]);
+  };
+
+  const handleAddArtwork = async (artwork: Artwork) => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (currentUser.id === 'test-admin') {
+      alert('Test Admin is local-only and cannot write to Supabase. Please sign in with Email/Google.');
+      return;
+    }
+    const payload: Artwork = { ...artwork, createdBy: currentUser?.id };
+    const created = await api.createArtwork(payload);
+    if (!created) {
+      alert('Failed to save artwork to Supabase. Check account role and RLS policy.');
+      return;
+    }
+    setArtworks(prev => [created, ...prev]);
+  };
+
+  const handleUpdateEvent = async (id: string, data: Partial<ArtEvent>) => {
+    if (!currentUser || !isAdminRole(currentUser.role)) {
+      alert("Chỉ admin mới chỉnh sửa sự kiện.");
+      return;
+    }
+    const updated = await api.updateEvent(id, data);
+    setEvents(prev => prev.map(ev => ev.id === id ? { ...ev, ...(updated || data) } : ev));
   };
 
   const submitBid = async () => {
@@ -159,16 +368,6 @@ const App: React.FC = () => {
     });
   }, [artworks, searchQuery, saleTypeFilter, priceFilter]);
 
-  const handleDiscovery = async () => {
-    setIsDiscovering(true);
-    try {
-      await searchArtEvents("Triển lãm nghệ thuật Việt Nam 2024");
-      alert(`Hệ thống đang quét các nguồn tin...`);
-    } finally {
-      setIsDiscovering(false);
-    }
-  };
-
   const selectedEvent = useMemo(() => 
     events.find(e => e.id === selectedEventId), 
   [events, selectedEventId]);
@@ -187,7 +386,32 @@ const App: React.FC = () => {
       language={language}
       setLanguage={setLanguage}
     >
-      {showAuthModal && <AuthModal onLogin={handleLogin} onClose={() => setShowAuthModal(false)} />}
+      {showAuthModal && (
+        <AuthModal
+          onLoginGoogle={handleLogin}
+          onLoginTestAdmin={handleLoginTestAdmin}
+          onLoginEmailPassword={handleEmailPasswordLogin}
+          onSignUpEmailPassword={handleEmailPasswordSignUp}
+          onResetPassword={handleResetPassword}
+          onClose={() => setShowAuthModal(false)}
+        />
+      )}
+
+      {selectedArtwork && (
+        <ArtworkDetail
+          artwork={selectedArtwork}
+          onClose={() => setSelectedArtwork(null)}
+          onInquire={(artwork) => {
+            setSelectedArtwork(null);
+            setActionArtwork(artwork);
+            setActionType('inquire');
+          }}
+          onBid={(artwork) => {
+            setSelectedArtwork(null);
+            handleBidClick(artwork);
+          }}
+        />
+      )}
       
       {selectedEvent && (
         <EventDetail 
@@ -258,11 +482,6 @@ const App: React.FC = () => {
                       <button onClick={() => setEventTimeline('past')} className={`flex-1 px-3 md:px-6 py-1.5 md:py-3 text-[7px] md:text-[10px] font-black uppercase tracking-widest transition-all ${eventTimeline === 'past' ? 'bg-white text-brand-orange shadow-sm border border-slate-100' : 'text-slate-400'}`}>{t('filter.archived', language)}</button>
                     </div>
                   )}
-                  {activeTab === 'events' && (
-                    <button onClick={handleDiscovery} disabled={isDiscovering} className="px-4 md:px-8 py-2 md:py-4 bg-brand-orange/5 text-brand-orange border border-brand-orange/20 text-[7px] md:text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-orange hover:text-white transition-all">
-                      {isDiscovering ? t('btn.searching', language) : t('btn.search', language)}
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -298,7 +517,16 @@ const App: React.FC = () => {
             {activeTab === 'marketplace' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 md:gap-x-12 gap-y-8 md:gap-y-20 animate-in duration-700">
                 {filteredArtworks.map(artwork => (
-                  <ArtworkCard key={artwork.id} artwork={artwork} onInquire={() => setActionArtwork(artwork)} onBid={() => handleBidClick(artwork)} />
+                  <ArtworkCard
+                    key={artwork.id}
+                    artwork={artwork}
+                    onOpen={() => setSelectedArtwork(artwork)}
+                    onInquire={() => {
+                      setActionType('inquire');
+                      setActionArtwork(artwork);
+                    }}
+                    onBid={() => handleBidClick(artwork)}
+                  />
                 ))}
               </div>
             )}
@@ -318,15 +546,13 @@ const App: React.FC = () => {
 
             {activeTab === 'admin' && (
               <AdminDashboard 
-                events={events} artworks={artworks} 
-                onAddEvent={async (e) => {
-                  const newEv = await api.createEvent(e);
-                  if (newEv) setEvents(prev => [newEv, ...prev]);
-                  else setEvents(prev => [e, ...prev]); // Fallback dữ liệu tạm
-                }}
-                onAddArtwork={(a) => setArtworks(prev => [a, ...prev])}
-                onUploadEvents={(newEvents) => setEvents(prev => [...prev, ...newEvents])}
+                events={events} artworks={artworks} currentUser={currentUser}
+                onAddEvent={handleAddEvent}
+                onAddArtwork={handleAddArtwork}
+                onUploadEvents={(newEvents) => setEvents(prev => [...prev, ...newEvents.map(ev => ({ ...ev, createdBy: currentUser?.id || SAMPLE_ADMIN_ID }))])}
                 onUploadArtworks={(newArtworks) => setArtworks(prev => [...prev, ...newArtworks])}
+                onUpdateEvent={handleUpdateEvent}
+                onUploadImage={api.uploadImage}
               />
             )}
           </>
