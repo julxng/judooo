@@ -326,6 +326,48 @@ const App: React.FC = () => {
     setEvents(prev => prev.map(ev => ev.id === id ? { ...ev, ...(updated || data) } : ev));
   };
 
+  const assertSupabaseWritableUser = (): boolean => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return false;
+    }
+    if (currentUser.id === 'test-admin') {
+      alert('Test Admin is local-only and cannot write to Supabase. Please sign in with Email/Google.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleBulkUploadEvents = async (newEvents: ArtEvent[]) => {
+    if (!assertSupabaseWritableUser()) return;
+    const payloads = newEvents.map((ev) => ({ ...ev, createdBy: currentUser!.id }));
+    const created = await Promise.all(payloads.map((ev) => api.createEvent(ev)));
+    const successful = created.filter((e): e is ArtEvent => !!e);
+    if (successful.length === 0) {
+      alert('No events were saved to Supabase. Check role/RLS settings.');
+      return;
+    }
+    if (successful.length < newEvents.length) {
+      alert(`Saved ${successful.length}/${newEvents.length} events to Supabase.`);
+    }
+    setEvents((prev) => [...successful, ...prev]);
+  };
+
+  const handleBulkUploadArtworks = async (newArtworks: Artwork[]) => {
+    if (!assertSupabaseWritableUser()) return;
+    const payloads = newArtworks.map((art) => ({ ...art, createdBy: currentUser!.id }));
+    const created = await Promise.all(payloads.map((art) => api.createArtwork(art)));
+    const successful = created.filter((a): a is Artwork => !!a);
+    if (successful.length === 0) {
+      alert('No artworks were saved to Supabase. Check role/RLS settings.');
+      return;
+    }
+    if (successful.length < newArtworks.length) {
+      alert(`Saved ${successful.length}/${newArtworks.length} artworks to Supabase.`);
+    }
+    setArtworks((prev) => [...successful, ...prev]);
+  };
+
   const submitBid = async () => {
     if (!actionArtwork || !currentUser) return;
     const currentPrice = actionArtwork.currentBid || actionArtwork.price;
@@ -549,8 +591,8 @@ const App: React.FC = () => {
                 events={events} artworks={artworks} currentUser={currentUser}
                 onAddEvent={handleAddEvent}
                 onAddArtwork={handleAddArtwork}
-                onUploadEvents={(newEvents) => setEvents(prev => [...prev, ...newEvents.map(ev => ({ ...ev, createdBy: currentUser?.id || SAMPLE_ADMIN_ID }))])}
-                onUploadArtworks={(newArtworks) => setArtworks(prev => [...prev, ...newArtworks])}
+                onUploadEvents={handleBulkUploadEvents}
+                onUploadArtworks={handleBulkUploadArtworks}
                 onUpdateEvent={handleUpdateEvent}
                 onUploadImage={api.uploadImage}
               />

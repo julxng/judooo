@@ -358,9 +358,23 @@ const upsertEvents = async (sourceItems) => {
   if (!sourceItems.length) return 0;
 
   const rows = sourceItems.map(buildEventRow);
-  const { error } = await supabase
+  const rowsWithPublishing = rows.map((row) => ({
+    ...row,
+    status: 'published',
+    moderation: 'approved',
+  }));
+
+  let { error } = await supabase
     .from('events')
-    .upsert(rows, { onConflict: 'source_url,external_id' });
+    .upsert(rowsWithPublishing, { onConflict: 'source_url,external_id' });
+
+  // Legacy schema fallback: table may not have status/moderation fields
+  if (error) {
+    const fallback = await supabase
+      .from('events')
+      .upsert(rows, { onConflict: 'source_url,external_id' });
+    error = fallback.error;
+  }
 
   if (error) throw error;
   return rows.length;
