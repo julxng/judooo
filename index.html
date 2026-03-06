@@ -7,49 +7,12 @@
     <title>Judooo | Vietnam Art Scene</title>
     <link rel="icon" type="image/svg+xml" href="/judooo_Favicon.svg">
     <link rel="apple-touch-icon" href="/judooo_Favicon.svg">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            orange: '#F14C23',
-                            orangeDark: '#D8431E',
-                            soft: '#FFFAF9',
-                            black: '#1A1A1A',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #ffffff;
-        }
-        h1, h2, h3, .font-serif {
-            font-family: 'Playfair Display', serif;
-        }
-        .leaflet-container {
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-        .judooo-map-pin {
-            background: #F14C23;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            width: 12px !important;
-            height: 12px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-    </style>
 </head>
-<body class="text-brand-black">
+<body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>

@@ -1,0 +1,117 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Badge, Button, Card, Modal } from '@ui/index';
+import { Grid } from '@components/layout/Grid';
+import { formatCurrency } from '@lib/format';
+import type { Artwork } from '../types/artwork.types';
+
+interface ArtworkDetailModalProps {
+  artwork: Artwork;
+  onClose: () => void;
+  onAction: (artwork: Artwork) => void;
+}
+
+export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetailModalProps) => {
+  const gallery = useMemo(() => {
+    const base = artwork.imageGallery && artwork.imageGallery.length ? artwork.imageGallery : [artwork.imageUrl];
+    return Array.from(new Set(base.filter(Boolean)));
+  }, [artwork.imageGallery, artwork.imageUrl]);
+  const [activeImage, setActiveImage] = useState(gallery[0] || artwork.imageUrl);
+  const isAuction = artwork.saleType === 'auction';
+
+  useEffect(() => {
+    setActiveImage(gallery[0] || artwork.imageUrl);
+  }, [artwork.id, artwork.imageUrl, gallery]);
+
+  return (
+    <Modal title={artwork.title} onClose={onClose} size="xl">
+      <div className="artwork-detail">
+        <div className="artwork-detail__gallery">
+          <div className="artwork-detail__hero">
+            <img src={activeImage} alt={artwork.title} />
+          </div>
+          {gallery.length > 1 ? (
+            <Grid columns={4} gap={12}>
+              {gallery.slice(0, 8).map((image) => (
+                <button
+                  key={image}
+                  type="button"
+                  className={`artwork-detail__thumb ${activeImage === image ? 'artwork-detail__thumb--active' : ''}`}
+                  onClick={() => setActiveImage(image)}
+                >
+                  <img src={image} alt={artwork.title} />
+                </button>
+              ))}
+            </Grid>
+          ) : null}
+        </div>
+
+        <div className="artwork-detail__content">
+          <Badge tone="accent">{isAuction ? 'Auction Lot' : 'Fixed Price'}</Badge>
+          <p className="muted-text">{artwork.artist}</p>
+
+          <Grid columns={2} gap={12}>
+            <Card className="detail-panel">
+              <span className="artwork-card__label">{isAuction ? 'Current Bid' : 'Price'}</span>
+              <strong>{formatCurrency(isAuction ? artwork.currentBid || artwork.price : artwork.price)}</strong>
+            </Card>
+            <Card className="detail-panel">
+              <span className="artwork-card__label">Medium</span>
+              <strong>{artwork.medium || 'N/A'}</strong>
+            </Card>
+            <Card className="detail-panel">
+              <span className="artwork-card__label">Dimensions</span>
+              <strong>{artwork.dimensions || 'N/A'}</strong>
+            </Card>
+            <Card className="detail-panel">
+              <span className="artwork-card__label">Location</span>
+              <strong>{[artwork.city, artwork.country].filter(Boolean).join(', ') || 'Vietnam'}</strong>
+            </Card>
+          </Grid>
+
+          <div className="detail-copy">
+            {artwork.description ? (
+              <div>
+                <p className="eyebrow">Description</p>
+                <p>{artwork.description}</p>
+              </div>
+            ) : null}
+            {artwork.story ? (
+              <div>
+                <p className="eyebrow">Story</p>
+                <p>{artwork.story}</p>
+              </div>
+            ) : null}
+            {artwork.provenance ? (
+              <div>
+                <p className="eyebrow">Provenance</p>
+                <p>{artwork.provenance}</p>
+              </div>
+            ) : null}
+            {artwork.authenticity ? (
+              <div>
+                <p className="eyebrow">Authenticity</p>
+                <p>{artwork.authenticity}</p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="detail-panel__actions">
+            {artwork.available ? (
+              <Button variant={isAuction ? 'primary' : 'secondary'} onClick={() => onAction(artwork)}>
+                {isAuction ? 'Place Bid' : 'Inquire'}
+              </Button>
+            ) : null}
+            {artwork.sourceItemUrl ? (
+              <Button
+                variant="ghost"
+                onClick={() => window.open(artwork.sourceItemUrl, '_blank', 'noopener,noreferrer')}
+              >
+                Source
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+};

@@ -73,6 +73,17 @@ Notes:
 - `CRAWL_ARTWORK_LIMIT=0` means crawl all discovered artworks from Nguyen Art Foundation.
 - `CRAWL_NGUYEN_MAX_PAGES` limits how many collection pages are scanned for pagination safety.
 
+### Export Nguyen Art Foundation collection to JSON (standalone scraper)
+
+Install Python deps once:
+`pip3 install requests beautifulsoup4`
+
+Run:
+`python3 scripts/scrape_naf_collection.py --output naf_main_collection.json`
+
+Scrape + upsert to Supabase artworks in one run:
+`set -a; source .env.crawl; set +a && python3 scripts/scrape_naf_collection.py --output naf_main_collection.json --to-supabase`
+
 ### What it does
 
 - Fetches each source feed
