@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Stack } from '@components/layout/Stack';
-import { SidebarLayout } from '@components/layout/SidebarLayout';
+import {
+  DetailLayout,
+  DetailPanel,
+  DetailPanelTitle,
+  DetailPanelActions,
+  DetailList,
+  DetailListItem,
+  DetailChipRow,
+  DetailMediaStripItem,
+} from '@components/layout/DetailLayout';
 import { Badge, Button, Card, Modal } from '@ui/index';
 import { formatDateRange } from '@lib/date';
 import type { Artwork } from '@features/marketplace/types/artwork.types';
@@ -68,14 +77,14 @@ export const EventDetailModal = ({
 
   return (
     <Modal title={event.name_vie || event.name_en || event.title} onClose={onClose} size="xl">
-      <SidebarLayout
+      <DetailLayout
         sidebar={
           <Stack gap={12}>
             <Card className="detail-panel">
-              <p className="eyebrow">Event Snapshot</p>
+              <DetailPanelTitle>Event Snapshot</DetailPanelTitle>
               <p>{formatDateRange(event.startDate, event.endDate)}</p>
               <p className="muted-text">{event.city || event.location}</p>
-              <div className="detail-panel__actions">
+              <DetailPanelActions>
                 <Button variant="secondary" fullWidth onClick={onToggleSave}>
                   {isSaved ? 'Remove from Route' : 'Save to Route'}
                 </Button>
@@ -100,72 +109,73 @@ export const EventDetailModal = ({
                     Open Source
                   </Button>
                 ) : null}
-              </div>
+              </DetailPanelActions>
             </Card>
           </Stack>
         }
-      >
-        <div className="detail-hero">
-          {activeMedia.type === 'image' ? (
-            <img src={activeMedia.url} alt={event.title} className="detail-hero__media" />
-          ) : (
-            <video src={activeMedia.url} controls className="detail-hero__media" />
-          )}
-          <div className="detail-hero__copy">
-            <Badge tone="accent">{event.event_type || event.category}</Badge>
-            <p className="muted-text">
-              {formatDateRange(event.startDate, event.endDate)} • {event.city || event.location}
-            </p>
-            <p>{event.description_vie || event.description_en || event.description}</p>
-          </div>
-        </div>
-
-        <div className="detail-media-strip">
-          {mediaItems.map((media, index) => (
-            <button
-              key={`${media.url}-${index}`}
-              type="button"
-              className={`detail-media-strip__item ${index === activeMediaIndex ? 'detail-media-strip__item--active' : ''}`}
-              onClick={() => setActiveMediaIndex(index)}
-            >
-              {media.type === 'image' ? (
-                <img src={media.url} alt={event.title} />
-              ) : (
-                <span>Video</span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        <div className="detail-grid">
-          <Card className="detail-panel">
-            <p className="eyebrow">Details</p>
-            <div className="detail-list">
-              <div>
-                <span>Date</span>
-                <strong>{formatDateRange(event.startDate, event.endDate)}</strong>
-              </div>
-              <div>
-                <span>Address</span>
-                <strong>{event.address || event.location || 'Updating...'}</strong>
-              </div>
-              <div>
-                <span>Price</span>
-                <strong>{event.is_free ? 'Free' : event.price ? `${event.price.toLocaleString()} VND` : 'Contact organizer'}</strong>
-              </div>
+        media={
+          <>
+            {activeMedia.type === 'image' ? (
+              <img src={activeMedia.url} alt={event.title} className="detail-hero__media" />
+            ) : (
+              <video src={activeMedia.url} controls className="detail-hero__media" />
+            )}
+            <div className="detail-hero__copy">
+              <Badge tone="accent">{event.event_type || event.category}</Badge>
+              <p className="muted-text">
+                {formatDateRange(event.startDate, event.endDate)} • {event.city || event.location}
+              </p>
+              <p>{event.description_vie || event.description_en || event.description}</p>
             </div>
-            <div className="detail-chip-row">
+          </>
+        }
+        mediaStrip={
+          mediaItems.length > 1 ? (
+            mediaItems.map((media, index) => (
+              <DetailMediaStripItem
+                key={`${media.url}-${index}`}
+                isActive={index === activeMediaIndex}
+                onClick={() => setActiveMediaIndex(index)}
+              >
+                {media.type === 'image' ? (
+                  <img src={media.url} alt={event.title} />
+                ) : (
+                  <span>Video</span>
+                )}
+              </DetailMediaStripItem>
+            ))
+          ) : undefined
+        }
+        content={
+          <Card className="detail-panel">
+            <DetailPanelTitle>Details</DetailPanelTitle>
+            <DetailList>
+              <DetailListItem
+                label="Date"
+                value={formatDateRange(event.startDate, event.endDate)}
+              />
+              <DetailListItem
+                label="Address"
+                value={event.address || event.location || 'Updating...'}
+              />
+              <DetailListItem
+                label="Price"
+                value={event.is_free ? 'Free' : event.price ? `${event.price.toLocaleString()} VND` : 'Contact organizer'}
+              />
+            </DetailList>
+            <DetailChipRow>
               {[event.art_medium, event.event_type, event.place_type, ...(event.tags || [])]
                 .filter(Boolean)
                 .map((chip) => (
                   <Badge key={chip}>{chip}</Badge>
                 ))}
-            </div>
+            </DetailChipRow>
           </Card>
-
-          {linkedArtworks.length > 0 ? (
+        }
+        relatedItems={
+          linkedArtworks.length > 0 ? (
             <Card className="detail-panel">
-              <p className="eyebrow">Related Artworks</p>
+              <DetailPanelTitle>Related Artworks</DetailPanelTitle>
               <div className="related-artworks">
                 {linkedArtworks.map((artwork) => (
                   <button
@@ -195,9 +205,9 @@ export const EventDetailModal = ({
                 ))}
               </div>
             </Card>
-          ) : null}
-        </div>
-      </SidebarLayout>
+          ) : undefined
+        }
+      />
     </Modal>
   );
 };

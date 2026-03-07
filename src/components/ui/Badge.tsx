@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import { cx } from '@lib/cx';
 
-interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: 'default' | 'accent' | 'success' | 'warning';
 }
 

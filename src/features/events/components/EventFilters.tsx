@@ -1,5 +1,5 @@
-import { Stack } from '@components/layout/Stack';
-import { Input, Select, Tabs } from '@ui/index';
+import { FilterToolbar } from '@components/shared/FilterToolbar';
+import { Select, Tabs } from '@ui/index';
 import type { EventCategory, EventTimeline } from '../types/event.types';
 
 interface EventFiltersProps {
@@ -23,38 +23,37 @@ export const EventFilters = ({
   viewMode,
   onViewModeChange,
 }: EventFiltersProps) => (
-  <div className="surface-toolbar">
-    <Stack gap={12} className="surface-toolbar__row">
-      <Input
-        value={searchQuery}
-        onChange={(event) => onSearchChange(event.target.value)}
-        placeholder="Search by title, city, or organizer"
-      />
+  <FilterToolbar
+    searchValue={searchQuery}
+    onSearchChange={onSearchChange}
+    searchPlaceholder="Search by title, city, or organizer"
+    filters={
       <Select value={category} onChange={(event) => onCategoryChange(event.target.value as EventCategory)}>
         <option value="all">All categories</option>
         <option value="exhibition">Exhibition</option>
         <option value="workshop">Workshop</option>
         <option value="auction">Auction</option>
       </Select>
-    </Stack>
-
-    <div className="surface-toolbar__tabs">
-      <Tabs
-        value={timeline}
-        onChange={onTimelineChange}
-        options={[
-          { id: 'active', label: 'Active' },
-          { id: 'past', label: 'Past' },
-        ]}
-      />
-      <Tabs
-        value={viewMode}
-        onChange={onViewModeChange}
-        options={[
-          { id: 'grid', label: 'Grid' },
-          { id: 'map', label: 'Map' },
-        ]}
-      />
-    </div>
-  </div>
+    }
+    tabs={
+      <>
+        <Tabs
+          value={timeline}
+          onChange={onTimelineChange}
+          options={[
+            { id: 'active', label: 'Active' },
+            { id: 'past', label: 'Past' },
+          ]}
+        />
+        <Tabs
+          value={viewMode}
+          onChange={onViewModeChange}
+          options={[
+            { id: 'grid', label: 'Grid' },
+            { id: 'map', label: 'Map' },
+          ]}
+        />
+      </>
+    }
+  />
 );
