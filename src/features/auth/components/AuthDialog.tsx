@@ -1,9 +1,16 @@
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { useNotice } from '@app/providers/NoticeProvider';
 import { Button, Input, Modal } from '@ui/index';
 import { Field } from '@components/shared/Field';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
+
+const MODE_LABELS: Record<AuthMode, string> = {
+  signin: 'Sign in',
+  signup: 'Sign up',
+  reset: 'Reset',
+};
 
 interface AuthDialogProps {
   onClose: () => void;
@@ -32,7 +39,8 @@ export const AuthDialog = ({
 
   const validateEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
     const trimmedEmail = email.trim();
     const trimmedName = name.trim();
 
@@ -84,15 +92,15 @@ export const AuthDialog = ({
               className={`auth-dialog__mode ${mode === value ? 'auth-dialog__mode--active' : ''}`}
               onClick={() => setMode(value)}
             >
-              {value}
+              {MODE_LABELS[value]}
             </button>
           ))}
         </div>
 
-        <div className="auth-dialog__fields">
+        <form className="auth-dialog__fields" onSubmit={handleSubmit}>
           {mode === 'signup' ? (
             <Field label="Full Name">
-              <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
+              <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Your full name" />
             </Field>
           ) : null}
 
@@ -101,7 +109,7 @@ export const AuthDialog = ({
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Email address"
+              placeholder="your@email.com"
             />
           </Field>
 
@@ -111,7 +119,7 @@ export const AuthDialog = ({
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Password"
+                placeholder="Min. 8 characters"
               />
             </Field>
           ) : null}
@@ -122,27 +130,32 @@ export const AuthDialog = ({
                 type="password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Confirm password"
+                placeholder="Repeat password"
               />
             </Field>
           ) : null}
-        </div>
 
-        <div className="auth-dialog__actions">
-          <Button variant="default" className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button type="submit" variant="default" className="w-full" disabled={isSubmitting}>
             {isSubmitting
               ? 'Working...'
               : mode === 'signin'
-                ? 'Sign in with Email'
+                ? 'Sign in'
                 : mode === 'signup'
                   ? 'Create account'
                   : 'Send reset link'}
           </Button>
-          <Button variant="secondary" className="w-full" onClick={onLoginGoogle}>
+        </form>
+
+        <div className="auth-dialog__divider">
+          <span>or</span>
+        </div>
+
+        <div className="auth-dialog__actions">
+          <Button type="button" variant="outline" className="w-full" onClick={onLoginGoogle}>
             Continue with Google
           </Button>
-          <Button variant="secondary" className="w-full" onClick={onLoginTestAdmin}>
-            Continue as Test Admin
+          <Button type="button" variant="ghost" className="w-full" onClick={onLoginTestAdmin}>
+            Test Admin
           </Button>
         </div>
       </div>

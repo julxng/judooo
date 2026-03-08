@@ -83,7 +83,7 @@ export const MainLayout = ({
                 </Button>
               </Stack>
             ) : (
-              <Button variant="secondary" size="sm" onClick={onOpenAuth}>
+              <Button variant="default" size="sm" onClick={onOpenAuth}>
                 Join
               </Button>
             )}

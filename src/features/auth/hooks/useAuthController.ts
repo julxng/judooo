@@ -89,7 +89,7 @@ export const useAuthController = () => {
 
   const loginWithGoogle = async () => {
     if (!supabase) {
-      notify('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'warning');
+      notify('Supabase is not configured. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.', 'warning');
       return;
     }
 
@@ -101,7 +101,7 @@ export const useAuthController = () => {
 
   const loginWithPassword = async (email: string, password: string) => {
     if (!supabase) {
-      notify('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'warning');
+      notify('Supabase is not configured. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.', 'warning');
       return;
     }
 
@@ -116,7 +116,7 @@ export const useAuthController = () => {
 
   const signUpWithPassword = async (name: string, email: string, password: string) => {
     if (!supabase) {
-      notify('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'warning');
+      notify('Supabase is not configured. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.', 'warning');
       return;
     }
 
@@ -140,7 +140,7 @@ export const useAuthController = () => {
 
   const resetPassword = async (email: string) => {
     if (!supabase) {
-      notify('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'warning');
+      notify('Supabase is not configured. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.', 'warning');
       return;
     }
 
