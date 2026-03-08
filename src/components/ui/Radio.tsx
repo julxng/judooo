@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes } from 'react';
-import { cx } from '@lib/cx';
+import { cn as cx } from '@/lib/utils';
 
 interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label: string;

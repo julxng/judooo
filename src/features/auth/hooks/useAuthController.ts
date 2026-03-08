@@ -42,7 +42,7 @@ export const useAuthController = () => {
     if (!supabase) return;
 
     const init = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabase!.auth.getSession();
       if (data.session?.user) {
         const user = await mapSessionUser(data.session.user);
         setCurrentUser(user);

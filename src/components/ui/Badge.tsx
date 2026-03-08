@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react';
-import { cx } from '@lib/cx';
+import { cn as cx } from '@/lib/utils';
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: 'default' | 'accent' | 'success' | 'warning';

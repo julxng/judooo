@@ -282,7 +282,7 @@ export const AdminDashboard = ({
             </Field>
             <div className="admin-form__actions">
               <Button variant="ghost" onClick={resetEventForm}>Cancel</Button>
-              <Button variant="primary" type="submit">{editingEventId ? 'Save Event' : 'Publish Event'}</Button>
+              <Button variant="default" type="submit">{editingEventId ? 'Save Event' : 'Publish Event'}</Button>
             </div>
           </form>
         </Card>
@@ -326,7 +326,7 @@ export const AdminDashboard = ({
             </Field>
             <div className="admin-form__actions">
               <Button variant="ghost" onClick={resetArtworkForm}>Cancel</Button>
-              <Button variant="primary" type="submit">List Artwork</Button>
+              <Button variant="default" type="submit">List Artwork</Button>
             </div>
           </form>
         </Card>

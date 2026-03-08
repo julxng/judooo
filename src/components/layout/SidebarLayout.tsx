@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cx } from '@lib/cx';
+import { cn as cx } from '@/lib/utils';
 
 interface SidebarLayoutProps {
   sidebar: ReactNode;

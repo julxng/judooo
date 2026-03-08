@@ -3,7 +3,7 @@ import type { DataMode } from './types';
 export const STORAGE_BUCKET = 'images';
 export const LOCAL_DB_KEY = 'judooo_local_db_v1';
 
-const rawDataMode = String(import.meta.env.VITE_DATA_MODE || 'auto').toLowerCase();
+const rawDataMode = String(process.env.NEXT_PUBLIC_DATA_MODE || 'auto').toLowerCase();
 
 export const DATA_MODE: DataMode =
   rawDataMode === 'local' ? 'local' : rawDataMode === 'supabase' ? 'supabase' : 'auto';

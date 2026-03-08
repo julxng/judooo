@@ -129,7 +129,7 @@ export const AuthDialog = ({
         </div>
 
         <div className="auth-dialog__actions">
-          <Button variant="primary" fullWidth onClick={handleSubmit} disabled={isSubmitting}>
+          <Button variant="default" className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting
               ? 'Working...'
               : mode === 'signin'
@@ -138,10 +138,10 @@ export const AuthDialog = ({
                   ? 'Create account'
                   : 'Send reset link'}
           </Button>
-          <Button variant="secondary" fullWidth onClick={onLoginGoogle}>
+          <Button variant="secondary" className="w-full" onClick={onLoginGoogle}>
             Continue with Google
           </Button>
-          <Button variant="subtle" fullWidth onClick={onLoginTestAdmin}>
+          <Button variant="secondary" className="w-full" onClick={onLoginTestAdmin}>
             Continue as Test Admin
           </Button>
         </div>

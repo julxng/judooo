@@ -76,16 +76,16 @@ export const EventDetailModal = ({
               <p>{formatDateRange(event.startDate, event.endDate)}</p>
               <p className="muted-text">{event.city || event.location}</p>
               <div className="detail-panel__actions">
-                <Button variant="secondary" fullWidth onClick={onToggleSave}>
+                <Button variant="secondary" className="w-full" onClick={onToggleSave}>
                   {isSaved ? 'Remove from Route' : 'Save to Route'}
                 </Button>
-                <Button variant="ghost" fullWidth onClick={shareEvent}>
+                <Button variant="ghost" className="w-full" onClick={shareEvent}>
                   Share
                 </Button>
                 {event.registration_link ? (
                   <Button
-                    variant="primary"
-                    fullWidth
+                    variant="default"
+                    className="w-full"
                     onClick={() => window.open(event.registration_link, '_blank', 'noopener,noreferrer')}
                   >
                     Register Now
@@ -93,8 +93,8 @@ export const EventDetailModal = ({
                 ) : null}
                 {event.sourceItemUrl ? (
                   <Button
-                    variant="subtle"
-                    fullWidth
+                    variant="secondary"
+                    className="w-full"
                     onClick={() => window.open(event.sourceItemUrl, '_blank', 'noopener,noreferrer')}
                   >
                     Open Source

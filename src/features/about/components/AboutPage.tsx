@@ -1,12 +1,12 @@
 import { Card } from '@ui/Card';
-import type { Language } from '@types';
+import type { Locale as Language } from '@/lib/i18n/translations';
 
 interface AboutPageProps {
   language: Language;
 }
 
 const aboutCopy = {
-  vn: {
+  vi: {
     intro:
       'judooo là một lớp hạ tầng khám phá nghệ thuật dành cho cộng đồng yêu nghệ thuật tại Việt Nam.',
     detail:

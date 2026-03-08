@@ -1,5 +1,5 @@
 import type { ElementType, HTMLAttributes } from 'react';
-import { cx } from '@lib/cx';
+import { cn as cx } from '@/lib/utils';
 
 interface ContainerProps extends HTMLAttributes<HTMLElement> {
   as?: ElementType;

@@ -1,1 +1,1 @@
-export { t } from './src/lib/i18n';
+export { t } from '@/lib/i18n';

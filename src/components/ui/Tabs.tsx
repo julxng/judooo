@@ -1,4 +1,4 @@
-import { cx } from '@lib/cx';
+import { cn as cx } from '@/lib/utils';
 
 interface TabOption<T extends string> {
   id: T;

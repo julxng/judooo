@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { cx } from '@lib/cx';
+import { cn as cx } from '@/lib/utils';
 
 interface PageProps extends PropsWithChildren {
   className?: string;

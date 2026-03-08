@@ -38,7 +38,7 @@ export const ArtworkActionModal = ({
           Send a collector interest signal and follow up directly with the gallery or artist.
         </p>
       )}
-      <Button variant="primary" fullWidth onClick={onSubmit}>
+      <Button variant="default" className="w-full" onClick={onSubmit}>
         {mode === 'bid' ? 'Submit Bid' : 'Send Inquiry'}
       </Button>
     </div>
