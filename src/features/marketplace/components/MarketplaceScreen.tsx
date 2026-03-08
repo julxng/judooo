@@ -1,5 +1,5 @@
-import { AsyncStatusBanner } from '@components/shared/AsyncStatusBanner';
-import { JudoooButton } from '@tailwind-ui/components/Button';
+import { AsyncStatusBanner } from '@/components/shared/AsyncStatusBanner';
+import { Button } from '@/components/ui/Button';
 import { MarketplaceFilters } from './MarketplaceFilters';
 import { MarketplaceGrid } from './MarketplaceGrid';
 import type {
@@ -40,66 +40,72 @@ export const MarketplaceScreen = ({
   const artistCount = new Set(artworks.map((artwork) => artwork.artist).filter(Boolean)).size;
 
   return (
-    <div className="jd:flex jd:flex-col jd:gap-6">
-      <section className="jd:relative jd:overflow-hidden jd:rounded-[32px] jd:border jd:border-judooo-ink/8 jd:bg-judooo-paper jd:p-6 jd:shadow-judooo-float md:jd:p-8">
-        <div className="judooo-ds__hero-glow" />
-        <div className="jd:relative jd:z-10 jd:grid jd:gap-8 lg:jd:grid-cols-[minmax(0,1.1fr)_320px]">
-          <div className="jd:flex jd:flex-col jd:gap-5">
-            <p className="jd:m-0 jd:font-mono jd:text-[11px] jd:font-semibold jd:uppercase jd:tracking-[0.28em] jd:text-judooo-ember">
+    <div className="flex flex-col gap-8">
+      <section className="relative overflow-hidden rounded-3xl border bg-card text-card-foreground p-8 lg:p-12 shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
+        <div className="relative z-10 grid gap-12 lg:grid-cols-[1fr_360px] items-center">
+          <div className="flex flex-col gap-6">
+            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold tracking-wider uppercase w-fit">
               Live Marketplace
-            </p>
-            <h2 className="jd:m-0 jd:max-w-3xl jd:font-serif jd:text-[clamp(2.6rem,5vw,4.8rem)] jd:leading-[0.9] jd:text-judooo-ink">
-              Selective adoption of the new Judooo collection language.
+            </span>
+            <h2 className="m-0 max-w-2xl text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight text-foreground">
+              Discover verified object stories.
             </h2>
-            <p className="jd:m-0 jd:max-w-2xl jd:text-base jd:leading-7 jd:text-judooo-smoke">
-              This screen now uses the new Tailwind component system only here: warmer papers, editorial typography, quieter controls, and stronger artwork framing.
+            <p className="m-0 max-w-xl text-lg text-muted-foreground leading-relaxed">
+              Explore our curated collection of contemporary artworks. Bid on exclusive auctions or inquire directly about fixed-price pieces from celebrated artists.
             </p>
-            <div className="jd:flex jd:flex-wrap jd:gap-3">
-              <JudoooButton variant="default">Collection live</JudoooButton>
-              <JudoooButton variant="secondary">Artsy-derived system</JudoooButton>
-              <JudoooButton variant="ghost">Judooo ember accent</JudoooButton>
+            <div className="flex flex-wrap gap-4 mt-2">
+              <Button size="lg" className="rounded-full shadow-md font-semibold px-8 hover:scale-105 transition-transform">
+                Explore Collection
+              </Button>
+              <Button size="lg" variant="secondary" className="rounded-full font-semibold px-8 hover:scale-105 transition-transform">
+                Learn More
+              </Button>
             </div>
           </div>
 
-          <div className="jd:grid jd:grid-cols-2 jd:gap-3">
-            <div className="jd:rounded-[24px] jd:border jd:border-judooo-ink/8 jd:bg-judooo-canvas jd:p-4">
-              <p className="jd:m-0 jd:font-mono jd:text-[10px] jd:uppercase jd:tracking-[0.22em] jd:text-judooo-smoke">Works</p>
-              <p className="jd:mt-2 jd:mb-0 jd:font-serif jd:text-4xl jd:leading-none jd:text-judooo-ink">{artworks.length}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col p-6 rounded-2xl bg-background border shadow-sm items-center text-center justify-center">
+              <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-2">Works</span>
+              <span className="text-4xl font-bold text-foreground">{artworks.length}</span>
             </div>
-            <div className="jd:rounded-[24px] jd:border jd:border-judooo-ink/8 jd:bg-judooo-canvas jd:p-4">
-              <p className="jd:m-0 jd:font-mono jd:text-[10px] jd:uppercase jd:tracking-[0.22em] jd:text-judooo-smoke">Available</p>
-              <p className="jd:mt-2 jd:mb-0 jd:font-serif jd:text-4xl jd:leading-none jd:text-judooo-ink">{availableCount}</p>
+            <div className="flex flex-col p-6 rounded-2xl bg-background border shadow-sm items-center text-center justify-center">
+              <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-2">Available</span>
+              <span className="text-4xl font-bold text-foreground">{availableCount}</span>
             </div>
-            <div className="jd:rounded-[24px] jd:border jd:border-judooo-ink/8 jd:bg-judooo-canvas jd:p-4">
-              <p className="jd:m-0 jd:font-mono jd:text-[10px] jd:uppercase jd:tracking-[0.22em] jd:text-judooo-smoke">Auctions</p>
-              <p className="jd:mt-2 jd:mb-0 jd:font-serif jd:text-4xl jd:leading-none jd:text-judooo-ink">{auctionCount}</p>
+            <div className="flex flex-col p-6 rounded-2xl bg-background border shadow-sm items-center text-center justify-center">
+              <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-2">Auctions</span>
+              <span className="text-4xl font-bold text-foreground">{auctionCount}</span>
             </div>
-            <div className="jd:rounded-[24px] jd:border jd:border-judooo-ink/8 jd:bg-judooo-canvas jd:p-4">
-              <p className="jd:m-0 jd:font-mono jd:text-[10px] jd:uppercase jd:tracking-[0.22em] jd:text-judooo-smoke">Artists</p>
-              <p className="jd:mt-2 jd:mb-0 jd:font-serif jd:text-4xl jd:leading-none jd:text-judooo-ink">{artistCount}</p>
+            <div className="flex flex-col p-6 rounded-2xl bg-background border shadow-sm items-center text-center justify-center">
+              <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-2">Artists</span>
+              <span className="text-4xl font-bold text-foreground">{artistCount}</span>
             </div>
           </div>
         </div>
       </section>
 
-      {dbReadError ? <AsyncStatusBanner tone="danger" message={dbReadError} /> : null}
+      {dbReadError ? <AsyncStatusBanner message={dbReadError} /> : null}
       {pendingWritesCount > 0 ? (
-        <AsyncStatusBanner tone="warning" message={`${pendingWritesCount} pending offline writes waiting to sync.`} />
+        <AsyncStatusBanner message={`${pendingWritesCount} pending offline writes waiting to sync.`} />
       ) : null}
-      <MarketplaceFilters
-        searchQuery={searchQuery}
-        saleTypeFilter={saleTypeFilter}
-        priceFilter={priceFilter}
-        resultCount={artworks.length}
-        onSearchChange={onSearchChange}
-        onSaleTypeChange={onSaleTypeChange}
-        onPriceFilterChange={onPriceFilterChange}
-      />
-      <MarketplaceGrid
-        artworks={artworks}
-        onOpenArtwork={onOpenArtwork}
-        onActionArtwork={onActionArtwork}
-      />
+
+      <div className="flex flex-col gap-6">
+        <MarketplaceFilters
+          searchQuery={searchQuery}
+          saleTypeFilter={saleTypeFilter}
+          priceFilter={priceFilter}
+          resultCount={artworks.length}
+          onSearchChange={onSearchChange}
+          onSaleTypeChange={onSaleTypeChange}
+          onPriceFilterChange={onPriceFilterChange}
+        />
+        <MarketplaceGrid
+          artworks={artworks}
+          onOpenArtwork={onOpenArtwork}
+          onActionArtwork={onActionArtwork}
+        />
+      </div>
     </div>
   );
 };

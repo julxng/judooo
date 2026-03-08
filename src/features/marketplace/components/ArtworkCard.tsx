@@ -1,8 +1,8 @@
 import type { KeyboardEvent } from 'react';
-import { Badge } from '@ui/index';
-import { formatCurrency } from '@lib/format';
-import { JudoooButton } from '@tailwind-ui/components/Button';
-import { JudoooCard } from '@tailwind-ui/components/Card';
+import { Badge } from '@/components/ui/Badge';
+import { formatCurrency } from '@/lib/format';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardFooter } from '@/components/ui/Card';
 import type { Artwork } from '../types/artwork.types';
 
 interface ArtworkCardProps {
@@ -22,72 +22,85 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
   };
 
   return (
-    <JudoooCard
-      className="jd:group jd:h-full jd:transition-transform jd:duration-200 hover:jd:-translate-y-1"
-      media={
-        <div className="jd:relative jd:h-full jd:w-full">
-          <img src={artwork.imageUrl} alt={artwork.title} className="jd:h-full jd:w-full jd:object-cover jd:transition-transform jd:duration-300 group-hover:jd:scale-[1.03]" />
-          <div className="jd:absolute jd:inset-x-0 jd:bottom-0 jd:h-32 jd:bg-gradient-to-t jd:from-judooo-ink/35 jd:to-transparent" />
-          {isAuction ? <Badge tone="accent" className="jd:absolute jd:top-4 jd:left-4">Auction</Badge> : null}
+    <Card
+      className="group flex flex-col h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer bg-card border-border/50"
+      onClick={() => onOpen(artwork)}
+    >
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+        <img
+          src={artwork.imageUrl}
+          alt={artwork.title}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-60 transition-opacity group-hover:opacity-80" />
+
+        <div className="absolute top-4 left-4 flex gap-2">
+          {isAuction ? (
+            <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground border-transparent shadow-sm">
+              Auction
+            </Badge>
+          ) : null}
           {!artwork.available ? (
-            <div className="jd:absolute jd:inset-0 jd:grid jd:place-items-center jd:bg-judooo-paper/70 jd:font-mono jd:text-[11px] jd:font-semibold jd:uppercase jd:tracking-[0.24em] jd:text-judooo-ink">
+            <Badge tone="default" className="bg-background/95 backdrop-blur-sm shadow-sm">
               Collected
-            </div>
+            </Badge>
           ) : null}
         </div>
-      }
-    >
+      </div>
+
       <div
         role="button"
         tabIndex={0}
-        className="jd:flex jd:h-full jd:flex-col jd:gap-4"
-        onClick={() => onOpen(artwork)}
+        className="flex flex-col flex-grow p-5 outline-none"
         onKeyDown={handleKeyDown}
       >
-        <div className="jd:flex jd:items-start jd:justify-between jd:gap-4">
-          <div className="jd:flex jd:flex-col jd:gap-2">
-            <p className="jd:m-0 jd:font-mono jd:text-[11px] jd:uppercase jd:tracking-[0.2em] jd:text-judooo-smoke">
+        <div className="flex items-start justify-between gap-4 mb-4 mt-1">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
               {artwork.city || artwork.country || 'Vietnam'}
-            </p>
-            <h3 className="jd:m-0 jd:font-serif jd:text-[clamp(1.5rem,3vw,2rem)] jd:leading-[0.94] jd:text-judooo-ink">
+            </span>
+            <h3 className="m-0 font-serif text-2xl font-semibold leading-tight text-foreground line-clamp-2">
               {artwork.title}
             </h3>
           </div>
           {isAuction ? (
-            <span className="jd:rounded-full jd:bg-judooo-ember/10 jd:px-3 jd:py-2 jd:font-mono jd:text-[10px] jd:uppercase jd:tracking-[0.18em] jd:text-judooo-ember">
+            <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider text-secondary-foreground border">
               {artwork.bidCount || 0} bids
             </span>
           ) : null}
         </div>
-        <div className="jd:flex jd:flex-col jd:gap-2">
-          <p className="jd:m-0 jd:text-sm jd:text-judooo-smoke">{artwork.artist}</p>
-          <p className="jd:m-0 jd:text-sm jd:leading-6 jd:text-judooo-smoke">
+
+        <div className="flex flex-col gap-1 mb-auto">
+          <p className="m-0 text-base font-medium text-foreground">{artwork.artist}</p>
+          <p className="m-0 text-sm text-muted-foreground">
             {artwork.medium} • {artwork.dimensions}
           </p>
         </div>
-        <div className="jd:flex jd:items-end jd:justify-between jd:gap-4">
-          <div className="jd:flex jd:flex-col jd:gap-1">
-            <span className="jd:font-mono jd:text-[10px] jd:uppercase jd:tracking-[0.22em] jd:text-judooo-smoke">
-              {isAuction ? 'Current bid' : 'Price'}
-            </span>
-            <strong className="jd:font-serif jd:text-3xl jd:leading-none jd:text-judooo-ink">
-              {formatCurrency(isAuction ? artwork.currentBid || artwork.price : artwork.price)}
-            </strong>
-          </div>
-          {artwork.available ? (
-            <JudoooButton
-              variant={isAuction ? 'primary' : 'secondary'}
-              className="jd:shrink-0"
-              onClick={(event) => {
-                event.stopPropagation();
-                onAction(artwork);
-              }}
-            >
-              {isAuction ? 'Place Bid' : 'Inquire'}
-            </JudoooButton>
-          ) : null}
-        </div>
       </div>
-    </JudoooCard>
+
+      <CardFooter className="p-5 pt-0 mt-2 border-t border-border/40 bg-muted/10 flex items-end justify-between gap-4">
+        <div className="flex flex-col gap-1 mt-4">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {isAuction ? 'Current bid' : 'Price'}
+          </span>
+          <strong className="font-serif text-2xl font-bold leading-none text-foreground">
+            {formatCurrency(isAuction ? artwork.currentBid || artwork.price : artwork.price)}
+          </strong>
+        </div>
+
+        {artwork.available ? (
+          <Button
+            variant={isAuction ? 'default' : 'secondary'}
+            className="shrink-0 rounded-full shadow-sm font-semibold transition-transform hover:scale-105"
+            onClick={(event) => {
+              event.stopPropagation();
+              onAction(artwork);
+            }}
+          >
+            {isAuction ? 'Place Bid' : 'Inquire'}
+          </Button>
+        ) : null}
+      </CardFooter>
+    </Card>
   );
 };
