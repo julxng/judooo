@@ -1,14 +1,18 @@
-import type { User } from '@features/auth/types/auth.types';
-import type { ArtEvent } from '@features/events/types/event.types';
-import { initialEvents } from '@features/events/services/eventFixtures';
-import type { Artwork } from '@features/marketplace/types/artwork.types';
-import { initialArtworks } from '@features/marketplace/services/artworkFixtures';
-import { hasBrowserStorage, LOCAL_DB_KEY, toId, toIsoDate } from './shared';
+import type { User } from '@/features/auth/types/auth.types';
+import type { ArtEvent } from '@/features/events/types/event.types';
+import { initialEvents } from '@/features/events/services/eventFixtures';
+import type { Artwork } from '@/features/marketplace/types/artwork.types';
+import { initialArtworks } from '@/features/marketplace/services/artworkFixtures';
+import { DATA_MODE, HAS_REMOTE_ENV, hasBrowserStorage, LOCAL_DB_KEY, mergeById, toId, toIsoDate } from './shared';
 import type { LocalDbState, PendingWrite } from './types';
 
+const shouldSeedFixtures = DATA_MODE === 'local' || !HAS_REMOTE_ENV;
+const fixtureEventIds = new Set(initialEvents.map((event) => event.id));
+const fixtureArtworkIds = new Set(initialArtworks.map((artwork) => artwork.id));
+
 const createDefaultLocalState = (): LocalDbState => ({
-  events: initialEvents,
-  artworks: initialArtworks,
+  events: shouldSeedFixtures ? initialEvents : [],
+  artworks: shouldSeedFixtures ? initialArtworks : [],
   profiles: [],
   watchlist: [],
   bids: [],
@@ -71,13 +75,44 @@ export const updateLocalDb = (updater: (state: LocalDbState) => LocalDbState): L
   return next;
 };
 
+export const hydrateLocalCatalogSnapshot = ({
+  events,
+  artworks,
+}: {
+  events?: ArtEvent[];
+  artworks?: Artwork[];
+}): LocalDbState =>
+  updateLocalDb((state) => ({
+    ...state,
+    events:
+      events && events.length > 0
+        ? mergeById(
+            events,
+            state.events.filter((event) => !fixtureEventIds.has(event.id)),
+          )
+        : state.events,
+    artworks:
+      artworks && artworks.length > 0
+        ? mergeById(
+            artworks,
+            state.artworks.filter((artwork) => !fixtureArtworkIds.has(artwork.id)),
+          )
+        : state.artworks,
+  }));
+
 export const ensureEventDefaults = (event: Partial<ArtEvent>): ArtEvent => ({
   id: String(event.id || toId('local-e')),
   title: String(event.title || 'Untitled Event'),
+  name_vie: event.name_vie,
+  name_en: event.name_en,
   organizer: String(event.organizer || 'Gallery'),
+  description_vie: event.description_vie,
+  description_en: event.description_en,
   startDate: toIsoDate(event.startDate),
   endDate: toIsoDate(event.endDate),
   location: String(event.location || 'Vietnam'),
+  city: event.city,
+  district: event.district,
   lat: Number(event.lat ?? 10.7769),
   lng: Number(event.lng ?? 106.7009),
   imageUrl: String(
@@ -86,10 +121,28 @@ export const ensureEventDefaults = (event: Partial<ArtEvent>): ArtEvent => ({
   media: Array.isArray(event.media) ? event.media : [],
   description: String(event.description || ''),
   category: event.category || 'exhibition',
+  art_medium: event.art_medium,
+  event_type: event.event_type,
+  place_type: event.place_type,
+  is_virtual: event.is_virtual,
+  is_free: event.is_free,
+  tags: event.tags,
+  price: event.price,
+  registration_required: event.registration_required,
+  registration_link: event.registration_link,
+  address: event.address,
+  google_map_link: event.google_map_link,
+  saved_count: event.saved_count,
   createdBy: event.createdBy,
   sourceUrl: event.sourceUrl,
   sourceItemUrl: event.sourceItemUrl,
   importedAt: event.importedAt,
+  socialvideo_url: event.socialvideo_url,
+  moderation_status: event.moderation_status,
+  featured: event.featured,
+  submitter_name: event.submitter_name,
+  submitter_email: event.submitter_email,
+  submitter_organization: event.submitter_organization,
 });
 
 export const ensureArtworkDefaults = (artwork: Partial<Artwork>): Artwork => ({
@@ -132,6 +185,7 @@ export const ensureArtworkDefaults = (artwork: Partial<Artwork>): Artwork => ({
   sourceItemUrl: artwork.sourceItemUrl,
   importedAt: artwork.importedAt,
   imageGallery: artwork.imageGallery,
+  moderation_status: artwork.moderation_status,
 });
 
 export const upsertLocalEvent = (event: ArtEvent): ArtEvent => {
@@ -160,6 +214,18 @@ export const upsertLocalArtwork = (artwork: Artwork): Artwork => {
     artworks: [artwork, ...state.artworks.filter((item) => item.id !== artwork.id)],
   }));
   return artwork;
+};
+
+export const patchLocalArtwork = (id: string, data: Partial<Artwork>): Artwork | null => {
+  const state = readLocalDb();
+  const index = state.artworks.findIndex((artwork) => artwork.id === id);
+  if (index === -1) return null;
+
+  const updated = ensureArtworkDefaults({ ...state.artworks[index], ...data, id: state.artworks[index].id });
+  const nextArtworks = [...state.artworks];
+  nextArtworks[index] = updated;
+  writeLocalDb({ ...state, artworks: nextArtworks });
+  return updated;
 };
 
 export const applyLocalBid = (artworkId: string, bidderId: string, amount: number): boolean => {
@@ -196,11 +262,14 @@ export const applyLocalBid = (artworkId: string, bidderId: string, amount: numbe
 };
 
 export const upsertLocalProfile = (user: User): User => {
+  const existing = readLocalDb().profiles.find((profile) => profile.id === user.id);
+  const nextProfile = existing ? { ...existing, ...user } : user;
+
   updateLocalDb((state) => ({
     ...state,
-    profiles: [user, ...state.profiles.filter((profile) => profile.id !== user.id)],
+    profiles: [nextProfile, ...state.profiles.filter((profile) => profile.id !== user.id)],
   }));
-  return user;
+  return nextProfile;
 };
 
 export const replaceLocalWatchlistForUser = (userId: string, eventIds: string[]): void => {
@@ -257,6 +326,12 @@ export const enqueuePendingWrite = (write: PendingWrite): void => {
     if (write.kind === 'syncUser') {
       pending = pending.filter(
         (item) => !(item.kind === 'syncUser' && item.payload.id === write.payload.id),
+      );
+    }
+
+    if (write.kind === 'updateArtwork') {
+      pending = pending.filter(
+        (item) => !(item.kind === 'updateArtwork' && item.payload.id === write.payload.id),
       );
     }
 

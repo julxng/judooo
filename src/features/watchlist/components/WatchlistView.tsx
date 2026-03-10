@@ -1,5 +1,5 @@
-import type { ArtEvent } from '@features/events/types/event.types';
-import { EventsGrid } from '@features/events/components/EventsGrid';
+import type { ArtEvent } from '@/features/events/types/event.types';
+import { EventsGrid } from '@/features/events/components/EventsGrid';
 
 interface WatchlistViewProps {
   events: ArtEvent[];

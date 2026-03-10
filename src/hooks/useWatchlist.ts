@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { User } from '@features/auth/types/auth.types';
-import { api } from '@services/api';
-import { useNotice } from '@app/providers/NoticeProvider';
+import type { User } from '@/features/auth/types/auth.types';
+import { api } from '@/services/api';
+import { useNotice } from '@/app/providers/NoticeProvider';
 
 export const useWatchlist = (currentUser: User | null) => {
   const { notify } = useNotice();

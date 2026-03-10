@@ -1,20 +1,30 @@
-import { useState } from 'react';
-import { useNotice } from '@app/providers/NoticeProvider';
-import { Button, Input, Modal } from '@ui/index';
-import { Field } from '@components/shared/Field';
+import { useEffect, useState } from 'react';
+import { useNotice } from '@/app/providers/NoticeProvider';
+import { Button, Input, Modal } from '@/components/ui';
+import { Field } from '@/components/shared/Field';
+import { cn } from '@/lib/utils';
+import type { SignUpRole } from '../types/auth.types';
+import { getRoleLabel } from '../utils/roles';
 
-type AuthMode = 'signin' | 'signup' | 'reset';
+export type AuthMode = 'signin' | 'signup' | 'reset';
 
 interface AuthDialogProps {
+  mode?: AuthMode;
   onClose: () => void;
   onLoginGoogle: () => void;
   onLoginTestAdmin: () => void;
   onLoginEmailPassword: (email: string, password: string) => Promise<void>;
-  onSignUpEmailPassword: (name: string, email: string, password: string) => Promise<void>;
+  onSignUpEmailPassword: (
+    name: string,
+    email: string,
+    password: string,
+    role: SignUpRole,
+  ) => Promise<void>;
   onResetPassword: (email: string) => Promise<void>;
 }
 
 export const AuthDialog = ({
+  mode: initialMode = 'signin',
   onClose,
   onLoginGoogle,
   onLoginTestAdmin,
@@ -23,12 +33,17 @@ export const AuthDialog = ({
   onResetPassword,
 }: AuthDialogProps) => {
   const { notify } = useNotice();
-  const [mode, setMode] = useState<AuthMode>('signin');
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [signUpRole, setSignUpRole] = useState<SignUpRole>('art_lover');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
 
   const validateEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
 
@@ -68,7 +83,7 @@ export const AuthDialog = ({
     if (mode === 'signin') {
       await onLoginEmailPassword(trimmedEmail, password);
     } else {
-      await onSignUpEmailPassword(trimmedName, trimmedEmail, password);
+      await onSignUpEmailPassword(trimmedName, trimmedEmail, password, signUpRole);
     }
     setIsSubmitting(false);
   };
@@ -91,9 +106,49 @@ export const AuthDialog = ({
 
         <div className="auth-dialog__fields">
           {mode === 'signup' ? (
-            <Field label="Full Name">
-              <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
-            </Field>
+            <>
+              <Field label="Full Name">
+                <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
+              </Field>
+
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-foreground">Account type</p>
+                <div className="grid gap-2">
+                  {([
+                    {
+                      id: 'art_lover',
+                      title: 'Collector account',
+                      body: 'Browse artworks, save events, and plan routes.',
+                    },
+                    {
+                      id: 'artist_pending',
+                      title: getRoleLabel('artist_pending'),
+                      body: 'Apply to submit artworks and events. Your posts stay in review until verified.',
+                    },
+                    {
+                      id: 'gallery_manager_pending',
+                      title: getRoleLabel('gallery_manager_pending'),
+                      body: 'Apply to submit gallery programming and artworks. Verified managers publish directly.',
+                    },
+                  ] as const).map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={cn(
+                        'border px-4 py-3 text-left transition-colors',
+                        signUpRole === option.id
+                          ? 'border-foreground bg-secondary'
+                          : 'border-border bg-background hover:border-foreground/60 hover:bg-secondary',
+                      )}
+                      onClick={() => setSignUpRole(option.id)}
+                    >
+                      <span className="block text-sm font-semibold text-foreground">{option.title}</span>
+                      <span className="mt-1 block text-sm leading-6 text-muted-foreground">{option.body}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
           ) : null}
 
           <Field label="Email">
@@ -138,7 +193,7 @@ export const AuthDialog = ({
                   ? 'Create account'
                   : 'Send reset link'}
           </Button>
-          <Button variant="secondary" className="w-full" onClick={onLoginGoogle}>
+          <Button variant="outline" className="w-full" onClick={onLoginGoogle}>
             Continue with Google
           </Button>
           <Button variant="secondary" className="w-full" onClick={onLoginTestAdmin}>

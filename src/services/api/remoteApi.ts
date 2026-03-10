@@ -1,7 +1,7 @@
-import type { User } from '@features/auth/types/auth.types';
-import type { ArtEvent } from '@features/events/types/event.types';
-import type { Artwork } from '@features/marketplace/types/artwork.types';
-import { supabase } from '@services/supabase/client';
+import type { User } from '@/features/auth/types/auth.types';
+import type { ArtEvent } from '@/features/events/types/event.types';
+import type { Artwork } from '@/features/marketplace/types/artwork.types';
+import { supabase } from '@/services/supabase/client';
 import { DATA_MODE, STORAGE_BUCKET } from './shared';
 import { buildArtworkPayloads, buildEventPayloads, mapArtwork, mapEvent } from './mappers';
 
@@ -138,6 +138,71 @@ export const createArtworkRemote = async (
   }
 };
 
+export const updateArtworkRemote = async (
+  id: string,
+  artwork: Partial<Artwork>,
+): Promise<Artwork | null> => {
+  try {
+    const client = withClient();
+
+    const payloadV2 = {
+      title: artwork.title,
+      artist: artwork.artist,
+      description: artwork.description,
+      medium: artwork.medium,
+      dimensions: artwork.dimensions,
+      image_url: artwork.imageUrl,
+      image_urls: artwork.imageGallery,
+      sale_type: artwork.saleType,
+      price: artwork.saleType === 'fixed' ? artwork.price : null,
+      current_bid: artwork.currentBid,
+      bid_ends_at: artwork.endTime,
+      availability: artwork.available ? 'active' : 'sold',
+      moderation: artwork.moderation_status,
+      moderation_status: artwork.moderation_status,
+      event_id: artwork.eventId,
+      year_created: artwork.yearCreated,
+      style: artwork.style,
+      city: artwork.city,
+      country: artwork.country,
+      provenance: artwork.provenance,
+      authenticity: artwork.authenticity,
+      condition_report: artwork.conditionReport,
+      story: artwork.story,
+    };
+
+    let { data, error } = await client.from('artworks').update(payloadV2).eq('id', id).select('*').single();
+    if (error) {
+      const payloadLegacy = {
+        title: artwork.title,
+        artist: artwork.artist,
+        price: artwork.price,
+        currentBid: artwork.currentBid,
+        bidCount: artwork.bidCount,
+        saleType: artwork.saleType,
+        imageUrl: artwork.imageUrl,
+        medium: artwork.medium,
+        dimensions: artwork.dimensions,
+        description: artwork.description,
+        available: artwork.available,
+        endTime: artwork.endTime,
+        eventId: artwork.eventId,
+        createdBy: artwork.createdBy,
+        moderation_status: artwork.moderation_status,
+      };
+      const fallback = await client.from('artworks').update(payloadLegacy).eq('id', id).select('*').single();
+      data = fallback.data;
+      error = fallback.error;
+    }
+
+    if (error) throw error;
+    return data ? mapArtwork(data) : null;
+  } catch (error) {
+    console.error('Supabase updateArtwork error', error);
+    return null;
+  }
+};
+
 export const placeBidRemote = async (
   artworkId: string,
   userId: string,
@@ -200,6 +265,24 @@ export const getProfileRemote = async (id: string): Promise<User | null> => {
     };
   } catch (error) {
     console.error('Supabase getProfile error', error);
+    return null;
+  }
+};
+
+export const getProfilesRemote = async (): Promise<User[] | null> => {
+  try {
+    const client = withClient();
+    const { data, error } = await client.from('profiles').select('*');
+    if (error) throw error;
+    return (data || []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      role: row.role,
+      avatar: row.avatar,
+    }));
+  } catch (error) {
+    console.error('Supabase getProfiles error', error);
     return null;
   }
 };

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
+    "cleanup:data": "node scripts/cleanupImportedData.mjs",
     "crawl:events": "node scripts/crawlToSupabase.mjs",
     "dedupe:events": "node scripts/dedupeEvents.mjs",
     "crawl:artworks": "node scripts/crawlArtworksToSupabase.mjs"

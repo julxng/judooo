@@ -9,5 +9,14 @@ export const AsyncStatusBanner = ({
   message,
   tone = 'info',
 }: AsyncStatusBannerProps) => (
-  <div className={cx('status-banner', `status-banner--${tone}`)}>{message}</div>
+  <div
+    className={cx(
+      'border px-4 py-3 text-sm',
+      tone === 'info' && 'border-border bg-card text-foreground',
+      tone === 'warning' && 'border-warning/30 bg-card text-warning',
+      tone === 'danger' && 'border-destructive/30 bg-card text-destructive',
+    )}
+  >
+    {message}
+  </div>
 );

@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -17,7 +18,10 @@ const DEFAULT_PRICE_MAX = Number(process.env.CRAWL_ARTWORK_PRICE_MAX || 30000000
 const WIKIDATA_RETRIES = Number(process.env.CRAWL_WIKIDATA_RETRIES || 4);
 const NGUYEN_COLLECTION_URL =
   process.env.CRAWL_NGUYEN_COLLECTION_URL || 'https://nguyenartfoundation.com/vn/collection/suu-tap/';
-const NGUYEN_MAX_PAGES = Number(process.env.CRAWL_NGUYEN_MAX_PAGES || 120);
+const NGUYEN_ARTWORKS_API =
+  process.env.CRAWL_NGUYEN_ARTWORKS_API || 'https://nguyenartfoundation.com/wp-json/wp/v2/artwork';
+const NGUYEN_MAX_PAGES = Number(process.env.CRAWL_NGUYEN_MAX_PAGES || 40);
+const NGUYEN_PER_PAGE = Math.min(100, Number(process.env.CRAWL_NGUYEN_PER_PAGE || 100));
 const WEB_QUERIES = (process.env.CRAWL_WEB_ARTWORK_QUERIES || 'site:nguyenartfoundation.com vietnam collection artwork')
   .split(',')
   .map((v) => v.trim())
@@ -25,8 +29,8 @@ const WEB_QUERIES = (process.env.CRAWL_WEB_ARTWORK_QUERIES || 'site:nguyenartfou
 const CITY_POOL = ['Ho Chi Minh City', 'Hanoi', 'Da Nang', 'Hue'];
 const STYLE_POOL = ['Contemporary', 'Modernist', 'Lacquer Contemporary', 'Abstract', 'Impressionist'];
 const MEDIUM_POOL = ['Oil on canvas', 'Acrylic on canvas', 'Lacquer on wood', 'Ink on paper', 'Mixed media'];
-const DIMENSIONS_POOL = ['80 x 100 cm', '100 x 120 cm', '90 x 90 cm', '70 x 100 cm', '120 x 150 cm'];
 const FALLBACK_LIMIT = ARTWORK_LIMIT > 0 ? ARTWORK_LIMIT : 50;
+const UPSERT_BATCH_SIZE = 100;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -34,6 +38,8 @@ const toSlug = (value = '') =>
   value
     .toLowerCase()
     .trim()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
@@ -41,18 +47,34 @@ const toSlug = (value = '') =>
 
 const parseYear = (value) => {
   if (!value) return null;
-  const match = String(value).match(/\d{4}/);
+  const match = String(value).match(/\b(19|20)\d{2}\b/);
   return match ? Number(match[0]) : null;
 };
 
-const randomPrice = () => {
-  const min = Math.min(DEFAULT_PRICE_MIN, DEFAULT_PRICE_MAX);
-  const max = Math.max(DEFAULT_PRICE_MIN, DEFAULT_PRICE_MAX);
-  return Math.round((min + Math.random() * (max - min)) / 100000) * 100000;
-};
-
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const stripHtml = (s = '') => s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const decodeHtml = (value = '') =>
+  value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&#8211;|&ndash;/g, '–')
+    .replace(/&#8212;|&mdash;/g, '—')
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8220;|&#8221;/g, '"')
+    .replace(/&#038;/g, '&')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+const stripHtml = (value = '') => decodeHtml(value).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const stripHtmlRich = (value = '') =>
+  decodeHtml(value)
+    .replace(/<\/(p|div|br|li|h1|h2|h3|h4|h5|h6)>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 const reachedLimit = (count, limit) => limit > 0 && count >= limit;
 const normalizeUrl = (url = '', base = '') => {
   try {
@@ -61,9 +83,18 @@ const normalizeUrl = (url = '', base = '') => {
     return '';
   }
 };
-const unique = (arr) => Array.from(new Set(arr.filter(Boolean)));
+const unique = (values) => Array.from(new Set(values.filter(Boolean)));
 const pick = (arr, seed = 0) => arr[Math.abs(seed) % arr.length];
-const hash = (s = '') => [...s].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0, 7);
+const hashNumber = (value = '') => [...value].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0, 7);
+const stableId = (value = '') => crypto.createHash('sha1').update(value).digest('hex').slice(0, 12);
+const stablePrice = (seedText) => {
+  const min = Math.min(DEFAULT_PRICE_MIN, DEFAULT_PRICE_MAX);
+  const max = Math.max(DEFAULT_PRICE_MIN, DEFAULT_PRICE_MAX);
+  const span = Math.max(1, max - min);
+  const seed = Math.abs(hashNumber(seedText));
+  return Math.round((min + (seed % span)) / 100000) * 100000;
+};
+const isVietnameseLink = (url = '') => /\/vn\//i.test(url);
 
 const fetchSeller = async () => {
   const { data, error } = await supabase
@@ -179,7 +210,7 @@ const fetchCommonsCategoryImages = async (categoryTitle, limit) => {
       return {
         title: title.replace(/\.(jpg|jpeg|png|webp|gif)$/i, '').trim(),
         imageUrl,
-        summary: String(summary).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
+        summary: stripHtml(summary),
         sourceItemUrl: `https://commons.wikimedia.org/wiki/${encodeURIComponent(page?.title || '')}`,
       };
     })
@@ -234,7 +265,9 @@ const fetchWikipediaArtistFallback = async (limit) => {
         title: `${name} Study`,
         imageUrl,
         summary: (json?.extract || '').trim(),
-        sourceItemUrl: json?.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/\s+/g, '_'))}`,
+        sourceItemUrl:
+          json?.content_urls?.desktop?.page ||
+          `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/\s+/g, '_'))}`,
       });
     } catch {
       // continue
@@ -243,156 +276,101 @@ const fetchWikipediaArtistFallback = async (limit) => {
   return results.slice(0, limit);
 };
 
-const fetchNguyenArtFoundationArtworks = async (limit) => {
-  const headers = {
-    'User-Agent': 'JudoooArtworkCrawler/1.0 (+https://judooo.art)',
-    Accept: 'text/html',
-  };
-  const extractClickTargets = (html, baseUrl) => {
-    const urls = [];
+const getEmbeddedTerms = (item, taxonomy) =>
+  (Array.isArray(item?._embedded?.['wp:term']) ? item._embedded['wp:term'].flat() : [])
+    .filter((term) => term?.taxonomy === taxonomy)
+    .map((term) => stripHtml(term?.name || ''))
+    .filter(Boolean);
 
-    const attrPatterns = [
-      /(?:href|data-href|data-url|data-link|data-permalink|data-post-url)=["']([^"']+)["']/gi,
-      /"(https?:\/\/[^"]*nguyenartfoundation\.com[^"]*)"/gi,
-      /'(https?:\/\/[^']*nguyenartfoundation\.com[^']*)'/gi,
-    ];
-    for (const pattern of attrPatterns) {
-      for (const match of html.matchAll(pattern)) {
-        urls.push(normalizeUrl(match[1] || '', baseUrl));
-      }
-    }
+const getEmbeddedImageUrl = (item) => {
+  const media = Array.isArray(item?._embedded?.['wp:featuredmedia']) ? item._embedded['wp:featuredmedia'][0] : null;
+  const full = media?.media_details?.sizes?.full?.source_url;
+  return normalizeUrl(full || media?.source_url || '', item?.link || NGUYEN_COLLECTION_URL);
+};
 
-    const onclickMatches = [...html.matchAll(/onclick=["']([\s\S]*?)["']/gi)];
-    for (const match of onclickMatches) {
-      const js = match[1] || '';
-      const quoted = [...js.matchAll(/['"]((?:https?:\/\/|\/)[^'"]+)['"]/gi)];
-      for (const q of quoted) urls.push(normalizeUrl(q[1] || '', baseUrl));
-      const wpPostId = js.match(/(?:post|id)\s*[:=]\s*['"]?(\d{2,10})['"]?/i)?.[1];
-      if (wpPostId) urls.push(normalizeUrl(`/?p=${wpPostId}`, baseUrl));
-    }
-
-    for (const script of html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)) {
-      const body = script[1] || '';
-      const jsonUrlMatches = [...body.matchAll(/"(\/[^"]*collection\/[^"]*)"/gi)];
-      for (const m of jsonUrlMatches) urls.push(normalizeUrl(m[1] || '', baseUrl));
-      const absMatches = [...body.matchAll(/"(https?:\/\/[^"]*nguyenartfoundation\.com[^"]*)"/gi)];
-      for (const m of absMatches) urls.push(normalizeUrl(m[1] || '', baseUrl));
-    }
-
-    return unique(urls).filter((href) => /nguyenartfoundation\.com/i.test(href));
-  };
-
-  const listPages = [NGUYEN_COLLECTION_URL];
-  const seenPages = new Set();
-  const detailLinks = [];
-  const seenDetailLinks = new Set();
-
-  for (let idx = 0; idx < listPages.length; idx += 1) {
-    if (seenPages.size >= NGUYEN_MAX_PAGES) break;
-    const pageUrl = listPages[idx];
-    if (!pageUrl || seenPages.has(pageUrl)) continue;
-    seenPages.add(pageUrl);
-
-    try {
-      const response = await fetch(pageUrl, { headers });
-      if (!response.ok) continue;
-      const html = await response.text();
-
-      const anchors = extractClickTargets(html, pageUrl);
-      for (const href of anchors) {
-        if (!href || !/nguyenartfoundation\.com/i.test(href)) continue;
-        if (/\/collection\//i.test(href) && !/\/collection\/suu-tap\/?$/i.test(href) && !/\/page\/\d+\/?$/i.test(href)) {
-          if (!seenDetailLinks.has(href)) {
-            seenDetailLinks.add(href);
-            detailLinks.push(href);
-          }
-          continue;
-        }
-        if (/\/collection\/suu-tap\/page\/\d+\/?$/i.test(href) || /\/page\/\d+\/?$/i.test(href) || /[?&]paged=\d+/i.test(href)) {
-          if (!seenPages.has(href) && !listPages.includes(href)) listPages.push(href);
-        }
-      }
-
-      const nextHref = normalizeUrl(
-        html.match(/<a[^>]+(?:rel=["']next["']|class=["'][^"']*(?:next|page-numbers)[^"']*["'])[^>]+href=["']([^"']+)["']/i)?.[1] || '',
-        pageUrl
-      );
-      if (nextHref && !seenPages.has(nextHref) && !listPages.includes(nextHref)) {
-        listPages.push(nextHref);
-      }
-
-      const currentPageNum = Number(
-        pageUrl.match(/\/page\/(\d+)\/?$/i)?.[1] ||
-          new URL(pageUrl).searchParams.get('paged') ||
-          1
-      );
-      const guessedNext = normalizeUrl(`./page/${currentPageNum + 1}/`, NGUYEN_COLLECTION_URL);
-      if (guessedNext && !seenPages.has(guessedNext) && !listPages.includes(guessedNext)) {
-        listPages.push(guessedNext);
-      }
-    } catch {
-      // continue
-    }
-  }
-
-  const toMetaMap = (html) => {
-    const map = {};
-    const pairs = [
-      ...html.matchAll(/<(?:li|p|div)[^>]*>\s*(?:<strong>|<b>)?\s*([^:<]{2,40})\s*:?\s*(?:<\/strong>|<\/b>)?\s*([^<]{1,200})<\/(?:li|p|div)>/gi),
-      ...html.matchAll(/<tr[^>]*>\s*<th[^>]*>([^<]+)<\/th>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<\/tr>/gi),
-      ...html.matchAll(/<dt[^>]*>([^<]+)<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/gi),
-    ];
-    for (const pair of pairs) {
-      const key = stripHtml(pair[1] || '').toLowerCase();
-      const value = stripHtml(pair[2] || '');
-      if (key && value && !map[key]) map[key] = value;
-    }
-    return map;
-  };
-
-  const pickMeta = (meta, patterns) => {
-    for (const key of Object.keys(meta)) {
-      if (patterns.some((p) => p.test(key))) return meta[key];
-    }
-    return '';
-  };
-
+const fetchPaginatedWpItems = async (endpoint, limit) => {
   const rows = [];
-  for (const link of detailLinks) {
-    if (reachedLimit(rows.length, limit)) break;
-    try {
-      const detailResponse = await fetch(link, { headers });
-      if (!detailResponse.ok) continue;
-      const html = await detailResponse.text();
-      const ogTitle = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1] || '';
-      const ogImage = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1] || '';
-      const twImage = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)?.[1] || '';
-      const ogDesc = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)?.[1] || '';
-      const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '';
-      const firstImage = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)?.[1] || '';
-      const meta = toMetaMap(html);
-      const title = stripHtml(ogTitle || h1 || 'Untitled Vietnamese Artwork');
-      const imageUrl = normalizeUrl(ogImage || twImage || firstImage, link);
-      const summary = stripHtml(ogDesc || meta.description || meta['mô tả'] || '');
-      if (!imageUrl) continue;
-      rows.push({
-        title,
-        imageUrl,
-        sourceItemUrl: link,
-        summary,
-        medium: pickMeta(meta, [/medium/i, /chất liệu/i]),
-        dimensions: pickMeta(meta, [/dimension/i, /kích thước/i, /size/i]),
-        year: pickMeta(meta, [/year/i, /\bnăm\b/i]),
-        style: pickMeta(meta, [/style/i, /phong cách/i]),
-        provenance: pickMeta(meta, [/provenance/i, /xuất xứ/i]),
-        condition: pickMeta(meta, [/condition/i, /tình trạng/i]),
-        artistName: pickMeta(meta, [/artist/i, /họa sĩ/i, /tác giả/i]),
-      });
-    } catch {
-      // continue
+  let page = 1;
+  let totalPages = NGUYEN_MAX_PAGES;
+
+  while (page <= totalPages && page <= NGUYEN_MAX_PAGES && !reachedLimit(rows.length, limit)) {
+    const url = new URL(endpoint);
+    url.searchParams.set('_embed', '1');
+    url.searchParams.set('per_page', String(NGUYEN_PER_PAGE));
+    url.searchParams.set('page', String(page));
+    url.searchParams.set('orderby', 'date');
+    url.searchParams.set('order', 'desc');
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'JudoooArtworkCrawler/1.0 (+https://judooo.art)',
+      },
+    });
+
+    if (!response.ok) {
+      if (page === 1) {
+        throw new Error(`Nguyen Art Foundation API fetch failed (${response.status})`);
+      }
+      break;
+    }
+
+    const json = await response.json();
+    if (!Array.isArray(json) || json.length === 0) break;
+    rows.push(...json);
+    totalPages = Number(response.headers.get('x-wp-totalpages') || totalPages || page);
+    page += 1;
+  }
+
+  return limit > 0 ? rows.slice(0, limit) : rows;
+};
+
+const buildNguyenArtworkCandidates = async (limit) => {
+  const items = await fetchPaginatedWpItems(NGUYEN_ARTWORKS_API, limit);
+  const deduped = new Map();
+
+  for (const item of items) {
+    const title = stripHtml(item?.title?.rendered || '');
+    const content = stripHtmlRich(item?.content?.rendered || '');
+    const excerpt = stripHtml(item?.excerpt?.rendered || '');
+    const imageUrl = getEmbeddedImageUrl(item);
+    if (!title || !imageUrl) continue;
+
+    const artistNames = getEmbeddedTerms(item, 'artist');
+    const artworkTypes = getEmbeddedTerms(item, 'artwork_type');
+    const collections = getEmbeddedTerms(item, 'collection');
+    const dedupeKey =
+      imageUrl ||
+      `${artistNames.join('|')}::${toSlug(title)}::${toSlug(excerpt || content.slice(0, 80))}`;
+
+    const candidate = {
+      title,
+      artistName: artistNames.join(', '),
+      imageUrl,
+      sourceItemUrl: normalizeUrl(item?.link || '', NGUYEN_COLLECTION_URL),
+      summary: content || excerpt,
+      medium: excerpt || artworkTypes.join(', '),
+      dimensions: '',
+      year: '',
+      style: artworkTypes.join(', '),
+      provenance: collections.length
+        ? `Imported from Nguyen Art Foundation (${collections.join(', ')}).`
+        : 'Imported from Nguyen Art Foundation.',
+      condition: 'Not specified',
+      score: isVietnameseLink(item?.link || '') ? 2 : 1,
+    };
+
+    const existing = deduped.get(dedupeKey);
+    if (!existing || candidate.score > existing.score || candidate.summary.length > existing.summary.length) {
+      deduped.set(dedupeKey, candidate);
     }
   }
-  return rows;
+
+  const rows = Array.from(deduped.values())
+    .sort((a, b) => a.sourceItemUrl.localeCompare(b.sourceItemUrl))
+    .map(({ score, ...row }) => row);
+
+  return limit > 0 ? rows.slice(0, limit) : rows;
 };
 
 const decodeDuckUrl = (href = '') => {
@@ -413,7 +391,8 @@ const fetchDuckDuckGoResults = async (query) => {
 
   const response = await fetch(endpoint.toString(), {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
       Accept: 'text/html',
     },
   });
@@ -434,7 +413,8 @@ const fetchPagePreviewImage = async (url) => {
     const timeout = setTimeout(() => controller.abort(), 12000);
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         Accept: 'text/html,*/*;q=0.8',
       },
       signal: controller.signal,
@@ -445,7 +425,8 @@ const fetchPagePreviewImage = async (url) => {
     const html = await response.text();
     const ogImage = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1] || '';
     const twImage = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)?.[1] || '';
-    const ogDesc = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)?.[1] || '';
+    const ogDesc =
+      html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)?.[1] || '';
     return {
       imageUrl: ogImage || twImage || '',
       description: stripHtml(ogDesc || ''),
@@ -512,9 +493,7 @@ const normalizeArtworkTitle = (title = '', summary = '') => {
     /(painting|artwork|canvas|lacquer|portrait|landscape|composition|still life|study|untitled|triptych|work)/i.test(
       text
     );
-  const looksLikeArtistName = /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}$/.test(cleaned);
   if (!cleaned) return 'Untitled Vietnamese Artwork';
-  if (looksLikeArtistName && !hasArtworkWord) return `Untitled Work after ${cleaned}`;
   if (!hasArtworkWord && cleaned.length < 4) return 'Untitled Vietnamese Artwork';
   return cleaned;
 };
@@ -530,13 +509,13 @@ const isLikelyArtistProfile = (title = '', summary = '', sourceItemUrl = '') => 
 const buildImportedArtwork = ({
   artistId,
   sellerId,
+  artistName,
   title,
   imageUrl,
   summary,
   sourceUrl,
   sourceItemUrl,
   slugPrefix,
-  indexSeed = 0,
   medium,
   dimensions,
   year,
@@ -544,39 +523,40 @@ const buildImportedArtwork = ({
   provenance,
   condition,
 }) => {
-  const seed = hash(`${title}|${imageUrl}|${sourceItemUrl}|${indexSeed}`);
   const normalizedTitle = normalizeArtworkTitle(title, summary);
-  const city = pick(CITY_POOL, seed);
+  const stableKey = sourceItemUrl || imageUrl || `${sourceUrl}:${normalizedTitle}`;
+  const seed = hashNumber(`${normalizedTitle}|${stableKey}`);
+  const city = /nguyenartfoundation\.com/i.test(sourceUrl) ? 'Ho Chi Minh City' : pick(CITY_POOL, seed);
   const styleValue = style || pick(STYLE_POOL, seed + 11);
   const mediumValue = medium || pick(MEDIUM_POOL, seed + 23);
-  const dimensionsValue = dimensions || pick(DIMENSIONS_POOL, seed + 37);
   const parsedYear = parseYear(year);
-  const yearCreated = parsedYear || 1995 + (Math.abs(seed) % 30);
-  const fallbackStory = `Curated marketplace placeholder based on online reference imagery for ${city}.`;
-  const story = (summary || fallbackStory).slice(0, 700);
+  const story = (summary || `Imported artwork reference for ${normalizedTitle}.`).slice(0, 1400);
 
   return {
+    artist: artistName || 'Unknown Artist',
     artist_id: artistId,
     created_by: sellerId,
     title: normalizedTitle,
-    slug: `${slugPrefix}-${toSlug(normalizedTitle)}-${Date.now()}-${Math.abs(seed % 10000)}`,
+    slug: `${slugPrefix}-${stableId(stableKey)}`,
     description: story || 'Imported artwork reference from public online sources.',
     art_form: 'painting',
     medium: mediumValue,
-    dimensions: dimensionsValue,
-    year_created: yearCreated,
+    dimensions: dimensions || 'Unknown',
+    year_created: parsedYear,
     image_url: imageUrl,
-    image_urls: [imageUrl],
+    image_urls: unique([imageUrl]),
     sale_type: 'fixed',
-    price: randomPrice(),
+    price: stablePrice(stableKey),
     availability: 'active',
     moderation: 'approved',
     style: styleValue,
     city,
     country: 'Vietnam',
     provenance: provenance || `Catalogued from online source at ${new Date().toISOString().split('T')[0]}.`,
-    authenticity: 'Marketplace placeholder; seller verification required.',
-    condition_report: condition || 'Good',
+    authenticity: /nguyenartfoundation\.com/i.test(sourceUrl)
+      ? 'Imported from Nguyen Art Foundation public catalog.'
+      : 'Public reference imported from online sources.',
+    condition_report: condition || 'Not specified',
     story,
     source_url: sourceUrl,
     source_item_url: sourceItemUrl || null,
@@ -586,12 +566,16 @@ const buildImportedArtwork = ({
 
 const upsertArtworks = async (rows) => {
   if (!rows.length) return [];
-  const { data, error } = await supabase
-    .from('artworks')
-    .upsert(rows, { onConflict: 'slug' })
-    .select('id,slug,title');
-  if (error) throw error;
-  return data || [];
+
+  const inserted = [];
+  for (let i = 0; i < rows.length; i += UPSERT_BATCH_SIZE) {
+    const chunk = rows.slice(i, i + UPSERT_BATCH_SIZE);
+    const { data, error } = await supabase.from('artworks').upsert(chunk, { onConflict: 'slug' }).select('id,slug,title');
+    if (error) throw error;
+    inserted.push(...(data || []));
+  }
+
+  return inserted;
 };
 
 const main = async () => {
@@ -600,25 +584,35 @@ const main = async () => {
     console.error('No seller profile found. Create at least one profile with role artist/gallery/art_dealer.');
     process.exit(1);
   }
+
   const artistId = await fetchArtistForSeller(sellerId);
   const normalized = [];
   const seen = new Set();
 
   let source = 'nguyenartfoundation';
-  const foundationRows = await fetchNguyenArtFoundationArtworks(ARTWORK_LIMIT);
+  let foundationRows = [];
+  try {
+    foundationRows = await buildNguyenArtworkCandidates(ARTWORK_LIMIT);
+  } catch (error) {
+    console.warn(`Nguyen Art Foundation API unavailable (${error?.message || error}). Falling back to open data.`);
+  }
+
   for (const row of foundationRows) {
     if (isLikelyArtistProfile(row.title, row.summary, row.sourceItemUrl)) continue;
+    const dedupeKey = row.sourceItemUrl || row.imageUrl;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
     normalized.push(
       buildImportedArtwork({
         artistId,
         sellerId,
+        artistName: row.artistName,
         title: row.title,
         imageUrl: row.imageUrl,
         summary: row.summary || 'Imported from Nguyen Art Foundation collection.',
-        sourceUrl: NGUYEN_COLLECTION_URL,
+        sourceUrl: NGUYEN_ARTWORKS_API,
         sourceItemUrl: row.sourceItemUrl || null,
         slugPrefix: 'nguyen-foundation',
-        indexSeed: normalized.length,
         medium: row.medium,
         dimensions: row.dimensions,
         year: row.year,
@@ -652,26 +646,27 @@ const main = async () => {
       if (seen.has(artworkUrl)) continue;
       seen.add(artworkUrl);
 
-      const qid = artworkUrl.split('/').pop() || `${Date.now()}`;
+      const qid = artworkUrl.split('/').pop() || stableId(artworkUrl);
       const articleUrl = row?.article?.value || '';
       const summary = await fetchWikipediaSummary(articleUrl);
       if (isLikelyArtistProfile(title, summary, articleUrl || artworkUrl)) continue;
-      const item = buildImportedArtwork({
-        artistId,
-        sellerId,
-        title,
-        imageUrl,
-        summary: summary || `Imported artwork reference from Wikidata (${qid}).`,
-        sourceUrl: 'https://query.wikidata.org/',
-        sourceItemUrl: articleUrl || artworkUrl,
-        slugPrefix: 'wikidata',
-        indexSeed: normalized.length,
-      });
-      if (row?.materialLabel?.value) item.medium = row.materialLabel.value;
-      if (parseYear(row?.inception?.value)) item.year_created = parseYear(row.inception.value);
-      normalized.push(item);
+      normalized.push(
+        buildImportedArtwork({
+          artistId,
+          sellerId,
+          artistName: row?.creatorLabel?.value || 'Unknown Artist',
+          title,
+          imageUrl,
+          summary: summary || `Imported artwork reference from Wikidata (${qid}).`,
+          sourceUrl: 'https://query.wikidata.org/',
+          sourceItemUrl: articleUrl || artworkUrl,
+          slugPrefix: 'wikidata',
+          medium: row?.materialLabel?.value || '',
+          year: row?.inception?.value || '',
+        })
+      );
     }
-  } else {
+  } else if (!normalized.length) {
     const commonsRows = await fetchCommonsFallbackArtworks(FALLBACK_LIMIT);
     for (const row of commonsRows) {
       if (!row?.title || !row?.imageUrl) continue;
@@ -682,13 +677,13 @@ const main = async () => {
         buildImportedArtwork({
           artistId,
           sellerId,
+          artistName: 'Unknown Artist',
           title: row.title,
           imageUrl: row.imageUrl,
           summary: row.summary || 'Imported from Wikimedia Commons category data.',
           sourceUrl: 'https://commons.wikimedia.org/',
           sourceItemUrl: row.sourceItemUrl,
           slugPrefix: 'commons',
-          indexSeed: normalized.length,
         })
       );
     }
@@ -703,13 +698,13 @@ const main = async () => {
         buildImportedArtwork({
           artistId,
           sellerId,
+          artistName: 'Unknown Artist',
           title: row.title,
           imageUrl: row.imageUrl,
           summary: row.summary || 'Imported from web search results.',
           sourceUrl: 'https://html.duckduckgo.com/html/',
           sourceItemUrl: row.sourceItemUrl || null,
           slugPrefix: 'web',
-          indexSeed: normalized.length,
         })
       );
     }
@@ -723,13 +718,13 @@ const main = async () => {
         buildImportedArtwork({
           artistId,
           sellerId,
+          artistName: 'Unknown Artist',
           title: row.title,
           imageUrl: row.imageUrl,
           summary: row.summary || 'Imported from Wikipedia artist references.',
           sourceUrl: 'https://en.wikipedia.org/',
           sourceItemUrl: row.sourceItemUrl,
           slugPrefix: 'wikipedia',
-          indexSeed: normalized.length,
         })
       );
     }
@@ -741,7 +736,7 @@ const main = async () => {
   }
 
   const inserted = await upsertArtworks(normalized);
-  console.log(`Imported/updated ${inserted.length} Vietnamese artwork placeholders via ${source}.`);
+  console.log(`Imported/updated ${inserted.length} artwork rows via ${source}.`);
 };
 
 main().catch((error) => {

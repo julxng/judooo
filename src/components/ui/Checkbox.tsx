@@ -6,8 +6,8 @@ interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'typ
 }
 
 export const Checkbox = ({ className, label, ...props }: CheckboxProps) => (
-  <label className={cx('choice', className)}>
-    <input type="checkbox" className="choice__control" {...props} />
+  <label className={cx('choice text-sm text-foreground', className)}>
+    <input type="checkbox" className="choice__control h-4 w-4 rounded-[2px] border-border" {...props} />
     <span>{label}</span>
   </label>
 );

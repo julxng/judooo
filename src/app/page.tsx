@@ -1,10 +1,17 @@
-import { AppProviders } from '@/app/providers/AppProviders';
-import ClientApp from '@/components/ClientApp';
+import { MarketplaceHomePage } from '@/features/marketplace/components/MarketplaceHomePage';
+import { getInitialEvents } from '@/features/events/api';
+import { getInitialArtworks } from '@/features/marketplace/api';
 
-export default function Home() {
+export default async function Home() {
+  const [initialEvents, initialArtworks] = await Promise.all([
+    getInitialEvents(),
+    getInitialArtworks(),
+  ]);
+
   return (
-    <AppProviders>
-      <ClientApp />
-    </AppProviders>
+    <MarketplaceHomePage
+      initialEvents={initialEvents}
+      initialArtworks={initialArtworks}
+    />
   );
 }

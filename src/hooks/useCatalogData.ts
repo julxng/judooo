@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import type { User } from '@features/auth/types/auth.types';
-import type { ArtEvent } from '@features/events/types/event.types';
-import type { Artwork } from '@features/marketplace/types/artwork.types';
-import { api } from '@services/api';
-import { supabase } from '@services/supabase/client';
-import { useNotice } from '@app/providers/NoticeProvider';
-import { canAccessAdmin } from '@features/auth/utils/roles';
-import { initialArtworks } from '@features/marketplace/services/artworkFixtures';
-import { initialEvents } from '@features/events/services/eventFixtures';
+import type { User } from '@/features/auth/types/auth.types';
+import type { ArtEvent } from '@/features/events/types/event.types';
+import type { Artwork } from '@/features/marketplace/types/artwork.types';
+import { api } from '@/services/api';
+import { supabase } from '@/services/supabase/client';
+import { useNotice } from '@/app/providers/NoticeProvider';
+import { canAccessAdmin } from '@/features/auth/utils/roles';
+import { initialArtworks } from '@/features/marketplace/services/artworkFixtures';
+import { initialEvents } from '@/features/events/services/eventFixtures';
 
 export const useCatalogData = (currentUser: User | null) => {
   const { notify } = useNotice();

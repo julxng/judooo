@@ -25,36 +25,6 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "@features/*": [
-        "./src/features/*"
-      ],
-      "@components/*": [
-        "./src/components/*"
-      ],
-      "@services/*": [
-        "./src/services/*"
-      ],
-      "@hooks/*": [
-        "./src/hooks/*"
-      ],
-      "@utils/*": [
-        "./src/utils/*"
-      ],
-      "@lib/*": [
-        "./src/lib/*"
-      ],
-      "@assets/*": [
-        "./src/assets/*"
-      ],
-      "@ui/*": [
-        "./src/components/ui/*"
-      ],
-      "@tailwind-ui/*": [
-        "./src/tailwind-ui/*"
-      ],
-      "@app/*": [
-        "./src/app/*"
       ]
     }
   },

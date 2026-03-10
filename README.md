@@ -35,7 +35,10 @@ Optional:
 - `CRAWL_SOURCE_URLS` (comma-separated feeds)
 - `CRAWL_GOOGLE_NEWS_QUERIES` (comma-separated search queries for broader Google News coverage)
 - `CRAWL_GOOGLE_NEWS_HL`, `CRAWL_GOOGLE_NEWS_GL`, `CRAWL_GOOGLE_NEWS_CEID`
-- `CRAWL_FACEBOOK_GROUP_IDS` + `FACEBOOK_GRAPH_ACCESS_TOKEN` (official Graph API access)
+- `CRAWL_FACEBOOK_GROUP_IDS` / `CRAWL_FACEBOOK_PAGE_IDS` + `FACEBOOK_GRAPH_ACCESS_TOKEN` (official Graph API access)
+- `CRAWL_NGUYEN_EVENTS_ENABLED`
+- `CRAWL_NGUYEN_EXHIBITIONS_API`, `CRAWL_NGUYEN_EDUCATION_API`
+- `CRAWL_NGUYEN_EVENT_LIMIT`, `CRAWL_NGUYEN_EVENT_MAX_PAGES`, `CRAWL_NGUYEN_EVENT_PER_PAGE`
 - `CRAWL_DEFAULT_LOCATION`
 - `CRAWL_DEFAULT_CATEGORY`
 - `CRAWL_BATCH_LIMIT`
@@ -44,9 +47,21 @@ Optional:
 
 `npm run crawl:events`
 
+This now ingests:
+- RSS/Atom feeds
+- Optional Google News RSS queries
+- Nguyen Art Foundation WordPress APIs for `exhibitions` and `education`
+- Optional Facebook groups/pages through the Graph API
+
 ### Remove duplicate crawled events
 
 `npm run dedupe:events`
+
+### Clean legacy imported data
+
+`npm run cleanup:data`
+
+This removes the old low-confidence placeholder artwork imports and a small set of clearly low-confidence imported event rows before re-crawling.
 
 ## Artwork placeholder DB + online import
 
@@ -61,7 +76,7 @@ Set crawl env vars (see `.env.crawl.example`), then run:
 `npm run crawl:artworks`
 
 This script tries sources in order:
-1. Nguyen Art Foundation collection pages (`https://nguyenartfoundation.com/vn/collection/suu-tap/`)
+1. Nguyen Art Foundation WordPress API (`https://nguyenartfoundation.com/wp-json/wp/v2/artwork`)
 2. Wikidata (with retry)
 3. Wikimedia Commons category images
 4. No-key web search fallback (DuckDuckGo HTML + page `og:image`)
@@ -71,7 +86,8 @@ Then it upserts into `public.artworks`.
 
 Notes:
 - `CRAWL_ARTWORK_LIMIT=0` means crawl all discovered artworks from Nguyen Art Foundation.
-- `CRAWL_NGUYEN_MAX_PAGES` limits how many collection pages are scanned for pagination safety.
+- Imported artwork slugs are deterministic, so reruns update existing imported records instead of creating duplicates.
+- `CRAWL_NGUYEN_MAX_PAGES` and `CRAWL_NGUYEN_PER_PAGE` limit Nguyen Art Foundation pagination safety.
 
 ### Export Nguyen Art Foundation collection to JSON (standalone scraper)
 
@@ -88,7 +104,8 @@ Scrape + upsert to Supabase artworks in one run:
 
 - Fetches each source feed
 - Expands optional Google News query feeds
-- Optionally ingests Facebook group posts via Graph API
+- Pulls Nguyen Art Foundation event data from structured WordPress API endpoints
+- Optionally ingests Facebook group/page posts via Graph API
 - Parses RSS items
 - Cleans noisy source suffixes from titles
 - Upserts into `public.source_items` using dedupe key `(source_url, external_id)`

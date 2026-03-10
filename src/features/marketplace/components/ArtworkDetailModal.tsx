@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Modal } from '@ui/index';
-import { Grid } from '@components/layout/Grid';
-import { formatCurrency } from '@lib/format';
+import { Badge, Button, Card, Modal } from '@/components/ui';
+import { Grid } from '@/components/layout/Grid';
+import { formatCurrency } from '@/lib/format';
 import type { Artwork } from '../types/artwork.types';
 
 interface ArtworkDetailModalProps {
@@ -98,7 +98,7 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
           <div className="detail-panel__actions">
             {artwork.available ? (
               <Button variant={isAuction ? 'primary' : 'secondary'} onClick={() => onAction(artwork)}>
-                {isAuction ? 'Place Bid' : 'Inquire'}
+                {isAuction ? 'Place Bid' : 'Auto Inquire'}
               </Button>
             ) : null}
             {artwork.sourceItemUrl ? (

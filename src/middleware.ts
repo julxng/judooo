@@ -1,7 +1,21 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/auth/callback'];
+const PUBLIC_ROUTES = [
+  '/',
+  '/about',
+  '/admin',
+  '/events',
+  '/login',
+  '/marketplace',
+  '/privacy',
+  '/profile',
+  '/route-planner',
+  '/signup',
+  '/submit-event',
+  '/terms',
+  '/auth/callback',
+];
 
 const ROLE_ROUTES: Record<string, string[]> = {
   '/admin': ['admin'],
@@ -9,25 +23,55 @@ const ROLE_ROUTES: Record<string, string[]> = {
   '/dashboard/buyer': ['buyer', 'admin'],
 };
 
+const sanitizeRedirectPath = (value: string | null) => {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) {
+    return null;
+  }
+
+  return value;
+};
+
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user } = await updateSession(request);
+  const { supabaseResponse, user, authEnabled } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
 
   const isPublic = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
-  if (!user && !isPublic) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    loginUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(loginUrl);
+  if (!authEnabled) {
+    return supabaseResponse;
   }
 
-  if (user && (pathname === '/login' || pathname === '/signup')) {
-    const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = '/dashboard';
-    return NextResponse.redirect(dashboardUrl);
+  if (pathname === '/login' || pathname === '/signup') {
+    const authUrl = request.nextUrl.clone();
+    authUrl.pathname = '/';
+    authUrl.searchParams.set('auth', pathname === '/signup' ? 'signup' : 'signin');
+
+    const redirectTo = sanitizeRedirectPath(request.nextUrl.searchParams.get('redirectTo'));
+    if (redirectTo) {
+      authUrl.searchParams.set('redirectTo', redirectTo);
+    } else {
+      authUrl.searchParams.delete('redirectTo');
+    }
+
+    if (!user) {
+      return NextResponse.redirect(authUrl);
+    }
+
+    const nextUrl = request.nextUrl.clone();
+    nextUrl.pathname = redirectTo || '/profile';
+    nextUrl.search = '';
+    return NextResponse.redirect(nextUrl);
+  }
+
+  if (!user && !isPublic) {
+    const authUrl = request.nextUrl.clone();
+    authUrl.pathname = '/';
+    authUrl.search = '';
+    authUrl.searchParams.set('auth', 'signin');
+    authUrl.searchParams.set('redirectTo', `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(authUrl);
   }
 
   if (user) {
@@ -35,9 +79,10 @@ export async function middleware(request: NextRequest) {
     for (const [routePrefix, allowedRoles] of Object.entries(ROLE_ROUTES)) {
       if (pathname.startsWith(routePrefix)) {
         if (!role || !allowedRoles.includes(role)) {
-          const dashboardUrl = request.nextUrl.clone();
-          dashboardUrl.pathname = '/dashboard';
-          return NextResponse.redirect(dashboardUrl);
+          const nextUrl = request.nextUrl.clone();
+          nextUrl.pathname = '/profile';
+          nextUrl.search = '';
+          return NextResponse.redirect(nextUrl);
         }
       }
     }

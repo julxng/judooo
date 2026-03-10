@@ -23,25 +23,24 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
 
   return (
     <Card
-      className="group flex flex-col h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer bg-card border-border/50"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden border-border transition-colors duration-300 hover:border-foreground"
       onClick={() => onOpen(artwork)}
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface-muted">
         <img
           src={artwork.imageUrl}
           alt={artwork.title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-60 transition-opacity group-hover:opacity-80" />
 
-        <div className="absolute top-4 left-4 flex gap-2">
+        <div className="absolute left-3 top-3 flex gap-2">
           {isAuction ? (
-            <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground border-transparent shadow-sm">
+            <Badge tone="accent">
               Auction
             </Badge>
           ) : null}
           {!artwork.available ? (
-            <Badge tone="default" className="bg-background/95 backdrop-blur-sm shadow-sm">
+            <Badge tone="default">
               Collected
             </Badge>
           ) : null}
@@ -51,26 +50,26 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
       <div
         role="button"
         tabIndex={0}
-        className="flex flex-col flex-grow p-5 outline-none"
+        className="flex flex-grow flex-col border-t border-border p-4 outline-none"
         onKeyDown={handleKeyDown}
       >
-        <div className="flex items-start justify-between gap-4 mb-4 mt-1">
+        <div className="mb-3 mt-1 flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {artwork.city || artwork.country || 'Vietnam'}
             </span>
-            <h3 className="m-0 font-serif text-2xl font-semibold leading-tight text-foreground line-clamp-2">
+            <h3 className="m-0 font-display text-[1.35rem] font-semibold leading-[0.98] tracking-[-0.04em] text-foreground line-clamp-2">
               {artwork.title}
             </h3>
           </div>
           {isAuction ? (
-            <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider text-secondary-foreground border">
+            <span className="shrink-0 rounded-sm border border-border px-2 py-1 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {artwork.bidCount || 0} bids
             </span>
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-1 mb-auto">
+        <div className="mb-auto flex flex-col gap-1">
           <p className="m-0 text-base font-medium text-foreground">{artwork.artist}</p>
           <p className="m-0 text-sm text-muted-foreground">
             {artwork.medium} • {artwork.dimensions}
@@ -78,20 +77,21 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
         </div>
       </div>
 
-      <CardFooter className="p-5 pt-0 mt-2 border-t border-border/40 bg-muted/10 flex items-end justify-between gap-4">
-        <div className="flex flex-col gap-1 mt-4">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+      <CardFooter className="mt-1 flex items-end justify-between gap-4 border-t border-border bg-card p-4 pt-0">
+        <div className="mt-4 flex flex-col gap-1">
+          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {isAuction ? 'Current bid' : 'Price'}
           </span>
-          <strong className="font-serif text-2xl font-bold leading-none text-foreground">
+          <strong className="font-display text-[1.35rem] font-semibold leading-none tracking-[-0.03em] text-foreground">
             {formatCurrency(isAuction ? artwork.currentBid || artwork.price : artwork.price)}
           </strong>
         </div>
 
         {artwork.available ? (
           <Button
-            variant={isAuction ? 'default' : 'secondary'}
-            className="shrink-0 rounded-full shadow-sm font-semibold transition-transform hover:scale-105"
+            variant={isAuction ? 'default' : 'outline'}
+            size="sm"
+            className="shrink-0"
             onClick={(event) => {
               event.stopPropagation();
               onAction(artwork);

@@ -1,12 +1,13 @@
-import type { User } from '@features/auth/types/auth.types';
-import type { ArtEvent } from '@features/events/types/event.types';
-import type { Artwork } from '@features/marketplace/types/artwork.types';
+import type { User } from '@/features/auth/types/auth.types';
+import type { ArtEvent } from '@/features/events/types/event.types';
+import type { Artwork } from '@/features/marketplace/types/artwork.types';
 import {
   applyLocalBid,
   enqueuePendingWrite,
   ensureArtworkDefaults,
   ensureEventDefaults,
   getLocalWatchlist,
+  patchLocalArtwork,
   patchLocalEvent,
   readLocalDb,
   replaceLocalWatchlistForUser,
@@ -22,12 +23,14 @@ import {
   getArtworksRemote,
   getEventsRemote,
   getProfileRemote,
+  getProfilesRemote,
   getWatchlistRemote,
   placeBidRemote,
   setWatchlistRemote,
   shouldUseRemote,
   syncUserRemote,
   updateEventRemote,
+  updateArtworkRemote,
   uploadImageRemote,
 } from './remoteApi';
 import { mergeById, withTimeout } from './shared';
@@ -74,6 +77,14 @@ const flushPendingWrites = async (): Promise<{ synced: number; remaining: number
         const created = await withTimeout(createArtworkRemote(write.payload), 7000);
         if (created) {
           upsertLocalArtwork(created);
+          ok = true;
+        }
+        break;
+      }
+      case 'updateArtwork': {
+        const updated = await withTimeout(updateArtworkRemote(write.payload.id, write.payload.data), 7000);
+        if (updated) {
+          upsertLocalArtwork(updated);
           ok = true;
         }
         break;
@@ -215,6 +226,27 @@ export const api = {
     return localArtwork;
   },
 
+  updateArtwork: async (id: string, artwork: Partial<Artwork>): Promise<Artwork | null> => {
+    if (shouldUseRemote()) {
+      const updatedRemote = await withTimeout(updateArtworkRemote(id, artwork), 7000);
+      if (updatedRemote) {
+        upsertLocalArtwork(updatedRemote);
+        void flushPendingWrites();
+        return updatedRemote;
+      }
+    }
+
+    const updatedLocal = patchLocalArtwork(id, artwork);
+    if (updatedLocal) {
+      enqueuePendingWrite({
+        kind: 'updateArtwork',
+        queuedAt: new Date().toISOString(),
+        payload: { id, data: artwork },
+      });
+    }
+    return updatedLocal;
+  },
+
   placeBid: async (artworkId: string, userId: string, amount: number): Promise<boolean> => {
     if (shouldUseRemote()) {
       const success = await withTimeout(placeBidRemote(artworkId, userId, amount), 7000);
@@ -267,6 +299,21 @@ export const api = {
     }
 
     return readLocalDb().profiles.find((profile) => profile.id === id) || null;
+  },
+
+  getProfiles: async (): Promise<User[]> => {
+    if (shouldUseRemote()) {
+      const profiles = await withTimeout(getProfilesRemote(), 7000);
+      if (profiles) {
+        profiles.forEach((profile) => {
+          upsertLocalProfile(profile);
+        });
+        void flushPendingWrites();
+        return profiles;
+      }
+    }
+
+    return readLocalDb().profiles;
   },
 
   getWatchlist: async (userId: string): Promise<string[]> => {

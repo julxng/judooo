@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { Card } from '@ui/Card';
+import { Card } from '@/components/ui/Card';
 import type { ArtEvent } from '../types/event.types';
 
 interface EventMapProps {
   events: ArtEvent[];
   routeIds?: string[];
+  routeLabel?: string;
+  routeDescription?: string;
+  selectedEventId?: string | null;
+  onSelectEvent?: (eventId: string) => void;
 }
 
 const buildPopupNode = (event: ArtEvent) => {
@@ -27,7 +31,14 @@ const buildPopupNode = (event: ArtEvent) => {
   return root;
 };
 
-const EventMap = ({ events, routeIds }: EventMapProps) => {
+const EventMap = ({
+  events,
+  routeIds,
+  routeLabel,
+  routeDescription,
+  selectedEventId,
+  onSelectEvent,
+}: EventMapProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -43,17 +54,24 @@ const EventMap = ({ events, routeIds }: EventMapProps) => {
         attribution: '&copy; CARTO',
       }).addTo(map);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
+      const routeColor =
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-strong').trim() ||
+        getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
 
       const markerGroup = L.layerGroup().addTo(map);
       events.forEach((event) => {
         const marker = L.divIcon({
-          className: 'judooo-map-pin',
+          className: `judooo-map-pin ${selectedEventId === event.id ? 'judooo-map-pin--active' : ''}`,
           iconSize: [12, 12],
         });
 
-        L.marker([event.lat, event.lng], { icon: marker })
+        const point = L.marker([event.lat, event.lng], { icon: marker })
           .addTo(markerGroup)
           .bindPopup(buildPopupNode(event), { closeButton: false });
+
+        point.on('click', () => {
+          onSelectEvent?.(event.id);
+        });
       });
 
       if (routeIds && routeIds.length > 1) {
@@ -64,7 +82,7 @@ const EventMap = ({ events, routeIds }: EventMapProps) => {
 
         if (routePoints.length > 1) {
           const routeLine = L.polyline(routePoints, {
-            color: '#f14c23',
+            color: routeColor,
             weight: 4,
             opacity: 0.6,
             dashArray: '10, 10',
@@ -88,15 +106,15 @@ const EventMap = ({ events, routeIds }: EventMapProps) => {
         map.remove();
       }
     };
-  }, [events, routeIds]);
+  }, [events, onSelectEvent, routeIds, selectedEventId]);
 
   return (
     <Card className="event-map">
       <div className="event-map__header">
-        <p className="eyebrow">{routeIds?.length ? 'Art Trail' : 'Exhibition Explorer'}</p>
+        <p className="eyebrow">{routeIds?.length ? routeLabel || 'Art Trail' : 'Exhibition Explorer'}</p>
         <p className="muted-text">
           {routeIds?.length
-            ? `Navigating ${routeIds.length} saved stops.`
+            ? routeDescription || `Navigating ${routeIds.length} saved stops.`
             : `Showing ${events.length} exhibitions across Vietnam.`}
         </p>
       </div>

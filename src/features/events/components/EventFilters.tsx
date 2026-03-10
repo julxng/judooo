@@ -1,5 +1,5 @@
-import { Stack } from '@components/layout/Stack';
-import { Input, Select, Tabs } from '@ui/index';
+import { Stack } from '@/components/layout/Stack';
+import { Input, Select, Tabs } from '@/components/ui';
 import type { EventCategory, EventTimeline } from '../types/event.types';
 
 interface EventFiltersProps {
@@ -9,8 +9,8 @@ interface EventFiltersProps {
   onCategoryChange: (value: EventCategory) => void;
   timeline: EventTimeline;
   onTimelineChange: (value: EventTimeline) => void;
-  viewMode: 'grid' | 'map';
-  onViewModeChange: (value: 'grid' | 'map') => void;
+  viewMode: 'grid' | 'map' | 'route';
+  onViewModeChange: (value: 'grid' | 'map' | 'route') => void;
 }
 
 export const EventFilters = ({
@@ -53,6 +53,7 @@ export const EventFilters = ({
         options={[
           { id: 'grid', label: 'Grid' },
           { id: 'map', label: 'Map' },
+          { id: 'route', label: 'Route' },
         ]}
       />
     </div>

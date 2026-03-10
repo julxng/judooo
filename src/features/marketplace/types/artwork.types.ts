@@ -1,4 +1,5 @@
 export type SaleType = 'fixed' | 'auction';
+export type ArtworkModerationStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Artwork {
   id: string;
@@ -28,6 +29,7 @@ export interface Artwork {
   sourceItemUrl?: string;
   importedAt?: string;
   imageGallery?: string[];
+  moderation_status?: ArtworkModerationStatus;
 }
 
 export type ArtworkPriceFilter = 'all' | 'high' | 'low';

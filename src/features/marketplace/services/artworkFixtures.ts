@@ -1,5 +1,5 @@
 import type { Artwork } from '../types/artwork.types';
-import { shiftIsoDate } from '@lib/date';
+import { shiftIsoDate } from '@/lib/date';
 
 export const initialArtworks: Artwork[] = [
   {

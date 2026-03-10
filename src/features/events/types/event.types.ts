@@ -3,6 +3,9 @@ export interface EventMedia {
   url: string;
 }
 
+export type EventModerationStatus = 'pending' | 'approved' | 'rejected';
+export type EventCategory = 'exhibition' | 'auction' | 'workshop' | 'performance' | 'talk' | 'all';
+
 export interface ArtEvent {
   id: string;
   title: string;
@@ -21,7 +24,7 @@ export interface ArtEvent {
   imageUrl: string;
   media?: EventMedia[];
   description: string;
-  category: 'exhibition' | 'auction' | 'workshop';
+  category: Exclude<EventCategory, 'all'>;
   art_medium?: string;
   event_type?: string;
   place_type?: string;
@@ -38,7 +41,12 @@ export interface ArtEvent {
   sourceUrl?: string;
   sourceItemUrl?: string;
   importedAt?: string;
+  socialvideo_url?: string;
+  moderation_status?: EventModerationStatus;
+  featured?: boolean;
+  submitter_name?: string;
+  submitter_email?: string;
+  submitter_organization?: string;
 }
 
-export type EventCategory = ArtEvent['category'] | 'all';
-export type EventTimeline = 'active' | 'past';
+export type EventTimeline = 'active' | 'past' | 'all';

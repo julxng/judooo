@@ -4,6 +4,10 @@ export const STORAGE_BUCKET = 'images';
 export const LOCAL_DB_KEY = 'judooo_local_db_v1';
 
 const rawDataMode = String(process.env.NEXT_PUBLIC_DATA_MODE || 'auto').toLowerCase();
+export const HAS_REMOTE_ENV = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+) &&
+  Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY);
 
 export const DATA_MODE: DataMode =
   rawDataMode === 'local' ? 'local' : rawDataMode === 'supabase' ? 'supabase' : 'auto';

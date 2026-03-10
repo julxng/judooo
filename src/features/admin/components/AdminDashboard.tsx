@@ -1,9 +1,9 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
-import { DashboardLayout } from '@components/layout/DashboardLayout';
-import { Field } from '@components/shared/Field';
-import { Button, Card, Input, Select, Table, Textarea } from '@ui/index';
-import type { ArtEvent } from '@features/events/types/event.types';
-import type { Artwork, SaleType } from '@features/marketplace/types/artwork.types';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Field } from '@/components/shared/Field';
+import { Button, Card, Input, Select, Table, Textarea } from '@/components/ui';
+import type { ArtEvent } from '@/features/events/types/event.types';
+import type { Artwork, SaleType } from '@/features/marketplace/types/artwork.types';
 
 interface AdminDashboardProps {
   events: ArtEvent[];

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Stack } from '@components/layout/Stack';
-import { SidebarLayout } from '@components/layout/SidebarLayout';
-import { Badge, Button, Card, Modal } from '@ui/index';
-import { formatDateRange } from '@lib/date';
-import type { Artwork } from '@features/marketplace/types/artwork.types';
+import { Stack } from '@/components/layout/Stack';
+import { SidebarLayout } from '@/components/layout/SidebarLayout';
+import { Badge, Button, Card, Modal } from '@/components/ui';
+import { formatDateRange } from '@/lib/date';
+import type { Artwork } from '@/features/marketplace/types/artwork.types';
 import type { ArtEvent, EventMedia } from '../types/event.types';
-import { useNotice } from '@app/providers/NoticeProvider';
+import { useNotice } from '@/app/providers/NoticeProvider';
 
 interface EventDetailModalProps {
   event: ArtEvent;

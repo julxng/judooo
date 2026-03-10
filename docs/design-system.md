@@ -1,53 +1,40 @@
 # Design System
 
-## Tokens
-Single source of truth: `src/styles/tokens.ts` (TypeScript, light mode defaults).
-CSS custom properties: `src/app/globals.css` (includes dark mode overrides).
-**When changing token values, update both files.**
+## Single System
+There is one active design system in this repo.
 
-### Colors
-| Token | CSS Var | Usage |
-|-------|---------|-------|
-| background | `--color-background` | Page background |
-| foreground | `--color-foreground` | Primary text |
-| primary | `--color-primary` | CTAs, key actions |
-| primary-foreground | `--color-primary-foreground` | Text on primary |
-| secondary | `--color-secondary` | Secondary surfaces |
-| muted | `--color-muted` | Subtle backgrounds |
-| muted-foreground | `--color-muted-foreground` | Subdued text |
-| border | `--color-border` | Dividers, outlines |
+- Tokens live in `src/styles/tokens.ts`
+- CSS variables and shared type utilities live in `src/app/globals.css`
+- Shared component primitives live in `src/components/ui/`
+- Shared structural CSS lives in `src/app/judooo-global.css`
 
-### Spacing
-Scale: `4 · 8 · 12 · 16 · 24 · 32 · 48 · 64` px
+The older parallel `src/tailwind-ui/` system has been removed. Do not recreate a second component or token layer.
 
-### Border Radius
-| Token | Value |
-|-------|-------|
-| sm | 4px |
-| md | 6px |
-| lg | 8px |
-| xl | 12px |
+## Visual Direction
+- Editorial, monochrome, image-first
+- Sharp borders, restrained shadows, small radii
+- Sans-first typography with strong display sizing
+- White canvas, black primary actions, neutral grays for support surfaces
 
-### Typography
-- Font: Inter (sans-serif)
-- Scale: `xs · sm · base · lg · xl · 2xl · 3xl`
+## Usage Rules
+- Import app code through the `@/*` alias only
+- Prefer imports from `@/components/ui` for shared primitives
+- Use tokens and CSS vars instead of hardcoded colors, spacing, or radius
+- When token values change, update both `src/styles/tokens.ts` and `src/app/globals.css`
+- Add new shared UI only in `src/components/ui/`
+- If a pattern is needed app-wide, extend the current primitives instead of creating a parallel design system
 
-## Components
-All shared components live in `src/components/ui/`.
+## Core Primitives
+- `Button`: `default`, `secondary`, `outline`, `ghost`, `destructive`
+- `Card`: `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter`
+- `Input`, `Select`, `Textarea`, `Checkbox`, `Radio`
+- `Modal`, `Tabs`, `Badge`, `Avatar`, `Container`
 
-### Button
-Variants: `default · secondary · outline · ghost · destructive`
-Sizes: `sm · md · lg`
+## Shared Utility Classes
+- `.surface-card`, `.surface-panel`, `.surface-stat`
+- `.section-kicker`, `.display-heading`, `.section-heading`
+- `.field`, `.field__label`, `.field__hint`
+- `.empty-state`, `.auth-dialog__*`, `.ui-modal__*`
 
-### Card
-Composable: `Card`, `CardHeader`, `CardTitle`, `CardContent`, `CardFooter`
-Use `Card` alone for simple cases, or compose sub-components for structured layouts.
-
-### Container
-Max-width wrapper. Sizes: `sm · md · lg · xl · full`
-
-## Rules
-- Use design tokens — never hardcode colors, spacing, or radius
-- Use `cn()` from `src/lib/utils` for conditional classes
-- Use CVA for multi-variant components
-- When changing tokens: update `tokens.ts` **and** `globals.css`
+## Default For New Work
+Build new pages and features on top of the current `@/components/ui` primitives and token variables first. Only add new abstractions when the same pattern is used in more than one live feature.

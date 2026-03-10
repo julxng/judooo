@@ -38,6 +38,18 @@ const config: Config = {
           foreground: "var(--accent-foreground)",
         },
         destructive: "var(--destructive)",
+        success: "var(--success)",
+        warning: "var(--warning)",
+        info: "var(--info)",
+        surface: {
+          DEFAULT: "var(--surface)",
+          muted: "var(--surface-muted)",
+          strong: "var(--surface-strong)",
+        },
+        line: {
+          strong: "var(--line-strong)",
+        },
+        brand: "var(--brand-strong)",
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
@@ -68,7 +80,13 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
+      },
+      boxShadow: {
+        soft: "var(--shadow-soft)",
+        medium: "var(--shadow-medium)",
+        focus: "var(--shadow-focus)",
       },
     },
   },

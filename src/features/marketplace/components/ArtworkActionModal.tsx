@@ -1,12 +1,14 @@
-import { Button, Input, Modal } from '@ui/index';
-import { Field } from '@components/shared/Field';
+import { Button, Input, Modal, Textarea } from '@/components/ui';
+import { Field } from '@/components/shared/Field';
 import type { Artwork } from '../types/artwork.types';
 
 interface ArtworkActionModalProps {
   artwork: Artwork;
-  mode: 'bid' | 'inquire';
+  mode: 'bid' | 'auto-inquire';
   bidValue: number;
+  collectorNote: string;
   onBidValueChange: (value: number) => void;
+  onCollectorNoteChange: (value: string) => void;
   onClose: () => void;
   onSubmit: () => void;
 }
@@ -15,11 +17,13 @@ export const ArtworkActionModal = ({
   artwork,
   mode,
   bidValue,
+  collectorNote,
   onBidValueChange,
+  onCollectorNoteChange,
   onClose,
   onSubmit,
 }: ArtworkActionModalProps) => (
-  <Modal title={mode === 'bid' ? 'Collector Bid' : 'Artwork Inquiry'} onClose={onClose} size="sm">
+  <Modal title={mode === 'bid' ? 'Collector Bid' : 'Automatic Inquiry'} onClose={onClose} size="sm">
     <div className="content-grid">
       <div>
         <p className="eyebrow">{artwork.title}</p>
@@ -34,12 +38,16 @@ export const ArtworkActionModal = ({
           />
         </Field>
       ) : (
-        <p className="muted-text">
-          Send a collector interest signal and follow up directly with the gallery or artist.
-        </p>
+        <Field label="Collector Note" hint="This note will travel with the inquiry request.">
+          <Textarea
+            value={collectorNote}
+            onChange={(event) => onCollectorNoteChange(event.target.value)}
+            placeholder="Share what you respond to in the work, timing, budget, or any questions for the gallery."
+          />
+        </Field>
       )}
       <Button variant="default" className="w-full" onClick={onSubmit}>
-        {mode === 'bid' ? 'Submit Bid' : 'Send Inquiry'}
+        {mode === 'bid' ? 'Submit Bid' : 'Send Auto Inquiry'}
       </Button>
     </div>
   </Modal>

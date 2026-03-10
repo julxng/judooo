@@ -12,7 +12,7 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="text-lg font-bold text-foreground hover:text-primary transition-colors">
+        <Link href="/" className="text-lg font-bold text-foreground transition-colors hover:text-muted-foreground">
           Judooo
         </Link>
         <nav className="hidden sm:flex items-center gap-6">

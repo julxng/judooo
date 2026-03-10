@@ -1,6 +1,6 @@
-import type { User } from '@features/auth/types/auth.types';
-import type { ArtEvent } from '@features/events/types/event.types';
-import type { Artwork } from '@features/marketplace/types/artwork.types';
+import type { User } from '@/features/auth/types/auth.types';
+import type { ArtEvent } from '@/features/events/types/event.types';
+import type { Artwork } from '@/features/marketplace/types/artwork.types';
 
 export type DataMode = 'auto' | 'local' | 'supabase';
 
@@ -19,6 +19,11 @@ export type PendingWrite =
       kind: 'createArtwork';
       queuedAt: string;
       payload: Artwork;
+    }
+  | {
+      kind: 'updateArtwork';
+      queuedAt: string;
+      payload: { id: string; data: Partial<Artwork> };
     }
   | {
       kind: 'placeBid';

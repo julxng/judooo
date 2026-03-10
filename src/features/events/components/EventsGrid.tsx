@@ -1,5 +1,5 @@
-import { Grid } from '@components/layout/Grid';
-import { EmptyState } from '@components/shared/EmptyState';
+import { Grid } from '@/components/layout/Grid';
+import { EmptyState } from '@/components/shared/EmptyState';
 import type { ArtEvent } from '../types/event.types';
 import { EventCard } from './EventCard';
 

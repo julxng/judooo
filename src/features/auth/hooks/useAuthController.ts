@@ -1,30 +1,57 @@
 import { useEffect, useState } from 'react';
-import type { User } from '../types/auth.types';
-import { canAccessAdmin } from '../utils/roles';
-import { api } from '@services/api';
-import { supabase } from '@services/supabase/client';
-import { useNotice } from '@app/providers/NoticeProvider';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import type { SignUpRole, User } from '../types/auth.types';
+import { canAccessAdmin, getRoleApplicationCopy } from '../utils/roles';
+import { api } from '@/services/api';
+import { supabase } from '@/services/supabase/client';
+import { useNotice } from '@/app/providers/NoticeProvider';
 
 const DEV_USER_STORAGE_KEY = 'judooo_dev_user';
+const AUTH_QUERY_KEY = 'auth';
+const REDIRECT_QUERY_KEY = 'redirectTo';
+const buildAvatar = (seed: string) =>
+  `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(seed)}`;
+type AuthMode = 'signin' | 'signup' | 'reset';
 
-const mapSessionUser = async (sessionUser: any): Promise<User> => {
+type SessionUser = {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+};
+
+const mapSessionUser = async (sessionUser: SessionUser): Promise<User> => {
   const profile = sessionUser?.id ? await api.getProfile(sessionUser.id) : null;
+  const fallbackName = sessionUser.user_metadata?.full_name || sessionUser.email || 'User';
+
   return {
     id: sessionUser.id,
-    name: profile?.name || sessionUser.user_metadata?.full_name || sessionUser.email || 'User',
-    email: sessionUser.email,
+    name: profile?.name || fallbackName,
+    email: profile?.email || sessionUser.email || '',
     role: profile?.role || 'art_lover',
     avatar:
       profile?.avatar ||
       sessionUser.user_metadata?.avatar_url ||
-      'https://api.dicebear.com/7.x/initials/svg?seed=JD',
+      buildAvatar(fallbackName),
   };
 };
 
 export const useAuthController = () => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { notify } = useNotice();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const authMode = searchParams.get(AUTH_QUERY_KEY);
+  const redirectTo = searchParams.get(REDIRECT_QUERY_KEY);
+  const authDialogMode: AuthMode =
+    authMode === 'signin' || authMode === 'signup' || authMode === 'reset' ? authMode : 'signin';
+  const isValidAuthMode = authDialogMode === authMode;
+  const nextRedirectPath =
+    redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
 
   useEffect(() => {
     const storedDevUser = localStorage.getItem(DEV_USER_STORAGE_KEY);
@@ -69,16 +96,53 @@ export const useAuthController = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isValidAuthMode || currentUser) {
+      return;
+    }
+
+    setIsAuthDialogOpen(true);
+  }, [currentUser, isValidAuthMode]);
+
+  useEffect(() => {
+    if (!currentUser || !isValidAuthMode) {
+      return;
+    }
+
+    if (nextRedirectPath && nextRedirectPath !== pathname) {
+      router.replace(nextRedirectPath);
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(AUTH_QUERY_KEY);
+    params.delete(REDIRECT_QUERY_KEY);
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+  }, [currentUser, isValidAuthMode, nextRedirectPath, pathname, router, searchParams]);
+
   const openAuthDialog = () => setIsAuthDialogOpen(true);
-  const closeAuthDialog = () => setIsAuthDialogOpen(false);
+  const closeAuthDialog = () => {
+    setIsAuthDialogOpen(false);
+
+    if (!isValidAuthMode) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(AUTH_QUERY_KEY);
+    params.delete(REDIRECT_QUERY_KEY);
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+  };
 
   const loginTestAdmin = () => {
     const testAdminUser: User = {
       id: 'test-admin',
-      name: 'Test Admin',
+      name: 'Admin Preview',
       email: 'test-admin@local.dev',
-      role: 'gallery',
-      avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=TA',
+      role: 'admin',
+      avatar: buildAvatar('Admin Preview'),
     };
 
     setCurrentUser(testAdminUser);
@@ -89,7 +153,7 @@ export const useAuthController = () => {
 
   const loginWithGoogle = async () => {
     if (!supabase) {
-      notify('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'warning');
+      notify('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_* or VITE_SUPABASE_* env vars.', 'warning');
       return;
     }
 
@@ -101,7 +165,7 @@ export const useAuthController = () => {
 
   const loginWithPassword = async (email: string, password: string) => {
     if (!supabase) {
-      notify('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'warning');
+      notify('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_* or VITE_SUPABASE_* env vars.', 'warning');
       return;
     }
 
@@ -114,17 +178,22 @@ export const useAuthController = () => {
     setIsAuthDialogOpen(false);
   };
 
-  const signUpWithPassword = async (name: string, email: string, password: string) => {
+  const signUpWithPassword = async (
+    name: string,
+    email: string,
+    password: string,
+    role: SignUpRole,
+  ) => {
     if (!supabase) {
-      notify('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'warning');
+      notify('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_* or VITE_SUPABASE_* env vars.', 'warning');
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: name },
+        data: { full_name: name, role },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -134,13 +203,42 @@ export const useAuthController = () => {
       return;
     }
 
-    notify('Account created. Check your email to confirm your account, then sign in.', 'success');
+    if (data.user?.id) {
+      await api.syncUser({
+        id: data.user.id,
+        name,
+        email,
+        role,
+        avatar: buildAvatar(name || email),
+      });
+    }
+
+    notify(
+      role === 'art_lover'
+        ? 'Account created. Check your email to confirm your account, then sign in.'
+        : getRoleApplicationCopy(role) || 'Account created. Check your email to confirm your account, then sign in.',
+      'success',
+    );
     setIsAuthDialogOpen(false);
+  };
+
+  const requestCreatorRole = async (role: Extract<SignUpRole, 'artist_pending' | 'gallery_manager_pending'>) => {
+    if (!currentUser) {
+      setIsAuthDialogOpen(true);
+      notify('Create an account first, then apply for creator access.', 'warning');
+      return false;
+    }
+
+    const nextUser: User = { ...currentUser, role };
+    setCurrentUser(nextUser);
+    await api.syncUser(nextUser);
+    notify(getRoleApplicationCopy(role) || 'Application sent.', 'success');
+    return true;
   };
 
   const resetPassword = async (email: string) => {
     if (!supabase) {
-      notify('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'warning');
+      notify('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_* or VITE_SUPABASE_* env vars.', 'warning');
       return;
     }
 
@@ -169,6 +267,7 @@ export const useAuthController = () => {
   return {
     currentUser,
     isAuthDialogOpen,
+    authDialogMode,
     canAccessAdmin: canAccessAdmin(currentUser?.role),
     openAuthDialog,
     closeAuthDialog,
@@ -176,6 +275,7 @@ export const useAuthController = () => {
     loginWithGoogle,
     loginWithPassword,
     signUpWithPassword,
+    requestCreatorRole,
     resetPassword,
     logout,
   };

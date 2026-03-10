@@ -1,13 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Instrument_Sans } from "next/font/google";
 import "@/app/globals.css";
 import "@/app/judooo-global.css";
+import { AppProviders } from '@/app/providers';
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+const instrumentDisplay = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
 
 export const metadata: Metadata = {
   title: "Judooo",
-  description: "Judooo Next.js Migration",
+  description: "Judooo is an art map for discovering and planning art events across Vietnam.",
+  icons: {
+    icon: "/judooo_Favicon.svg",
+    shortcut: "/judooo_Favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -17,12 +29,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} min-h-screen bg-background font-sans antialiased`}>
-        <div className="flex relative flex-col min-h-screen">
-          <main className="flex-1">
-            {children}
-          </main>
-        </div>
+      <body className={`${instrumentSans.variable} ${instrumentDisplay.variable} min-h-screen bg-background font-sans antialiased`}>
+        <AppProviders>
+          <div className="relative flex min-h-screen flex-col">
+            <main className="flex-1">{children}</main>
+          </div>
+        </AppProviders>
       </body>
     </html>
   );
