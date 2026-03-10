@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { SignUpRole, User } from '../types/auth.types';
 import { canAccessAdmin, getRoleApplicationCopy } from '../utils/roles';
 import { api } from '@/services/api';
@@ -41,10 +41,11 @@ const mapSessionUser = async (sessionUser: SessionUser): Promise<User> => {
 export const useAuthController = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { notify } = useNotice();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const search = typeof window === 'undefined' ? '' : window.location.search;
+  const searchParams = new URLSearchParams(search);
   const authMode = searchParams.get(AUTH_QUERY_KEY);
   const redirectTo = searchParams.get(REDIRECT_QUERY_KEY);
   const authDialogMode: AuthMode =
@@ -119,7 +120,7 @@ export const useAuthController = () => {
     params.delete(REDIRECT_QUERY_KEY);
     const nextQuery = params.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
-  }, [currentUser, isValidAuthMode, nextRedirectPath, pathname, router, searchParams]);
+  }, [currentUser, isValidAuthMode, nextRedirectPath, pathname, router, search]);
 
   const openAuthDialog = () => setIsAuthDialogOpen(true);
   const closeAuthDialog = () => {
