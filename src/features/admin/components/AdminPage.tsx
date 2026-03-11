@@ -17,7 +17,6 @@ import type { User } from '@/features/auth/types/auth.types';
 import type { ArtEvent } from '@/features/events/types/event.types';
 import type { Artwork } from '@/features/marketplace/types/artwork.types';
 import { api } from '@/services/api';
-import { hydrateLocalCatalogSnapshot } from '@/services/api/localDb';
 
 const emptyForm: Partial<ArtEvent> = {
   category: 'exhibition',
@@ -35,20 +34,16 @@ interface AdminPageProps {
 
 export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPageProps) => {
   const { currentUser, openAuthDialog } = useAuth();
-  const { events, createEvent, updateEvent, uploadImage } = useEventsCatalog(initialEvents, {
+  const { events, refresh, createEvent, updateEvent, uploadImage } = useEventsCatalog(initialEvents, {
     currentUser,
     onAuthRequired: openAuthDialog,
+    skipAutoRefresh: true,
   });
   const [artworks, setArtworks] = useState<Artwork[]>(initialArtworks);
   const [profiles, setProfiles] = useState<User[]>([]);
   const [form, setForm] = useState<Partial<ArtEvent>>(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [bulkRows, setBulkRows] = useState('');
-
-  useEffect(() => {
-    if (initialArtworks.length === 0) return;
-    hydrateLocalCatalogSnapshot({ artworks: initialArtworks });
-  }, [initialArtworks]);
 
   const refreshArtworks = async () => {
     const nextArtworks = await api.getArtworks();
@@ -62,9 +57,10 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
 
   useEffect(() => {
     if (!currentUser || !canAccessAdmin(currentUser.role)) return;
+    void refresh();
     void refreshArtworks();
     void refreshProfiles();
-  }, [currentUser]);
+  }, [currentUser, refresh]);
 
   const creatorApplications = useMemo(
     () => profiles.filter((profile) => isCreatorApplicationPending(profile.role)),

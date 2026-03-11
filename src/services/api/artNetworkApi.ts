@@ -35,6 +35,7 @@ import {
 } from './remoteApi';
 import { mergeById, withTimeout } from './shared';
 import type { PendingWrite } from './types';
+import { enrichArtworkTranslations, enrichEventTranslations } from '@/lib/i18n/content';
 
 const fileToDataUrl = async (file: File): Promise<string | null> =>
   new Promise((resolve) => {
@@ -152,8 +153,10 @@ export const api = {
   },
 
   createEvent: async (event: Partial<ArtEvent>): Promise<ArtEvent | null> => {
+    const localizedEvent = await enrichEventTranslations(event);
+
     if (shouldUseRemote()) {
-      const inserted = await withTimeout(createEventRemote(event), 7000);
+      const inserted = await withTimeout(createEventRemote(localizedEvent), 7000);
       if (inserted) {
         upsertLocalEvent(inserted);
         void flushPendingWrites();
@@ -161,7 +164,7 @@ export const api = {
       }
     }
 
-    const localEvent = upsertLocalEvent(ensureEventDefaults(event));
+    const localEvent = upsertLocalEvent(ensureEventDefaults(localizedEvent));
     enqueuePendingWrite({
       kind: 'createEvent',
       queuedAt: new Date().toISOString(),
@@ -171,8 +174,10 @@ export const api = {
   },
 
   updateEvent: async (id: string, event: Partial<ArtEvent>): Promise<ArtEvent | null> => {
+    const localizedEvent = await enrichEventTranslations(event);
+
     if (shouldUseRemote()) {
-      const updatedRemote = await withTimeout(updateEventRemote(id, event), 7000);
+      const updatedRemote = await withTimeout(updateEventRemote(id, localizedEvent), 7000);
       if (updatedRemote) {
         upsertLocalEvent(updatedRemote);
         void flushPendingWrites();
@@ -180,12 +185,12 @@ export const api = {
       }
     }
 
-    const updatedLocal = patchLocalEvent(id, event);
+    const updatedLocal = patchLocalEvent(id, localizedEvent);
     if (updatedLocal) {
       enqueuePendingWrite({
         kind: 'updateEvent',
         queuedAt: new Date().toISOString(),
-        payload: { id, data: event },
+        payload: { id, data: localizedEvent },
       });
     }
     return updatedLocal;
@@ -208,8 +213,10 @@ export const api = {
   },
 
   createArtwork: async (artwork: Partial<Artwork>): Promise<Artwork | null> => {
+    const localizedArtwork = await enrichArtworkTranslations(artwork);
+
     if (shouldUseRemote()) {
-      const inserted = await withTimeout(createArtworkRemote(artwork), 7000);
+      const inserted = await withTimeout(createArtworkRemote(localizedArtwork), 7000);
       if (inserted) {
         upsertLocalArtwork(inserted);
         void flushPendingWrites();
@@ -217,7 +224,7 @@ export const api = {
       }
     }
 
-    const localArtwork = upsertLocalArtwork(ensureArtworkDefaults(artwork));
+    const localArtwork = upsertLocalArtwork(ensureArtworkDefaults(localizedArtwork));
     enqueuePendingWrite({
       kind: 'createArtwork',
       queuedAt: new Date().toISOString(),
@@ -227,8 +234,10 @@ export const api = {
   },
 
   updateArtwork: async (id: string, artwork: Partial<Artwork>): Promise<Artwork | null> => {
+    const localizedArtwork = await enrichArtworkTranslations(artwork);
+
     if (shouldUseRemote()) {
-      const updatedRemote = await withTimeout(updateArtworkRemote(id, artwork), 7000);
+      const updatedRemote = await withTimeout(updateArtworkRemote(id, localizedArtwork), 7000);
       if (updatedRemote) {
         upsertLocalArtwork(updatedRemote);
         void flushPendingWrites();
@@ -236,12 +245,12 @@ export const api = {
       }
     }
 
-    const updatedLocal = patchLocalArtwork(id, artwork);
+    const updatedLocal = patchLocalArtwork(id, localizedArtwork);
     if (updatedLocal) {
       enqueuePendingWrite({
         kind: 'updateArtwork',
         queuedAt: new Date().toISOString(),
-        payload: { id, data: artwork },
+        payload: { id, data: localizedArtwork },
       });
     }
     return updatedLocal;

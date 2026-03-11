@@ -25,6 +25,13 @@ import type { ArtEvent } from '@/features/events/types/event.types';
 import type { Artwork } from '../types/artwork.types';
 import { ArtworkCard } from './ArtworkCard';
 import { ArtworkDetailModal } from './ArtworkDetailModal';
+import {
+  getArtworkDescription,
+  getArtworkLocation,
+  getArtworkStory,
+  getArtworkStyle,
+  getArtworkTitle,
+} from '../utils/artwork-utils';
 
 const isApprovedArtwork = (artwork: Artwork) =>
   !artwork.moderation_status || artwork.moderation_status === 'approved';
@@ -103,39 +110,39 @@ const marketplaceHomeCopy: Record<
     vietnam: 'Vietnam',
   },
   vi: {
-    featuredWork: 'Tac pham noi bat',
-    heroTitle: 'Kham pha va suu tam nghe thuat duong dai Viet Nam de dang hon.',
+    featuredWork: 'Tác phẩm nổi bật',
+    heroTitle: 'Khám phá và sưu tầm nghệ thuật đương đại Việt Nam dễ dàng hơn.',
     heroBody:
-      'Judooo dua tac pham, su kien va cong cu len lo trinh vao cung mot noi de viec kham pha bot roi rac hon.',
-    auction: 'Dau gia',
-    fixedPrice: 'Gia co dinh',
-    currentBid: 'Gia hien tai',
-    price: 'Gia',
-    viewArtwork: 'Xem tac pham',
-    browseEvents: 'Xem su kien',
-    marketplace: 'Tac pham',
-    loadingArtworks: 'Dang tai tac pham...',
-    account: 'Tai khoan',
-    activeAccount: 'Tai khoan cua ban dang hoat dong.',
-    openBrowsing: 'Ban co the xem truoc ma khong can dang nhap.',
-    accountBody: 'Chi can dang nhap khi ban muon luu lo trinh, theo doi tac pham hoac gui bai dang.',
-    signUpToSave: 'Dang ky de luu',
-    howItWorks: 'Cach su dung',
+      'Judooo đưa tác phẩm, sự kiện và công cụ lên lộ trình vào cùng một nơi để việc khám phá bớt rời rạc hơn.',
+    auction: 'Đấu giá',
+    fixedPrice: 'Giá cố định',
+    currentBid: 'Giá hiện tại',
+    price: 'Giá',
+    viewArtwork: 'Xem tác phẩm',
+    browseEvents: 'Xem sự kiện',
+    marketplace: 'Tác phẩm',
+    loadingArtworks: 'Đang tải tác phẩm...',
+    account: 'Tài khoản',
+    activeAccount: 'Tài khoản của bạn đang hoạt động.',
+    openBrowsing: 'Bạn có thể xem trước mà không cần đăng nhập.',
+    accountBody: 'Chỉ cần đăng nhập khi bạn muốn lưu lộ trình, theo dõi tác phẩm hoặc gửi bài đăng.',
+    signUpToSave: 'Đăng ký để lưu',
+    howItWorks: 'Cách sử dụng',
     howItWorksSteps: [
-      'Xem ngay cac tac pham noi bat.',
-      'Chuyen sang su kien khi ban can them boi canh van hoa.',
-      'Quay lai lo trinh da luu va cong cu creator sau khi dang nhap.',
+      'Xem ngay các tác phẩm nổi bật.',
+      'Chuyển sang sự kiện khi bạn cần thêm bối cảnh văn hóa.',
+      'Quay lại lộ trình đã lưu và công cụ creator sau khi đăng nhập.',
     ],
-    selectedWorks: 'Tac pham da chon',
-    selectedWorksTitle: 'Xem toan bo bo suu tap tac pham hien co.',
-    submitArtwork: 'Dang tac pham',
-    eventLayer: 'Lop su kien',
-    eventLayerTitle: 'Dung lich su kien lam boi canh roi lap thanh lo trinh thuc te.',
+    selectedWorks: 'Tác phẩm đã chọn',
+    selectedWorksTitle: 'Xem toàn bộ bộ sưu tập tác phẩm hiện có.',
+    submitArtwork: 'Đăng tác phẩm',
+    eventLayer: 'Lớp sự kiện',
+    eventLayerTitle: 'Dùng lịch sự kiện làm bối cảnh rồi lập thành lộ trình thực tế.',
     eventLayerBody:
-      'Su kien van la lop tao thoi quen: xem trien lam, luu diem dung va bien danh sach ngan thanh mot ngay di xem hop ly.',
-    openEvents: 'Mo su kien',
-    openRoutePlanner: 'Mo lo trinh',
-    vietnam: 'Viet Nam',
+      'Sự kiện vẫn là lớp tạo thói quen: xem triển lãm, lưu điểm dừng và biến danh sách ngắn thành một ngày đi xem hợp lý.',
+    openEvents: 'Mở sự kiện',
+    openRoutePlanner: 'Mở lộ trình',
+    vietnam: 'Việt Nam',
   },
 };
 
@@ -197,7 +204,7 @@ export const MarketplaceHomePage = ({
                 >
                   <img
                     src={featuredArtwork.imageUrl}
-                    alt={featuredArtwork.title}
+                    alt={getArtworkTitle(featuredArtwork, language)}
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                   />
                 </button>
@@ -217,8 +224,8 @@ export const MarketplaceHomePage = ({
                       <Badge tone="accent">
                         {featuredArtwork.saleType === 'auction' ? copy.auction : copy.fixedPrice}
                       </Badge>
-                      {featuredArtwork.style ? <Badge>{featuredArtwork.style}</Badge> : null}
-                      <Badge>{featuredArtwork.city || featuredArtwork.country || copy.vietnam}</Badge>
+                      {featuredArtwork.style ? <Badge>{getArtworkStyle(featuredArtwork, language)}</Badge> : null}
+                      <Badge>{getArtworkLocation(featuredArtwork, language) || copy.vietnam}</Badge>
                     </div>
                   </div>
 
@@ -226,10 +233,10 @@ export const MarketplaceHomePage = ({
                     <div>
                       <p className="text-sm text-muted-foreground">{featuredArtwork.artist}</p>
                       <h2 className="mt-2 font-display text-[2rem] leading-[0.94] tracking-[-0.045em] text-foreground sm:text-[2.4rem]">
-                        {featuredArtwork.title}
+                        {getArtworkTitle(featuredArtwork, language)}
                       </h2>
                       <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                        {featuredArtwork.story || featuredArtwork.description}
+                        {getArtworkStory(featuredArtwork, language) || getArtworkDescription(featuredArtwork, language)}
                       </p>
                     </div>
 
@@ -381,7 +388,12 @@ export const MarketplaceHomePage = ({
               openAuthDialog();
               return;
             }
-            notify(`Interest captured for ${activeArtwork.title}.`, 'success');
+            notify(
+              language === 'vi'
+                ? `Đã ghi nhận quan tâm cho ${getArtworkTitle(activeArtwork, language)}.`
+                : `Interest captured for ${getArtworkTitle(activeArtwork, language)}.`,
+              'success',
+            );
           }}
         />
       ) : null}

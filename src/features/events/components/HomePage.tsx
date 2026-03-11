@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { ArrowRight, Clock3, Flame, Gift, MapPinned } from 'lucide-react';
+import { useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Card } from '@/components/ui/Card';
 import { Container } from '@/components/ui/Container';
@@ -43,6 +45,8 @@ interface HomePageProps {
 }
 
 export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
+  const router = useRouter();
+  const { language } = useLanguage();
   const { events, isLoading, savedEventIds, toggleSavedEvent } = useEventsCatalog(initialEvents);
 
   const publicEvents = useMemo(
@@ -75,7 +79,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                 <div className="relative min-h-[22rem] overflow-hidden lg:min-h-full">
                   <img
                     src={featuredEvents[0].imageUrl}
-                    alt={getEventTitle(featuredEvents[0])}
+                    alt={getEventTitle(featuredEvents[0], language)}
                     className="absolute inset-0 h-full w-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--foreground)]/75 via-[color:var(--foreground)]/10 to-transparent" />
@@ -120,14 +124,14 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                     <div className="relative">
                       <img
                         src={event.imageUrl}
-                        alt={getEventTitle(event)}
+                        alt={getEventTitle(event, language)}
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                       />
                     </div>
                     <div className="flex flex-col justify-between gap-4 p-6">
                       <div className="space-y-3">
                         <Badge tone="accent">{event.event_type || event.category}</Badge>
-                        <h2 className="text-xl font-semibold tracking-[-0.02em]">{getEventTitle(event)}</h2>
+                        <h2 className="text-xl font-semibold tracking-[-0.02em]">{getEventTitle(event, language)}</h2>
                         <p className="text-sm leading-7 text-muted-foreground">{event.city}</p>
                       </div>
                       <span className={viewAllLinkClass}>
@@ -167,9 +171,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                 key={event.id}
                 event={event}
                 isSaved={savedEventIds.includes(event.id)}
-                onOpen={() => {
-                  window.location.href = `/events/${event.id}`;
-                }}
+                onOpen={() => router.push(`/events/${event.id}`)}
                 onToggleSave={() => toggleSavedEvent(event.id)}
               />
             ))}
@@ -235,9 +237,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                       <EventCard
                         event={item}
                         isSaved={savedEventIds.includes(item.id)}
-                        onOpen={() => {
-                          window.location.href = `/events/${item.id}`;
-                        }}
+                        onOpen={() => router.push(`/events/${item.id}`)}
                         onToggleSave={() => toggleSavedEvent(item.id)}
                       />
                     </div>

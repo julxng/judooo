@@ -1,9 +1,11 @@
 import type { KeyboardEvent } from 'react';
+import { useLanguage } from '@/app/providers';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/format';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardFooter } from '@/components/ui/Card';
 import type { Artwork } from '../types/artwork.types';
+import { getArtworkLocation, getArtworkMedium, getArtworkTitle } from '../utils/artwork-utils';
 
 interface ArtworkCardProps {
   artwork: Artwork;
@@ -12,6 +14,7 @@ interface ArtworkCardProps {
 }
 
 export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => {
+  const { language } = useLanguage();
   const isAuction = artwork.saleType === 'auction';
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -29,7 +32,7 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface-muted">
         <img
           src={artwork.imageUrl}
-          alt={artwork.title}
+          alt={getArtworkTitle(artwork, language)}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           loading="lazy"
         />
@@ -57,10 +60,10 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
         <div className="mb-3 mt-1 flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1.5">
             <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {artwork.city || artwork.country || 'Vietnam'}
+              {getArtworkLocation(artwork, language) || 'Vietnam'}
             </span>
             <h3 className="m-0 font-display text-[1.35rem] font-semibold leading-[0.98] tracking-[-0.04em] text-foreground line-clamp-2">
-              {artwork.title}
+              {getArtworkTitle(artwork, language)}
             </h3>
           </div>
           {isAuction ? (
@@ -73,7 +76,7 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
         <div className="mb-auto flex flex-col gap-1">
           <p className="m-0 text-base font-medium text-foreground">{artwork.artist}</p>
           <p className="m-0 text-sm text-muted-foreground">
-            {artwork.medium} • {artwork.dimensions}
+            {getArtworkMedium(artwork, language)} • {artwork.dimensions}
           </p>
         </div>
       </div>

@@ -1,10 +1,11 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Filter, Map, Rows3, Search } from 'lucide-react';
-import { useAuth } from '@/app/providers';
+import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -14,7 +15,6 @@ import { Container } from '@/components/ui/Container';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { EventCard } from './EventCard';
-import EventMap from './EventMap';
 import { useEventsCatalog } from '../hooks/useEventsCatalog';
 import {
   getEventDescription,
@@ -37,24 +37,32 @@ type FilterSelectConfig = {
   options: string[];
 };
 
+const EventMap = dynamic(() => import('./EventMap'), {
+  ssr: false,
+  loading: () => <Card className="min-h-[32rem] animate-pulse bg-secondary" />,
+});
+
 interface EventsDirectoryPageProps {
   initialSection?: string | null;
+  initialSearch?: string | null;
   initialEvents?: ArtEvent[];
 }
 
 export const EventsDirectoryPage = ({
   initialSection,
+  initialSearch,
   initialEvents = [],
 }: EventsDirectoryPageProps) => {
   const router = useRouter();
   const { currentUser, openAuthDialog } = useAuth();
+  const { language } = useLanguage();
   const { events, isLoading, savedEventIds, routeEventIds, toggleSavedEvent, toggleRouteEvent } =
     useEventsCatalog(initialEvents, { currentUser, onAuthRequired: openAuthDialog });
 
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [timeline, setTimeline] = useState<EventTimeline>('all');
   const [sortMode, setSortMode] = useState<SortMode>('recently-imported');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch ?? '');
   const [city, setCity] = useState('all');
   const [district, setDistrict] = useState('all');
   const [artMedium, setArtMedium] = useState('all');
@@ -79,6 +87,11 @@ export const EventsDirectoryPage = ({
     setTimeline(initialSection === 'archive' ? 'past' : 'all');
   }, [initialSection]);
 
+  useEffect(() => {
+    setSearch(initialSearch ?? '');
+  }, [initialSearch]);
+
+  const deferredSearch = useDeferredValue(search);
   const publicEvents = useMemo(() => events.filter(isApprovedEvent), [events]);
   const toStringOptions = (values: Array<string | undefined>) => [
     'all',
@@ -106,7 +119,7 @@ export const EventsDirectoryPage = ({
   );
 
   const filteredEvents = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch = deferredSearch.trim().toLowerCase();
     const base = publicEvents.filter((event) => {
       const matchesSearch =
         normalizedSearch.length === 0 ||
@@ -142,7 +155,7 @@ export const EventsDirectoryPage = ({
     placeType,
     publicEvents,
     registrationRequired,
-    search,
+    deferredSearch,
     sortMode,
     timeline,
   ]);
@@ -297,15 +310,15 @@ export const EventsDirectoryPage = ({
                     <div className="flex gap-4">
                       <img
                         src={event.imageUrl}
-                        alt={getEventTitle(event)}
+                        alt={getEventTitle(event, language)}
                         className="h-28 w-24 rounded-md object-cover"
                       />
                       <div className="flex flex-1 flex-col justify-between gap-3">
                         <div className="space-y-2">
                           <Badge tone="accent">{event.event_type || event.category}</Badge>
-                          <h2 className="text-base font-semibold">{getEventTitle(event)}</h2>
+                          <h2 className="text-base font-semibold">{getEventTitle(event, language)}</h2>
                           <p className="line-clamp-2 text-sm text-muted-foreground">
-                            {getEventDescription(event)}
+                            {getEventDescription(event, language)}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -329,7 +342,7 @@ export const EventsDirectoryPage = ({
                 {selectedEvent ? (
                   <Card className="p-4">
                     <p className="text-sm text-muted-foreground">
-                      {getEventTitle(selectedEvent)} highlighted on map
+                      {getEventTitle(selectedEvent, language)} highlighted on map
                     </p>
                   </Card>
                 ) : null}

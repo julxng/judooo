@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/app/providers';
+import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -23,6 +23,7 @@ interface ProfilePageProps {
 }
 
 export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
+  const { language } = useLanguage();
   const {
     currentUser,
     logout,
@@ -129,7 +130,7 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
                     ) : (
                       currentSaved.map((event) => (
                         <Card key={event.id} className="bg-secondary p-4">
-                          <p className="font-semibold">{getEventTitle(event)}</p>
+                          <p className="font-semibold">{getEventTitle(event, language)}</p>
                           <p className="mt-1 text-sm text-muted-foreground">{event.city}</p>
                         </Card>
                       ))
@@ -144,7 +145,7 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
                     ) : (
                       pastSaved.map((event) => (
                         <Card key={event.id} className="bg-secondary p-4">
-                          <p className="font-semibold">{getEventTitle(event)}</p>
+                          <p className="font-semibold">{getEventTitle(event, language)}</p>
                           <p className="mt-1 text-sm text-muted-foreground">{event.city}</p>
                         </Card>
                       ))

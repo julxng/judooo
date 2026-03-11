@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '@/app/providers';
 import { Stack } from '@/components/layout/Stack';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { Badge, Button, Card, Modal } from '@/components/ui';
@@ -6,6 +7,13 @@ import { formatDateRange } from '@/lib/date';
 import type { Artwork } from '@/features/marketplace/types/artwork.types';
 import type { ArtEvent, EventMedia } from '../types/event.types';
 import { useNotice } from '@/app/providers/NoticeProvider';
+import {
+  getEventAddress,
+  getEventChips,
+  getEventCity,
+  getEventDescription,
+  getEventTitle,
+} from '../utils/event-utils';
 
 interface EventDetailModalProps {
   event: ArtEvent;
@@ -29,6 +37,7 @@ export const EventDetailModal = ({
   onBidArtwork,
 }: EventDetailModalProps) => {
   const { notify } = useNotice();
+  const { language } = useLanguage();
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
 
   useEffect(() => {
@@ -48,8 +57,8 @@ export const EventDetailModal = ({
 
   const shareEvent = async () => {
     const shareData = {
-      title: event.name_vie || event.name_en || event.title,
-      text: event.description?.slice(0, 180) || 'Check this event on Judooo',
+      title: getEventTitle(event, language),
+      text: getEventDescription(event, language).slice(0, 180) || 'Check this event on Judooo',
       url: window.location.href,
     };
 
@@ -67,7 +76,7 @@ export const EventDetailModal = ({
   };
 
   return (
-    <Modal title={event.name_vie || event.name_en || event.title} onClose={onClose} size="xl">
+    <Modal title={getEventTitle(event, language)} onClose={onClose} size="xl">
       <SidebarLayout
         sidebar={
           <Stack gap={12}>
@@ -114,9 +123,9 @@ export const EventDetailModal = ({
           <div className="detail-hero__copy">
             <Badge tone="accent">{event.event_type || event.category}</Badge>
             <p className="muted-text">
-              {formatDateRange(event.startDate, event.endDate)} • {event.city || event.location}
+              {formatDateRange(event.startDate, event.endDate)} • {getEventCity(event, language) || event.location}
             </p>
-            <p>{event.description_vie || event.description_en || event.description}</p>
+            <p>{getEventDescription(event, language)}</p>
           </div>
         </div>
 
@@ -147,7 +156,7 @@ export const EventDetailModal = ({
               </div>
               <div>
                 <span>Address</span>
-                <strong>{event.address || event.location || 'Updating...'}</strong>
+                <strong>{getEventAddress(event, language) || 'Updating...'}</strong>
               </div>
               <div>
                 <span>Price</span>
@@ -155,11 +164,9 @@ export const EventDetailModal = ({
               </div>
             </div>
             <div className="detail-chip-row">
-              {[event.art_medium, event.event_type, event.place_type, ...(event.tags || [])]
-                .filter(Boolean)
-                .map((chip) => (
-                  <Badge key={chip}>{chip}</Badge>
-                ))}
+              {getEventChips(event, language).map((chip) => (
+                <Badge key={chip}>{chip}</Badge>
+              ))}
             </div>
           </Card>
 

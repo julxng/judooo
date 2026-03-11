@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '@/app/providers';
 import { Badge, Button, Card, Modal } from '@/components/ui';
 import { Grid } from '@/components/layout/Grid';
 import { formatCurrency } from '@/lib/format';
 import type { Artwork } from '../types/artwork.types';
+import {
+  getArtworkAuthenticity,
+  getArtworkConditionReport,
+  getArtworkDescription,
+  getArtworkLocation,
+  getArtworkMedium,
+  getArtworkProvenance,
+  getArtworkStory,
+  getArtworkTitle,
+} from '../utils/artwork-utils';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork;
@@ -11,6 +22,7 @@ interface ArtworkDetailModalProps {
 }
 
 export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetailModalProps) => {
+  const { language } = useLanguage();
   const gallery = useMemo(() => {
     const base = artwork.imageGallery && artwork.imageGallery.length ? artwork.imageGallery : [artwork.imageUrl];
     return Array.from(new Set(base.filter(Boolean)));
@@ -23,11 +35,11 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
   }, [artwork.id, artwork.imageUrl, gallery]);
 
   return (
-    <Modal title={artwork.title} onClose={onClose} size="xl">
+    <Modal title={getArtworkTitle(artwork, language)} onClose={onClose} size="xl">
       <div className="artwork-detail">
         <div className="artwork-detail__gallery">
           <div className="artwork-detail__hero">
-            <img src={activeImage} alt={artwork.title} />
+            <img src={activeImage} alt={getArtworkTitle(artwork, language)} />
           </div>
           {gallery.length > 1 ? (
             <Grid columns={4} gap={12}>
@@ -38,7 +50,7 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
                   className={`artwork-detail__thumb ${activeImage === image ? 'artwork-detail__thumb--active' : ''}`}
                   onClick={() => setActiveImage(image)}
                 >
-                  <img src={image} alt={artwork.title} />
+                  <img src={image} alt={getArtworkTitle(artwork, language)} />
                 </button>
               ))}
             </Grid>
@@ -56,7 +68,7 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
             </Card>
             <Card className="detail-panel">
               <span className="artwork-card__label">Medium</span>
-              <strong>{artwork.medium || 'N/A'}</strong>
+              <strong>{getArtworkMedium(artwork, language) || 'N/A'}</strong>
             </Card>
             <Card className="detail-panel">
               <span className="artwork-card__label">Dimensions</span>
@@ -64,33 +76,39 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
             </Card>
             <Card className="detail-panel">
               <span className="artwork-card__label">Location</span>
-              <strong>{[artwork.city, artwork.country].filter(Boolean).join(', ') || 'Vietnam'}</strong>
+              <strong>{getArtworkLocation(artwork, language) || 'Vietnam'}</strong>
             </Card>
           </Grid>
 
           <div className="detail-copy">
-            {artwork.description ? (
+            {getArtworkDescription(artwork, language) ? (
               <div>
                 <p className="eyebrow">Description</p>
-                <p>{artwork.description}</p>
+                <p>{getArtworkDescription(artwork, language)}</p>
               </div>
             ) : null}
-            {artwork.story ? (
+            {getArtworkStory(artwork, language) ? (
               <div>
                 <p className="eyebrow">Story</p>
-                <p>{artwork.story}</p>
+                <p>{getArtworkStory(artwork, language)}</p>
               </div>
             ) : null}
-            {artwork.provenance ? (
+            {getArtworkProvenance(artwork, language) ? (
               <div>
                 <p className="eyebrow">Provenance</p>
-                <p>{artwork.provenance}</p>
+                <p>{getArtworkProvenance(artwork, language)}</p>
               </div>
             ) : null}
-            {artwork.authenticity ? (
+            {getArtworkAuthenticity(artwork, language) ? (
               <div>
                 <p className="eyebrow">Authenticity</p>
-                <p>{artwork.authenticity}</p>
+                <p>{getArtworkAuthenticity(artwork, language)}</p>
+              </div>
+            ) : null}
+            {getArtworkConditionReport(artwork, language) ? (
+              <div>
+                <p className="eyebrow">Condition</p>
+                <p>{getArtworkConditionReport(artwork, language)}</p>
               </div>
             ) : null}
           </div>

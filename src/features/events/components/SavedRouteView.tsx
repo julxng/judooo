@@ -1,10 +1,12 @@
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
+import { useLanguage } from '@/app/providers';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { formatDateRange } from '@/lib/date';
 import { Card, Tabs } from '@/components/ui';
 import type { ArtEvent, RoutePlannerMode } from '../types';
 import { buildRoutePlans } from '../utils/route-optimizer';
-import EventMap from './EventMap';
+import { getEventCity, getEventTitle } from '../utils/event-utils';
 import { EventsGrid } from './EventsGrid';
 
 interface SavedRouteViewProps {
@@ -26,12 +28,18 @@ const formatTravelTime = (minutes: number): string => {
   return remainder === 0 ? `${hours} hr` : `${hours} hr ${remainder} min`;
 };
 
+const EventMap = dynamic(() => import('./EventMap'), {
+  ssr: false,
+  loading: () => <Card className="min-h-[32rem] animate-pulse bg-secondary" />,
+});
+
 export const SavedRouteView = ({
   events,
   savedEventIds,
   onOpenEvent,
   onToggleSave,
 }: SavedRouteViewProps) => {
+  const { language } = useLanguage();
   const [routeMode, setRouteMode] = useState<RoutePlannerMode>('optimized');
   const routePlans = useMemo(() => buildRoutePlans(events, savedEventIds), [events, savedEventIds]);
   const activePlan = routeMode === 'optimized' ? routePlans.optimized : routePlans.saved;
@@ -107,9 +115,9 @@ export const SavedRouteView = ({
               >
                 <span className="route-stop__index">{stop.order}</span>
                 <span className="route-stop__body">
-                  <strong>{stop.event.name_vie || stop.event.name_en || stop.event.title}</strong>
+                  <strong>{getEventTitle(stop.event, language)}</strong>
                   <span>
-                    {stop.event.city || stop.event.location} •{' '}
+                    {getEventCity(stop.event, language) || stop.event.location} •{' '}
                     {formatDateRange(stop.event.startDate, stop.event.endDate)}
                   </span>
                 </span>

@@ -1,14 +1,15 @@
 'use client';
 
+import { Suspense, useEffect, useRef, useState, type FormEvent, type PropsWithChildren } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState, type PropsWithChildren } from 'react';
-import { Menu, Search, X } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ChevronDown, Menu, Search, X } from 'lucide-react';
 import { branding } from '@/assets/branding';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/app/providers';
 import { useLanguage } from '@/app/providers/LanguageProvider';
 import { Container } from '@/components/ui/Container';
+import { Input } from '@/components/ui/Input';
 import type { Locale } from '@/lib/i18n/translations';
 import { cn } from '@/lib/utils';
 import {
@@ -24,6 +25,7 @@ const shellCopy: Record<
       marketplace: string;
       events: string;
       routePlanner: string;
+      workspace: string;
       submitEvent: string;
       submitArtwork: string;
       profile: string;
@@ -53,10 +55,11 @@ const shellCopy: Record<
       marketplace: 'Marketplace',
       events: 'Events',
       routePlanner: 'Route Planner',
+      workspace: 'Workspace',
       submitEvent: 'Submit Event',
       submitArtwork: 'Submit Artwork',
       profile: 'Profile',
-      admin: 'Admin',
+      admin: 'Dashboard',
     },
     footerLinks: {
       about: 'About Us',
@@ -79,32 +82,33 @@ const shellCopy: Record<
   },
   vi: {
     navigation: {
-      marketplace: 'Tac pham',
-      events: 'Su kien',
-      routePlanner: 'Lo trinh',
-      submitEvent: 'Dang su kien',
-      submitArtwork: 'Dang tac pham',
-      profile: 'Ho so',
-      admin: 'Quan tri',
+      marketplace: 'Tác phẩm',
+      events: 'Sự kiện',
+      routePlanner: 'Lộ trình',
+      workspace: 'Không gian',
+      submitEvent: 'Đăng sự kiện',
+      submitArtwork: 'Đăng tác phẩm',
+      profile: 'Hồ sơ',
+      admin: 'Bảng điều khiển',
     },
     footerLinks: {
-      about: 'Ve chung minh',
-      terms: 'Dieu khoan',
-      privacy: 'Bao mat',
+      about: 'Về chúng mình',
+      terms: 'Điều khoản',
+      privacy: 'Bảo mật',
     },
-    search: 'Tim nghe si, su kien va tac pham',
-    signIn: 'Dang nhap',
-    signUp: 'Dang ky',
-    signOut: 'Dang xuat',
-    browse: 'Kham pha',
+    search: 'Tìm nghệ sĩ, sự kiện và tác phẩm',
+    signIn: 'Đăng nhập',
+    signUp: 'Đăng ký',
+    signOut: 'Đăng xuất',
+    browse: 'Khám phá',
     company: 'Judooo',
-    contact: 'Lien he',
-    footerTitle: 'Kham pha tac pham va theo doi lich nghe thuat tren khap Viet Nam.',
+    contact: 'Liên hệ',
+    footerTitle: 'Khám phá tác phẩm và theo dõi lịch nghệ thuật trên khắp Việt Nam.',
     footerBody:
-      'Judooo giup moi nguoi tim thay trien lam, tac pham va lo trinh tham quan nghe thuat de len ke hoach de dang hon.',
-    openMenu: 'Mo menu',
-    closeMenu: 'Dong menu',
-    languageLabel: 'Ngon ngu',
+      'Judooo giúp mọi người tìm thấy triển lãm, tác phẩm và lộ trình tham quan nghệ thuật để lên kế hoạch dễ dàng hơn.',
+    openMenu: 'Mở menu',
+    closeMenu: 'Đóng menu',
+    languageLabel: 'Ngôn ngữ',
   },
 };
 
@@ -113,16 +117,37 @@ const languageOptions: { value: Locale; label: 'EN' | 'VN' }[] = [
   { value: 'vi', label: 'VN' },
 ];
 
+const SearchQuerySync = ({
+  pathname,
+  onChange,
+}: {
+  pathname: string;
+  onChange: (value: string) => void;
+}) => {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const searchEnabledRoutes = pathname === '/events' || pathname === '/marketplace' || pathname === '/search';
+    onChange(searchEnabledRoutes ? searchParams.get('search') ?? '' : '');
+  }, [onChange, pathname, searchParams]);
+
+  return null;
+};
+
 export const SiteShell = ({ children }: PropsWithChildren) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
+  const [isManagementMenuOpen, setIsManagementMenuOpen] = useState(false);
   const { currentUser, openAuthDialog, logout } = useAuth();
   const { language, setLanguage } = useLanguage();
+  const managementMenuRef = useRef<HTMLDivElement | null>(null);
   const copy = shellCopy[language];
   const showAdminLink = canAccessAdmin(currentUser?.role);
   const showCreatorLinks = hasCreatorWorkspaceAccess(currentUser?.role);
   const navigation = [
-    { href: '/', label: copy.navigation.marketplace },
+    { href: '/marketplace', label: copy.navigation.marketplace },
     { href: '/events', label: copy.navigation.events },
     { href: '/route-planner', label: copy.navigation.routePlanner },
   ];
@@ -133,10 +158,6 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
   ];
 
   const isActive = (href: string) => {
-    if (href === '/') {
-      return pathname === '/' || pathname === '/marketplace';
-    }
-
     return pathname === href;
   };
 
@@ -144,18 +165,61 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
     ? [
         { href: '/submit-event', label: copy.navigation.submitEvent },
         { href: '/submit-artwork', label: copy.navigation.submitArtwork },
-        { href: '/profile', label: copy.navigation.profile },
       ]
     : [];
 
-  const utilityLinks = showAdminLink
+  const managementLinks = showAdminLink
     ? [...creatorLinks, { href: '/admin', label: copy.navigation.admin }]
     : creatorLinks;
 
-  const allNavItems = [...navigation, ...utilityLinks];
+  const allNavItems = navigation;
+  const managementMenuLabel = showAdminLink ? copy.navigation.admin : copy.navigation.workspace;
+  const managementRootHref = showAdminLink ? '/admin' : managementLinks[0]?.href ?? '/profile';
+  const isManagementActive = managementLinks.some((item) => isActive(item.href));
+  const getSearchHref = (query: string) => {
+    const params = new URLSearchParams();
+    const normalizedQuery = query.trim();
+
+    if (normalizedQuery) {
+      params.set('search', normalizedQuery);
+    }
+
+    return params.size ? `/search?${params.toString()}` : '/search';
+  };
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (managementMenuRef.current && !managementMenuRef.current.contains(target)) {
+        setIsManagementMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
+
+  useEffect(() => {
+    setIsManagementMenuOpen(false);
+    setIsOpen(false);
+  }, [pathname]);
+
+  const handleDesktopSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsOpen(false);
+    router.push(getSearchHref(desktopSearchQuery));
+  };
 
   return (
     <div className="min-h-screen bg-background">
+      <Suspense fallback={null}>
+        <SearchQuerySync pathname={pathname} onChange={setDesktopSearchQuery} />
+      </Suspense>
       <header className="sticky top-0 z-[120] isolate border-b border-border bg-background">
         <Container size="xl">
           <div className="relative z-[121] flex min-h-[3.5rem] items-center justify-between gap-3 py-2 md:min-h-[4.75rem] md:py-3">
@@ -179,32 +243,87 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
               </Link>
             </div>
 
-            <div className="hidden min-w-0 flex-1 items-center gap-6 md:flex">
-              <Link
-                href="/events"
-                className="flex h-10 min-w-[16rem] max-w-[25rem] flex-1 items-center gap-3 rounded-md border border-border px-4 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            <div className="hidden min-w-0 flex-1 items-center gap-4 md:flex lg:gap-6">
+              <form
+                onSubmit={handleDesktopSearchSubmit}
+                className="flex min-w-[18rem] max-w-[26rem] flex-1 items-center gap-2"
               >
-                <Search size={16} />
-                {copy.search}
-              </Link>
+                <div className="relative flex-1">
+                  <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={desktopSearchQuery}
+                    onChange={(event) => setDesktopSearchQuery(event.target.value)}
+                    placeholder={copy.search}
+                    className="pl-9"
+                  />
+                </div>
+                <Button type="submit" size="sm">
+                  Search
+                </Button>
+              </form>
 
-              <nav className="flex items-center gap-4">
+              <nav className="flex min-w-0 items-center gap-3 lg:gap-4">
                 {allNavItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      'border-b border-transparent pb-1 text-sm transition-colors hover:text-foreground',
+                      'whitespace-nowrap border-b border-transparent pb-1 text-sm transition-colors hover:text-foreground',
                       isActive(item.href) ? 'border-foreground text-foreground' : 'text-muted-foreground',
                     )}
                   >
                     {item.label}
                   </Link>
                 ))}
+                {managementLinks.length ? (
+                  <div ref={managementMenuRef} className="relative">
+                    <div
+                      className={cn(
+                        'inline-flex items-center gap-1 whitespace-nowrap border-b border-transparent pb-1 text-sm transition-colors hover:text-foreground',
+                        isManagementActive || isManagementMenuOpen
+                          ? 'border-foreground text-foreground'
+                          : 'text-muted-foreground',
+                      )}
+                    >
+                      <Link href={managementRootHref} onClick={() => setIsManagementMenuOpen(false)}>
+                        {managementMenuLabel}
+                      </Link>
+                      <button
+                        type="button"
+                        className="inline-flex items-center"
+                        onClick={() => setIsManagementMenuOpen((current) => !current)}
+                        aria-label={managementMenuLabel}
+                        aria-expanded={isManagementMenuOpen}
+                      >
+                        <ChevronDown
+                          size={14}
+                          className={cn('transition-transform', isManagementMenuOpen ? 'rotate-180' : '')}
+                        />
+                      </button>
+                    </div>
+                    {isManagementMenuOpen ? (
+                      <div className="absolute right-0 top-full mt-3 min-w-[12rem] rounded-md border border-border bg-background p-1 shadow-sm">
+                        {managementLinks.map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn(
+                              'block rounded-sm px-3 py-2 text-sm transition-colors hover:bg-secondary hover:text-foreground',
+                              isActive(item.href) ? 'bg-secondary text-foreground' : 'text-muted-foreground',
+                            )}
+                            onClick={() => setIsManagementMenuOpen(false)}
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </nav>
             </div>
 
-            <div className="hidden items-center gap-3 md:flex">
+            <div className="hidden items-center gap-2 md:flex lg:gap-3">
               <div
                 className="inline-flex items-center gap-1 rounded-md border border-border p-1"
                 aria-label={copy.languageLabel}
@@ -227,12 +346,12 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
 
               {currentUser ? (
                 <>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-foreground">{currentUser.name}</p>
+                  <Link href="/profile" className="shrink-0 text-right transition-colors hover:text-foreground">
+                    <p className="max-w-[10rem] truncate text-sm font-medium text-foreground">{currentUser.name}</p>
                     <p className="text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">
                       {getRoleLabel(currentUser.role)}
                     </p>
-                  </div>
+                  </Link>
                   <Button variant="outline" size="sm" onClick={() => void logout()}>
                     {copy.signOut}
                   </Button>
@@ -258,14 +377,20 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
         {isOpen ? (
           <div className="relative z-[121] border-t border-border bg-background md:hidden">
             <Container size="xl" className="space-y-4 py-4">
-              <Link
-                href="/events"
-                className="flex h-11 items-center gap-3 rounded-md border border-border px-4 text-sm text-muted-foreground"
-                onClick={() => setIsOpen(false)}
-              >
-                <Search size={16} />
-                {copy.search}
-              </Link>
+              <form onSubmit={handleDesktopSearchSubmit} className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={desktopSearchQuery}
+                    onChange={(event) => setDesktopSearchQuery(event.target.value)}
+                    placeholder={copy.search}
+                    className="pl-9"
+                  />
+                </div>
+                <Button type="submit" size="sm">
+                  Search
+                </Button>
+              </form>
 
               <nav className="grid gap-3">
                 {allNavItems.map((item) => (
@@ -282,6 +407,29 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
                   </Link>
                 ))}
               </nav>
+
+              {managementLinks.length ? (
+                <div className="space-y-3 border-t border-border pt-4">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    {managementMenuLabel}
+                  </p>
+                  <div className="grid gap-3">
+                    {managementLinks.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          'text-sm transition-colors',
+                          isActive(item.href) ? 'text-foreground' : 'text-muted-foreground',
+                        )}
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -308,12 +456,16 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
               <div className="flex items-center gap-3 border-t border-border pt-4">
                 {currentUser ? (
                   <>
-                    <div className="flex-1">
+                    <Link
+                      href="/profile"
+                      className="flex-1"
+                      onClick={() => setIsOpen(false)}
+                    >
                       <p className="text-sm font-medium text-foreground">{currentUser.name}</p>
                       <p className="text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">
                         {getRoleLabel(currentUser.role)}
                       </p>
-                    </div>
+                    </Link>
                     <Button
                       variant="outline"
                       size="sm"

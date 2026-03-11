@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { ExternalLink, MoveDown, MoveUp, Trash2 } from 'lucide-react';
-import { useAuth } from '@/app/providers';
+import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -39,6 +39,7 @@ interface RoutePlannerPageProps {
 
 export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) => {
   const { currentUser, openAuthDialog } = useAuth();
+  const { language } = useLanguage();
   const {
     savedEvents,
     routeEvents,
@@ -102,11 +103,11 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
                 currentSavedEvents.map((event) => (
                   <Card key={event.id} className="p-4">
                     <div className="flex gap-4">
-                      <img src={event.imageUrl} alt={getEventTitle(event)} className="h-28 w-24 rounded-md object-cover" />
+                      <img src={event.imageUrl} alt={getEventTitle(event, language)} className="h-28 w-24 rounded-md object-cover" />
                       <div className="flex flex-1 flex-col justify-between gap-3">
                         <div className="space-y-2">
                           <Badge tone="accent">{event.event_type || event.category}</Badge>
-                          <h3 className="text-base font-semibold">{getEventTitle(event)}</h3>
+                          <h3 className="text-base font-semibold">{getEventTitle(event, language)}</h3>
                           <p className="text-sm text-muted-foreground">{event.city}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -176,7 +177,7 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
                         {index + 1}
                       </div>
                       <div className="flex-1 space-y-2">
-                        <p className="text-base font-semibold">{getEventTitle(event)}</p>
+                        <p className="text-base font-semibold">{getEventTitle(event, language)}</p>
                         <p className="text-sm text-muted-foreground">{event.city}</p>
                         <div className="flex flex-wrap gap-2">
                           <Button variant="ghost" size="sm" onClick={() => moveRouteEvent(event.id, 'up')}>

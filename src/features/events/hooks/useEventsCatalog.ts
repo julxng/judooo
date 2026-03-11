@@ -31,13 +31,14 @@ const getRouteStorageKey = (userId: string) => `${ROUTE_EVENTS_KEY_PREFIX}.${use
 interface UseEventsCatalogOptions {
   currentUser?: User | null;
   onAuthRequired?: () => void;
+  skipAutoRefresh?: boolean;
 }
 
 export const useEventsCatalog = (
   initialEvents: ArtEvent[] = [],
   options: UseEventsCatalogOptions = {},
 ) => {
-  const { currentUser = null, onAuthRequired } = options;
+  const { currentUser = null, onAuthRequired, skipAutoRefresh = false } = options;
   const { notify } = useNotice();
   const [events, setEvents] = useState<ArtEvent[]>(initialEvents);
   const [isLoading, setIsLoading] = useState(initialEvents.length === 0);
@@ -60,9 +61,9 @@ export const useEventsCatalog = (
   };
 
   useEffect(() => {
-    if (initialEvents.length > 0) return;
+    if (skipAutoRefresh || initialEvents.length > 0) return;
     void refresh();
-  }, [initialEvents.length]);
+  }, [initialEvents.length, skipAutoRefresh]);
 
   useEffect(() => {
     if (!currentUser) {

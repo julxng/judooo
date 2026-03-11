@@ -1,5 +1,5 @@
 import { EventDetailPage } from '@/features/events/components/EventDetailPage';
-import { getInitialEvents } from '@/features/events/api';
+import { getInitialEventById, getRelatedInitialEvents } from '@/features/events/api';
 
 export default async function EventPage({
   params,
@@ -7,7 +7,16 @@ export default async function EventPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const initialEvents = await getInitialEvents();
+  const initialEvent = await getInitialEventById(id);
+  const initialRelatedEvents = initialEvent?.city
+    ? await getRelatedInitialEvents({ city: initialEvent.city, excludeId: initialEvent.id, limit: 3 })
+    : [];
 
-  return <EventDetailPage eventId={id} initialEvents={initialEvents} />;
+  return (
+    <EventDetailPage
+      eventId={id}
+      initialEvent={initialEvent}
+      initialRelatedEvents={initialRelatedEvents}
+    />
+  );
 }

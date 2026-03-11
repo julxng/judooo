@@ -57,28 +57,28 @@ const aboutPageCopy: Record<
     },
   },
   vi: {
-    kicker: 'Ve chung minh',
+    kicker: 'Về chúng mình',
     title:
-      'judooo dang xay dung ban do nghe thuat cho nhung ai muon viec tim, theo doi va ghe tham nghe thuat Viet Nam tro nen de hon.',
+      'judooo đang xây dựng bản đồ nghệ thuật cho những ai muốn việc tìm, theo dõi và ghé thăm nghệ thuật Việt Nam trở nên dễ hơn.',
     primaryBody:
-      'judooo la du an ban do nghe thuat danh cho cong dong yeu nghe thuat. Chung minh tong hop, gioi thieu va luu tru cac su kien nghe thuat dang dien ra tren khap Viet Nam de viec kham pha bot mat cong hon.',
+      'judooo là dự án bản đồ nghệ thuật dành cho cộng đồng yêu nghệ thuật. Chúng mình tổng hợp, giới thiệu và lưu trữ các sự kiện nghệ thuật đang diễn ra trên khắp Việt Nam để việc khám phá bớt mất công hơn.',
     secondaryBody:
-      'Muc tieu rat ro rang: giam bot kho khan khi tim thong tin huu ich, dong thoi giup nhieu nguoi ket noi voi nghe si, khong gian va doi song van hoa tai Viet Nam.',
+      'Mục tiêu rất rõ ràng: giảm bớt khó khăn khi tìm thông tin hữu ích, đồng thời giúp nhiều người kết nối với nghệ sĩ, không gian và đời sống văn hóa tại Việt Nam.',
     whatWeDo: {
-      kicker: 'Chung minh lam gi',
-      title: 'Su kien, kham pha va lap lo trinh',
+      kicker: 'Chúng mình làm gì',
+      title: 'Sự kiện, khám phá và lập lộ trình',
       body:
-        'judooo dua trien lam, workshop, talk, performance va dau gia nghe thuat vao mot noi de tim kiem, sau do bien danh sach da luu thanh lo trinh tham quan thuc te.',
+        'judooo đưa triển lãm, workshop, talk, performance và đấu giá nghệ thuật vào một nơi để tìm kiếm, sau đó biến danh sách đã lưu thành lộ trình tham quan thực tế.',
     },
     whyItMatters: {
-      kicker: 'Vi sao quan trong',
-      title: 'Cau noi vao nghe thuat Viet Nam',
+      kicker: 'Vì sao quan trọng',
+      title: 'Cầu nối vào nghệ thuật Việt Nam',
       body:
-        'Nen tang duoc thiet ke cho nhung nguoi yeu nghe thuat nhung khong phai luc nao cung biet can tim o dau, len lich the nao hay nen theo doi khong gian nao.',
+        'Nền tảng được thiết kế cho những người yêu nghệ thuật nhưng không phải lúc nào cũng biết cần tìm ở đâu, lên lịch thế nào hay nên theo dõi không gian nào.',
     },
     contact: {
-      kicker: 'Lien he',
-      title: 'Giu lien lac',
+      kicker: 'Liên hệ',
+      title: 'Giữ liên lạc',
     },
   },
 };

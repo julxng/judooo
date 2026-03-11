@@ -23,8 +23,8 @@ export const MarketplaceFilters = ({
   onSaleTypeChange,
   onPriceFilterChange,
 }: MarketplaceFiltersProps) => (
-  <div className="surface-toolbar">
-    <div className="surface-toolbar__row flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+  <div className="grid gap-3 rounded-lg border border-border bg-card p-4">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
       <div className="relative w-full lg:max-w-md">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -38,7 +38,7 @@ export const MarketplaceFilters = ({
         />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+      <div className="flex flex-col gap-3 sm:flex-row lg:ml-auto">
         <Select
           value={saleTypeFilter}
           onChange={(event) => onSaleTypeChange(event.target.value as ArtworkSaleFilter)}
@@ -61,7 +61,7 @@ export const MarketplaceFilters = ({
       </div>
     </div>
 
-    <div className="surface-toolbar__tabs">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <Badge tone="accent">
         {resultCount} {resultCount === 1 ? 'work' : 'works'}
       </Badge>

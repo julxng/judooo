@@ -1,18 +1,18 @@
-import { getInitialEvents } from '@/features/events/api';
-import { MarketplaceHomePage } from '@/features/marketplace/components/MarketplaceHomePage';
+import { MarketplaceCollectionPage } from '@/features/marketplace/components/MarketplaceCollectionPage';
 import { getInitialArtworks } from '@/features/marketplace/api';
 
-export default async function MarketplaceRoute() {
-  const [initialEvents, initialArtworks] = await Promise.all([
-    getInitialEvents(),
-    getInitialArtworks(24),
-  ]);
+export default async function MarketplaceRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string }>;
+}) {
+  const params = await searchParams;
+  const initialArtworks = await getInitialArtworks();
 
   return (
-    <MarketplaceHomePage
-      initialEvents={initialEvents}
+    <MarketplaceCollectionPage
       initialArtworks={initialArtworks}
-      artworkLimit={24}
+      initialSearch={params.search || null}
     />
   );
 }

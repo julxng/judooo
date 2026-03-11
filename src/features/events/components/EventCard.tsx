@@ -3,6 +3,7 @@ import { useLanguage } from '@/app/providers';
 import { Badge, Card } from '@/components/ui';
 import { formatDateRange } from '@/lib/date';
 import type { ArtEvent } from '../types/event.types';
+import { getEventCity, getEventDescription, getEventTitle } from '../utils/event-utils';
 
 interface EventCardProps {
   event: ArtEvent;
@@ -24,12 +25,12 @@ const eventCardCopy = {
     dateLocale: 'en-US',
   },
   vi: {
-    removeFromRoute: 'Bo khoi lo trinh',
-    saveToRoute: 'Luu vao lo trinh',
-    emptyDescription: 'Chua co mo ta. Mo su kien de xem them thong tin.',
-    free: 'Mien phi',
-    virtual: 'Truc tuyen',
-    viewEvent: 'Xem su kien',
+    removeFromRoute: 'Bỏ khỏi lộ trình',
+    saveToRoute: 'Lưu vào lộ trình',
+    emptyDescription: 'Chưa có mô tả. Mở sự kiện để xem thêm thông tin.',
+    free: 'Miễn phí',
+    virtual: 'Trực tuyến',
+    viewEvent: 'Xem sự kiện',
     dateLocale: 'vi-VN',
   },
 } as const;
@@ -43,14 +44,8 @@ export const EventCard = ({ event, isSaved = false, onOpen, onToggleSave }: Even
       .map((item) => item.url);
     return Array.from(new Set([event.imageUrl, ...mediaImages, fallbackImage].filter(Boolean)));
   }, [event.imageUrl, event.media]);
-  const eventTitle =
-    language === 'vi'
-      ? event.name_vie || event.name_en || event.title
-      : event.name_en || event.name_vie || event.title;
-  const eventDescription =
-    language === 'vi'
-      ? event.description_vie || event.description_en || event.description
-      : event.description_en || event.description_vie || event.description;
+  const eventTitle = getEventTitle(event, language);
+  const eventDescription = getEventDescription(event, language);
 
   const [imageIndex, setImageIndex] = useState(0);
   const activeImage = imageCandidates[imageIndex] || fallbackImage;
@@ -103,7 +98,7 @@ export const EventCard = ({ event, isSaved = false, onOpen, onToggleSave }: Even
         </div>
         <div className="event-card__body">
           <div className="event-card__meta">
-            <span>{event.city || event.location}</span>
+            <span>{getEventCity(event, language) || event.location}</span>
             <span>{formatDateRange(event.startDate, event.endDate, copy.dateLocale)}</span>
           </div>
           <h3>{eventTitle}</h3>

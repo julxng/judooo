@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ExternalLink, MapPinned, Share2 } from 'lucide-react';
-import { useAuth } from '@/app/providers';
+import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +16,9 @@ import {
   buildGoogleMapsUrl,
   getEventChips,
   getEventDescription,
+  getEventDistrict,
+  getEventAddress,
+  getEventCity,
   getEventTitle,
   isApprovedEvent,
 } from '../utils/event-utils';
@@ -23,13 +27,37 @@ import type { ArtEvent } from '../types/event.types';
 
 interface EventDetailPageProps {
   eventId: string;
-  initialEvents?: ArtEvent[];
+  initialEvent?: ArtEvent | null;
+  initialRelatedEvents?: ArtEvent[];
 }
 
-export const EventDetailPage = ({ eventId, initialEvents = [] }: EventDetailPageProps) => {
+export const EventDetailPage = ({
+  eventId,
+  initialEvent = null,
+  initialRelatedEvents = [],
+}: EventDetailPageProps) => {
+  const router = useRouter();
   const { currentUser, openAuthDialog } = useAuth();
+  const { language } = useLanguage();
+  const initialEvents = useMemo(
+    () =>
+      [initialEvent, ...initialRelatedEvents].filter(
+        (event, index, items): event is ArtEvent => {
+          if (!event) {
+            return false;
+          }
+
+          return items.findIndex((candidate) => candidate?.id === event.id) === index;
+        },
+      ),
+    [initialEvent, initialRelatedEvents],
+  );
   const { events, isLoading, savedEventIds, routeEventIds, toggleSavedEvent, toggleRouteEvent } =
-    useEventsCatalog(initialEvents, { currentUser, onAuthRequired: openAuthDialog });
+    useEventsCatalog(initialEvents, {
+      currentUser,
+      onAuthRequired: openAuthDialog,
+      skipAutoRefresh: true,
+    });
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
 
   const event = useMemo(
@@ -61,8 +89,8 @@ export const EventDetailPage = ({ eventId, initialEvents = [] }: EventDetailPage
     if (!event) return;
 
     const shareData = {
-      title: getEventTitle(event),
-      text: getEventDescription(event),
+      title: getEventTitle(event, language),
+      text: getEventDescription(event, language),
       url: window.location.href,
     };
 
@@ -117,7 +145,7 @@ export const EventDetailPage = ({ eventId, initialEvents = [] }: EventDetailPage
               ) : (
                 <img
                   src={activeMedia?.url || event.imageUrl}
-                  alt={getEventTitle(event)}
+                  alt={getEventTitle(event, language)}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
               )}
@@ -136,7 +164,7 @@ export const EventDetailPage = ({ eventId, initialEvents = [] }: EventDetailPage
                         Video
                       </div>
                     ) : (
-                      <img src={item.url} alt={getEventTitle(event)} className="h-20 w-28 object-cover" />
+                      <img src={item.url} alt={getEventTitle(event, language)} className="h-20 w-28 object-cover" />
                     )}
                   </button>
                 ))}
@@ -147,8 +175,8 @@ export const EventDetailPage = ({ eventId, initialEvents = [] }: EventDetailPage
           <Card className="p-8">
             <div className="space-y-4">
               <Badge tone="accent">{event.event_type || event.category}</Badge>
-              <h1 className="section-heading">{getEventTitle(event)}</h1>
-              <p className="text-sm leading-7 text-muted-foreground">{getEventDescription(event)}</p>
+              <h1 className="section-heading">{getEventTitle(event, language)}</h1>
+              <p className="text-sm leading-7 text-muted-foreground">{getEventDescription(event, language)}</p>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -162,7 +190,7 @@ export const EventDetailPage = ({ eventId, initialEvents = [] }: EventDetailPage
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Location
                 </p>
-                <p className="mt-2 text-sm font-medium">{event.address || event.location}</p>
+                <p className="mt-2 text-sm font-medium">{getEventAddress(event, language)}</p>
               </Card>
             </div>
 
@@ -201,12 +229,12 @@ export const EventDetailPage = ({ eventId, initialEvents = [] }: EventDetailPage
 
             <div className="mt-6 space-y-4 border-t border-border pt-6">
               <div className="grid gap-3 text-sm text-muted-foreground">
-                <p>City: <span className="font-medium text-foreground">{event.city || 'Updating'}</span></p>
-                <p>District: <span className="font-medium text-foreground">{event.district || 'Updating'}</span></p>
+                <p>City: <span className="font-medium text-foreground">{getEventCity(event, language) || 'Updating'}</span></p>
+                <p>District: <span className="font-medium text-foreground">{getEventDistrict(event, language) || 'Updating'}</span></p>
                 <p>Price: <span className="font-medium text-foreground">{event.is_free ? 'Free' : event.price ? `${event.price.toLocaleString()} VND` : 'Contact organizer'}</span></p>
               </div>
               <div className="flex flex-wrap gap-2">
-                {getEventChips(event).map((chip) => (
+                {getEventChips(event, language).map((chip) => (
                   <Badge key={chip}>{chip}</Badge>
                 ))}
               </div>
@@ -231,9 +259,7 @@ export const EventDetailPage = ({ eventId, initialEvents = [] }: EventDetailPage
                   key={relatedEvent.id}
                   event={relatedEvent}
                   isSaved={savedEventIds.includes(relatedEvent.id)}
-                  onOpen={() => {
-                    window.location.href = `/events/${relatedEvent.id}`;
-                  }}
+                  onOpen={() => router.push(`/events/${relatedEvent.id}`)}
                   onToggleSave={() => toggleSavedEvent(relatedEvent.id)}
                 />
               ))}
