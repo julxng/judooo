@@ -5,13 +5,14 @@ import { getInitialArtworks } from '@/features/marketplace/api';
 export default async function Home() {
   const [initialEvents, initialArtworks] = await Promise.all([
     getInitialEvents(),
-    getInitialArtworks(),
+    getInitialArtworks(12),
   ]);
 
   return (
     <MarketplaceHomePage
       initialEvents={initialEvents}
       initialArtworks={initialArtworks}
+      artworkLimit={12}
     />
   );
 }

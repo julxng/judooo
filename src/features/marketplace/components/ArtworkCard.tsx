@@ -31,6 +31,7 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
           src={artwork.imageUrl}
           alt={artwork.title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+          loading="lazy"
         />
 
         <div className="absolute left-3 top-3 flex gap-2">

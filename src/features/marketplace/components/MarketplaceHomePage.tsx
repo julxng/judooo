@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, CalendarDays, ShieldCheck } from 'lucide-react';
 import { useAuth, useLanguage } from '@/app/providers';
 import { useNotice } from '@/app/providers/NoticeProvider';
@@ -31,6 +32,7 @@ const isApprovedArtwork = (artwork: Artwork) =>
 interface MarketplaceHomePageProps {
   initialEvents?: ArtEvent[];
   initialArtworks?: Artwork[];
+  artworkLimit?: number;
 }
 
 const marketplaceHomeCopy: Record<
@@ -140,7 +142,9 @@ const marketplaceHomeCopy: Record<
 export const MarketplaceHomePage = ({
   initialEvents = [],
   initialArtworks = [],
+  artworkLimit,
 }: MarketplaceHomePageProps) => {
+  const router = useRouter();
   const { currentUser, openAuthDialog } = useAuth();
   const { language } = useLanguage();
   const { notify } = useNotice();
@@ -154,15 +158,21 @@ export const MarketplaceHomePage = ({
   }, [initialArtworks]);
 
   useEffect(() => {
+    if (initialArtworks.length > 0) return;
+
     const loadArtworks = async () => {
       const nextArtworks = await api.getArtworks();
       setArtworks(nextArtworks);
     };
 
     void loadArtworks();
-  }, []);
+  }, [initialArtworks.length]);
 
   const publicArtworks = useMemo(() => artworks.filter(isApprovedArtwork), [artworks]);
+  const displayedArtworks = useMemo(
+    () => (typeof artworkLimit === 'number' ? publicArtworks.slice(0, artworkLimit) : publicArtworks),
+    [artworkLimit, publicArtworks],
+  );
   const featuredArtwork = publicArtworks[0] || null;
   const currentEvents = useMemo(
     () => initialEvents.filter((event) => isApprovedEvent(event) && isCurrentEvent(event)),
@@ -309,7 +319,7 @@ export const MarketplaceHomePage = ({
           </div>
 
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {publicArtworks.map((artwork) => (
+            {displayedArtworks.map((artwork) => (
               <ArtworkCard
                 key={artwork.id}
                 artwork={artwork}
@@ -353,7 +363,7 @@ export const MarketplaceHomePage = ({
                   key={event.id}
                   event={event}
                   onOpen={() => {
-                    window.location.href = `/events/${event.id}`;
+                    router.push(`/events/${event.id}`);
                   }}
                 />
               ))}

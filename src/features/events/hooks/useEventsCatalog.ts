@@ -60,8 +60,9 @@ export const useEventsCatalog = (
   };
 
   useEffect(() => {
+    if (initialEvents.length > 0) return;
     void refresh();
-  }, []);
+  }, [initialEvents.length]);
 
   useEffect(() => {
     if (!currentUser) {
