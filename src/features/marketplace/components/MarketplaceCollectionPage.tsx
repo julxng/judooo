@@ -16,7 +16,7 @@ import type {
   ArtworkPriceFilter,
   ArtworkSaleFilter,
 } from '../types/artwork.types';
-import { ArtworkDetailModal } from './ArtworkDetailModal';
+import { ArtworkDrawer } from './ArtworkDrawer';
 import { MarketplaceFilters } from './MarketplaceFilters';
 import { MarketplaceGrid } from './MarketplaceGrid';
 import { getArtworkTitle } from '../utils/artwork-utils';
@@ -139,9 +139,11 @@ export const MarketplaceCollectionPage = ({
       </Container>
 
       {activeArtwork ? (
-        <ArtworkDetailModal
+        <ArtworkDrawer
           artwork={activeArtwork}
+          artworks={filteredArtworks}
           onClose={() => setActiveArtwork(null)}
+          onNavigate={setActiveArtwork}
           onAction={() => {
             if (!currentUser) {
               openAuthDialog();

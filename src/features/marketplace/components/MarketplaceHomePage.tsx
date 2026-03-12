@@ -24,7 +24,7 @@ import {
 import type { ArtEvent } from '@/features/events/types/event.types';
 import type { Artwork } from '../types/artwork.types';
 import { ArtworkCard } from './ArtworkCard';
-import { ArtworkDetailModal } from './ArtworkDetailModal';
+import { ArtworkDrawer } from './ArtworkDrawer';
 import {
   getArtworkDescription,
   getArtworkLocation,
@@ -380,9 +380,11 @@ export const MarketplaceHomePage = ({
       </Container>
 
       {activeArtwork ? (
-        <ArtworkDetailModal
+        <ArtworkDrawer
           artwork={activeArtwork}
+          artworks={displayedArtworks}
           onClose={() => setActiveArtwork(null)}
+          onNavigate={setActiveArtwork}
           onAction={() => {
             if (!currentUser) {
               openAuthDialog();
