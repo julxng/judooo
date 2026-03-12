@@ -1,12 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import { useLanguage } from '@/app/providers';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Grid } from '@/components/layout/Grid';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { Artwork } from '../types/artwork.types';
@@ -37,6 +35,7 @@ export const ArtworkDrawer = ({
   onNavigate,
 }: ArtworkDrawerProps) => {
   const { language } = useLanguage();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const gallery = useMemo(() => {
     const base =
@@ -61,10 +60,13 @@ export const ArtworkDrawer = ({
     if (hasNext) onNavigate(artworks[currentIndex + 1]);
   }, [hasNext, currentIndex, artworks, onNavigate]);
 
+  // Reset image + scroll when artwork changes
   useEffect(() => {
     setActiveImage(gallery[0] || artwork.imageUrl);
+    scrollRef.current?.scrollTo({ top: 0 });
   }, [artwork.id, artwork.imageUrl, gallery]);
 
+  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -72,6 +74,7 @@ export const ArtworkDrawer = ({
     };
   }, []);
 
+  // Keyboard nav
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -83,9 +86,14 @@ export const ArtworkDrawer = ({
   }, [onClose, goPrev, goNext]);
 
   const positionLabel =
-    artworks.length > 0
-      ? `${currentIndex + 1} / ${artworks.length}`
-      : '';
+    artworks.length > 0 ? `${currentIndex + 1} / ${artworks.length}` : '';
+
+  const title = getArtworkTitle(artwork, language);
+  const description = getArtworkDescription(artwork, language);
+  const story = getArtworkStory(artwork, language);
+  const provenance = getArtworkProvenance(artwork, language);
+  const authenticity = getArtworkAuthenticity(artwork, language);
+  const condition = getArtworkConditionReport(artwork, language);
 
   return (
     <div className="artwork-drawer">
@@ -96,8 +104,13 @@ export const ArtworkDrawer = ({
         aria-label="Close artwork detail"
       />
 
-      <div className="artwork-drawer__panel" role="dialog" aria-modal="true" aria-label={getArtworkTitle(artwork, language)}>
-        {/* Header */}
+      <div
+        className="artwork-drawer__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        {/* Header bar */}
         <div className="artwork-drawer__header">
           <div className="artwork-drawer__nav">
             <button
@@ -110,7 +123,7 @@ export const ArtworkDrawer = ({
               disabled={!hasPrev}
               aria-label="Previous artwork"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
             </button>
             <span className="artwork-drawer__position">{positionLabel}</span>
             <button
@@ -123,145 +136,175 @@ export const ArtworkDrawer = ({
               disabled={!hasNext}
               aria-label="Next artwork"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </button>
           </div>
+
           <button
             type="button"
             className="artwork-drawer__close"
             onClick={onClose}
             aria-label="Close"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="artwork-drawer__body">
-          {/* Hero image */}
-          <div className="artwork-drawer__hero">
-            <img
-              src={activeImage}
-              alt={getArtworkTitle(artwork, language)}
-            />
-          </div>
+        {/* Two-column scrollable body */}
+        <div className="artwork-drawer__body" ref={scrollRef}>
+          <div className="artwork-drawer__layout">
+            {/* Left: gallery */}
+            <div className="artwork-drawer__gallery">
+              <div className="artwork-drawer__hero">
+                <img src={activeImage} alt={title} />
+              </div>
 
-          {/* Thumbnail strip */}
-          {gallery.length > 1 ? (
-            <div className="artwork-drawer__thumbs">
-              {gallery.slice(0, 8).map((image) => (
-                <button
-                  key={image}
-                  type="button"
-                  className={cn(
-                    'artwork-drawer__thumb',
-                    activeImage === image && 'artwork-drawer__thumb--active',
-                  )}
-                  onClick={() => setActiveImage(image)}
-                >
-                  <img src={image} alt={getArtworkTitle(artwork, language)} />
-                </button>
-              ))}
+              {gallery.length > 1 ? (
+                <div className="artwork-drawer__thumbs">
+                  {gallery.slice(0, 8).map((image) => (
+                    <button
+                      key={image}
+                      type="button"
+                      className={cn(
+                        'artwork-drawer__thumb',
+                        activeImage === image && 'artwork-drawer__thumb--active',
+                      )}
+                      onClick={() => setActiveImage(image)}
+                    >
+                      <img src={image} alt={title} />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
-          ) : null}
 
-          {/* Title + artist */}
-          <div className="artwork-drawer__title-block">
-            <Badge tone="accent">{isAuction ? 'Auction Lot' : 'Fixed Price'}</Badge>
-            <h2 className="artwork-drawer__title">
-              {getArtworkTitle(artwork, language)}
-            </h2>
-            <p className="artwork-drawer__artist">{artwork.artist}</p>
-          </div>
+            {/* Right: details */}
+            <div className="artwork-drawer__details">
+              {/* Title block */}
+              <div className="artwork-drawer__title-block">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone="accent">
+                    {isAuction ? 'Auction Lot' : 'Fixed Price'}
+                  </Badge>
+                  {!artwork.available ? <Badge tone="default">Collected</Badge> : null}
+                </div>
+                <h2 className="artwork-drawer__title">{title}</h2>
+                <p className="artwork-drawer__artist">{artwork.artist}</p>
+              </div>
 
-          {/* Info cards */}
-          <Grid columns={2} gap={12}>
-            <Card className="detail-panel">
-              <span className="artwork-card__label">
-                {isAuction ? 'Current Bid' : 'Price'}
-              </span>
-              <strong>
-                {formatCurrency(
-                  isAuction ? artwork.currentBid || artwork.price : artwork.price,
-                )}
-              </strong>
-            </Card>
-            <Card className="detail-panel">
-              <span className="artwork-card__label">Medium</span>
-              <strong>{getArtworkMedium(artwork, language) || 'N/A'}</strong>
-            </Card>
-            <Card className="detail-panel">
-              <span className="artwork-card__label">Dimensions</span>
-              <strong>{artwork.dimensions || 'N/A'}</strong>
-            </Card>
-            <Card className="detail-panel">
-              <span className="artwork-card__label">Location</span>
-              <strong>
-                {getArtworkLocation(artwork, language) || 'Vietnam'}
-              </strong>
-            </Card>
-          </Grid>
+              {/* Key facts */}
+              <div className="artwork-drawer__facts">
+                <div className="artwork-drawer__fact">
+                  <span className="artwork-drawer__fact-label">
+                    {isAuction ? 'Current Bid' : 'Price'}
+                  </span>
+                  <strong className="artwork-drawer__fact-value">
+                    {formatCurrency(
+                      isAuction
+                        ? artwork.currentBid || artwork.price
+                        : artwork.price,
+                    )}
+                  </strong>
+                </div>
+                <div className="artwork-drawer__fact">
+                  <span className="artwork-drawer__fact-label">Medium</span>
+                  <strong className="artwork-drawer__fact-value">
+                    {getArtworkMedium(artwork, language) || 'N/A'}
+                  </strong>
+                </div>
+                <div className="artwork-drawer__fact">
+                  <span className="artwork-drawer__fact-label">Dimensions</span>
+                  <strong className="artwork-drawer__fact-value">
+                    {artwork.dimensions || 'Unknown'}
+                  </strong>
+                </div>
+                <div className="artwork-drawer__fact">
+                  <span className="artwork-drawer__fact-label">Location</span>
+                  <strong className="artwork-drawer__fact-value">
+                    {getArtworkLocation(artwork, language) || 'Vietnam'}
+                  </strong>
+                </div>
+                {isAuction && artwork.bidCount ? (
+                  <div className="artwork-drawer__fact">
+                    <span className="artwork-drawer__fact-label">Bids</span>
+                    <strong className="artwork-drawer__fact-value">
+                      {artwork.bidCount}
+                    </strong>
+                  </div>
+                ) : null}
+                {artwork.yearCreated ? (
+                  <div className="artwork-drawer__fact">
+                    <span className="artwork-drawer__fact-label">Year</span>
+                    <strong className="artwork-drawer__fact-value">
+                      {artwork.yearCreated}
+                    </strong>
+                  </div>
+                ) : null}
+              </div>
 
-          {/* Copy sections */}
-          <div className="detail-copy">
-            {getArtworkDescription(artwork, language) ? (
-              <div>
-                <p className="eyebrow">Description</p>
-                <p>{getArtworkDescription(artwork, language)}</p>
+              {/* Actions */}
+              <div className="artwork-drawer__actions">
+                {artwork.available ? (
+                  <Button
+                    variant={isAuction ? 'primary' : 'default'}
+                    className="w-full"
+                    onClick={() => onAction(artwork)}
+                  >
+                    {isAuction ? 'Place Bid' : 'Inquire'}
+                  </Button>
+                ) : null}
+                {artwork.sourceItemUrl ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() =>
+                      window.open(
+                        artwork.sourceItemUrl,
+                        '_blank',
+                        'noopener,noreferrer',
+                      )
+                    }
+                  >
+                    View Source
+                    <ExternalLink size={14} />
+                  </Button>
+                ) : null}
               </div>
-            ) : null}
-            {getArtworkStory(artwork, language) ? (
-              <div>
-                <p className="eyebrow">Story</p>
-                <p>{getArtworkStory(artwork, language)}</p>
-              </div>
-            ) : null}
-            {getArtworkProvenance(artwork, language) ? (
-              <div>
-                <p className="eyebrow">Provenance</p>
-                <p>{getArtworkProvenance(artwork, language)}</p>
-              </div>
-            ) : null}
-            {getArtworkAuthenticity(artwork, language) ? (
-              <div>
-                <p className="eyebrow">Authenticity</p>
-                <p>{getArtworkAuthenticity(artwork, language)}</p>
-              </div>
-            ) : null}
-            {getArtworkConditionReport(artwork, language) ? (
-              <div>
-                <p className="eyebrow">Condition</p>
-                <p>{getArtworkConditionReport(artwork, language)}</p>
-              </div>
-            ) : null}
-          </div>
 
-          {/* Actions */}
-          <div className="artwork-drawer__actions">
-            {artwork.available ? (
-              <Button
-                variant={isAuction ? 'primary' : 'secondary'}
-                className="w-full"
-                onClick={() => onAction(artwork)}
-              >
-                {isAuction ? 'Place Bid' : 'Auto Inquire'}
-              </Button>
-            ) : null}
-            {artwork.sourceItemUrl ? (
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() =>
-                  window.open(
-                    artwork.sourceItemUrl,
-                    '_blank',
-                    'noopener,noreferrer',
-                  )
-                }
-              >
-                View Source
-              </Button>
-            ) : null}
+              {/* Prose sections */}
+              <div className="artwork-drawer__prose">
+                {description ? (
+                  <div className="artwork-drawer__section">
+                    <h3 className="artwork-drawer__section-label">Description</h3>
+                    <p>{description}</p>
+                  </div>
+                ) : null}
+                {story ? (
+                  <div className="artwork-drawer__section">
+                    <h3 className="artwork-drawer__section-label">Story</h3>
+                    <p>{story}</p>
+                  </div>
+                ) : null}
+                {provenance ? (
+                  <div className="artwork-drawer__section">
+                    <h3 className="artwork-drawer__section-label">Provenance</h3>
+                    <p>{provenance}</p>
+                  </div>
+                ) : null}
+                {authenticity ? (
+                  <div className="artwork-drawer__section">
+                    <h3 className="artwork-drawer__section-label">Authenticity</h3>
+                    <p>{authenticity}</p>
+                  </div>
+                ) : null}
+                {condition ? (
+                  <div className="artwork-drawer__section">
+                    <h3 className="artwork-drawer__section-label">Condition</h3>
+                    <p>{condition}</p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
       </div>
