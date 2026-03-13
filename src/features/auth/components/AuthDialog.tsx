@@ -8,11 +8,10 @@ import { getRoleLabel } from '../utils/roles';
 
 export type AuthMode = 'signin' | 'signup' | 'reset';
 
-interface AuthDialogProps {
+type AuthDialogProps = {
   mode?: AuthMode;
   onClose: () => void;
   onLoginGoogle: () => void;
-  onLoginTestAdmin: () => void;
   onLoginEmailPassword: (email: string, password: string) => Promise<void>;
   onSignUpEmailPassword: (
     name: string,
@@ -21,13 +20,12 @@ interface AuthDialogProps {
     role: SignUpRole,
   ) => Promise<void>;
   onResetPassword: (email: string) => Promise<void>;
-}
+};
 
 export const AuthDialog = ({
   mode: initialMode = 'signin',
   onClose,
   onLoginGoogle,
-  onLoginTestAdmin,
   onLoginEmailPassword,
   onSignUpEmailPassword,
   onResetPassword,
@@ -45,9 +43,18 @@ export const AuthDialog = ({
     setMode(initialMode);
   }, [initialMode]);
 
+  useEffect(() => {
+    setPassword('');
+    setConfirmPassword('');
+  }, [mode]);
+
   const validateEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
 
   const handleSubmit = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     const trimmedEmail = email.trim();
     const trimmedName = name.trim();
 
@@ -58,8 +65,11 @@ export const AuthDialog = ({
 
     if (mode === 'reset') {
       setIsSubmitting(true);
-      await onResetPassword(trimmedEmail);
-      setIsSubmitting(false);
+      try {
+        await onResetPassword(trimmedEmail);
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -80,38 +90,57 @@ export const AuthDialog = ({
     }
 
     setIsSubmitting(true);
-    if (mode === 'signin') {
-      await onLoginEmailPassword(trimmedEmail, password);
-    } else {
-      await onSignUpEmailPassword(trimmedName, trimmedEmail, password, signUpRole);
+    try {
+      if (mode === 'signin') {
+        await onLoginEmailPassword(trimmedEmail, password);
+      } else {
+        await onSignUpEmailPassword(trimmedName, trimmedEmail, password, signUpRole);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (
     <Modal title="Judooo Network" onClose={onClose} size="sm">
       <div className="auth-dialog">
-        <div className="auth-dialog__modes">
+        <p className="auth-dialog__intro">
+          {mode === 'signin'
+            ? 'Sign in to save routes, follow events, and unlock creator tools.'
+            : mode === 'signup'
+              ? 'Create your account to sync your favorites across devices.'
+              : 'Enter your email to receive a secure reset link.'}
+        </p>
+
+        <div className="auth-dialog__modes" role="tablist" aria-label="Authentication mode">
           {(['signin', 'signup', 'reset'] as const).map((value) => (
             <button
               key={value}
               type="button"
-              className={`auth-dialog__mode ${mode === value ? 'auth-dialog__mode--active' : ''}`}
+              className={cn('auth-dialog__mode', mode === value ? 'auth-dialog__mode--active' : null)}
+              role="tab"
+              aria-selected={mode === value}
               onClick={() => setMode(value)}
             >
-              {value}
+              {value === 'signin' ? 'Sign in' : value === 'signup' ? 'Sign up' : 'Reset'}
             </button>
           ))}
         </div>
 
-        <div className="auth-dialog__fields">
+        <form
+          className="auth-dialog__fields"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSubmit();
+          }}
+        >
           {mode === 'signup' ? (
             <>
               <Field label="Full Name">
                 <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
               </Field>
 
-              <div className="space-y-3">
+              <div className="auth-dialog__role-options">
                 <p className="text-sm font-medium text-foreground">Account type</p>
                 <div className="grid gap-2">
                   {([
@@ -135,10 +164,10 @@ export const AuthDialog = ({
                       key={option.id}
                       type="button"
                       className={cn(
-                        'border px-4 py-3 text-left transition-colors',
+                        'auth-dialog__role-option',
                         signUpRole === option.id
-                          ? 'border-foreground bg-secondary'
-                          : 'border-border bg-background hover:border-foreground/60 hover:bg-secondary',
+                          ? 'auth-dialog__role-option--active'
+                          : 'auth-dialog__role-option--idle',
                       )}
                       onClick={() => setSignUpRole(option.id)}
                     >
@@ -181,25 +210,21 @@ export const AuthDialog = ({
               />
             </Field>
           ) : null}
-        </div>
-
-        <div className="auth-dialog__actions">
-          <Button variant="default" className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting
-              ? 'Working...'
-              : mode === 'signin'
-                ? 'Sign in with Email'
-                : mode === 'signup'
-                  ? 'Create account'
-                  : 'Send reset link'}
-          </Button>
-          <Button variant="outline" className="w-full" onClick={onLoginGoogle}>
-            Continue with Google
-          </Button>
-          <Button variant="secondary" className="w-full" onClick={onLoginTestAdmin}>
-            Continue as Test Admin
-          </Button>
-        </div>
+          <div className="auth-dialog__actions">
+            <Button variant="default" className="w-full" type="submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? 'Working...'
+                : mode === 'signin'
+                  ? 'Sign in with Email'
+                  : mode === 'signup'
+                    ? 'Create account'
+                    : 'Send reset link'}
+            </Button>
+            <Button variant="outline" className="w-full" type="button" onClick={onLoginGoogle} disabled={isSubmitting}>
+              Continue with Google
+            </Button>
+          </div>
+        </form>
       </div>
     </Modal>
   );

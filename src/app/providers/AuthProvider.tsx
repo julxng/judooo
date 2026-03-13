@@ -20,7 +20,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
           mode={auth.authDialogMode}
           onClose={auth.closeAuthDialog}
           onLoginGoogle={auth.loginWithGoogle}
-          onLoginTestAdmin={auth.loginTestAdmin}
           onLoginEmailPassword={auth.loginWithPassword}
           onSignUpEmailPassword={auth.signUpWithPassword}
           onResetPassword={auth.resetPassword}

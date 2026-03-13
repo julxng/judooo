@@ -29,7 +29,7 @@ auth/
 
 `useAuthController` manages the full auth lifecycle:
 
-1. **Session init**: checks `localStorage` for dev user (`judooo_dev_user`), then Supabase session
+1. **Session init**: checks current Supabase session
 2. **Auth state listener**: subscribes to `supabase.auth.onAuthStateChange`
 3. **Profile sync**: on auth, fetches/creates profile via `api.getProfile()` + `api.syncUser()`
 4. **URL-driven auth**: reads `?auth=signin|signup|reset` and `?redirectTo=` from URL to auto-open dialog
@@ -39,7 +39,6 @@ auth/
 - `loginWithGoogle()` — Supabase OAuth with Google
 - `loginWithPassword(email, password)` — email/password sign-in
 - `signUpWithPassword(name, email, password, role)` — creates account + syncs profile
-- `loginTestAdmin()` — local dev-only admin (persisted in localStorage)
 - `resetPassword(email)` — sends password reset email
 - `logout()` — signs out from Supabase + clears local state
 
@@ -60,5 +59,4 @@ The `AuthProvider` (in `src/app/providers/AuthProvider.tsx`) wraps the app and e
 ## Important patterns
 
 - Supabase may not be configured (no env vars) — all auth methods check for `supabase` before calling and show a warning via `notify()` if missing
-- The dev user (`loginTestAdmin`) bypasses Supabase entirely — useful for local development without Supabase credentials
 - Profile avatar falls back to DiceBear initials API
