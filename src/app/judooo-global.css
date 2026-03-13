@@ -1306,28 +1306,38 @@ img {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  padding: var(--space-3);
+}
+
+.auth-dialog__intro {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
 }
 
 .auth-dialog__modes {
   display: inline-flex;
-  gap: 8px;
-  padding: 0 0 8px;
-  border-bottom: 1px solid var(--color-border-subtle);
+  gap: var(--space-2);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
 }
 
 .auth-dialog__mode {
   border: 0;
   background: transparent;
-  padding: 10px 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-xs);
   cursor: pointer;
-  text-transform: capitalize;
   color: var(--color-text-secondary);
-  border-bottom: 1px solid transparent;
+  transition: background-color var(--motion-fast) var(--motion-easing), color var(--motion-fast) var(--motion-easing);
 }
 
 .auth-dialog__mode--active {
   color: var(--color-text-primary);
-  border-bottom-color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-soft);
 }
 
 .auth-dialog__fields,
@@ -1335,6 +1345,34 @@ img {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.auth-dialog__role-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.auth-dialog__role-option {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  text-align: left;
+  transition: border-color var(--motion-fast) var(--motion-easing), background-color var(--motion-fast) var(--motion-easing);
+}
+
+.auth-dialog__role-option--active {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+}
+
+.auth-dialog__role-option--idle {
+  background: var(--color-surface-raised);
+}
+
+.auth-dialog__role-option--idle:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
 }
 
 .admin-actions {

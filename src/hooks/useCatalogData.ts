@@ -65,12 +65,6 @@ export const useCatalogData = (currentUser: User | null) => {
       notify('Sign in to continue.', 'warning');
       return null;
     }
-
-    if (currentUser.id === 'test-admin') {
-      notify('Test Admin is local-only and cannot write to Supabase. Sign in with Email/Google.', 'warning');
-      return null;
-    }
-
     return currentUser;
   };
 
