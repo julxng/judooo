@@ -6,7 +6,6 @@ import { api } from '@/services/api';
 import { supabase } from '@/services/supabase/client';
 import { useNotice } from '@/app/providers/NoticeProvider';
 
-const DEV_USER_STORAGE_KEY = 'judooo_dev_user';
 const AUTH_QUERY_KEY = 'auth';
 const REDIRECT_QUERY_KEY = 'redirectTo';
 const buildAvatar = (seed: string) =>
@@ -55,18 +54,6 @@ export const useAuthController = () => {
     redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
 
   useEffect(() => {
-    const storedDevUser = localStorage.getItem(DEV_USER_STORAGE_KEY);
-    if (storedDevUser) {
-      try {
-        const parsed = JSON.parse(storedDevUser) as User;
-        if (parsed?.id && parsed?.role) {
-          setCurrentUser(parsed);
-        }
-      } catch (error) {
-        console.error('Failed to parse local test user', error);
-      }
-    }
-
     if (!supabase) return;
 
     const init = async () => {
@@ -85,7 +72,6 @@ export const useAuthController = () => {
         const user = await mapSessionUser(session.user);
         setCurrentUser(user);
         await api.syncUser(user);
-        localStorage.removeItem(DEV_USER_STORAGE_KEY);
         setIsAuthDialogOpen(false);
       } else {
         setCurrentUser(null);
@@ -135,21 +121,6 @@ export const useAuthController = () => {
     params.delete(REDIRECT_QUERY_KEY);
     const nextQuery = params.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
-  };
-
-  const loginTestAdmin = () => {
-    const testAdminUser: User = {
-      id: 'test-admin',
-      name: 'Admin Preview',
-      email: 'test-admin@local.dev',
-      role: 'admin',
-      avatar: buildAvatar('Admin Preview'),
-    };
-
-    setCurrentUser(testAdminUser);
-    setIsAuthDialogOpen(false);
-    localStorage.setItem(DEV_USER_STORAGE_KEY, JSON.stringify(testAdminUser));
-    notify('Local test admin enabled.', 'success');
   };
 
   const loginWithGoogle = async () => {
@@ -260,7 +231,6 @@ export const useAuthController = () => {
       await supabase.auth.signOut();
     }
 
-    localStorage.removeItem(DEV_USER_STORAGE_KEY);
     setCurrentUser(null);
     notify('Signed out.', 'info');
   };
@@ -272,7 +242,6 @@ export const useAuthController = () => {
     canAccessAdmin: canAccessAdmin(currentUser?.role),
     openAuthDialog,
     closeAuthDialog,
-    loginTestAdmin,
     loginWithGoogle,
     loginWithPassword,
     signUpWithPassword,
