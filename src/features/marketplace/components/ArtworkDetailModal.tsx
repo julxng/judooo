@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/app/providers';
 import { Badge, Button, Card, Modal } from '@/components/ui';
+import { Lightbox } from '@/components/ui/Lightbox';
 import { Grid } from '@/components/layout/Grid';
 import { formatCurrency } from '@/lib/format';
 import type { Artwork } from '../types/artwork.types';
@@ -28,18 +29,27 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
     return Array.from(new Set(base.filter(Boolean)));
   }, [artwork.imageGallery, artwork.imageUrl]);
   const [activeImage, setActiveImage] = useState(gallery[0] || artwork.imageUrl);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const isAuction = artwork.saleType === 'auction';
 
   useEffect(() => {
     setActiveImage(gallery[0] || artwork.imageUrl);
   }, [artwork.id, artwork.imageUrl, gallery]);
 
+  const lightboxIndex = gallery.indexOf(activeImage);
+
   return (
+    <>
     <Modal title={getArtworkTitle(artwork, language)} onClose={onClose} size="xl">
       <div className="artwork-detail">
         <div className="artwork-detail__gallery">
           <div className="artwork-detail__hero">
-            <img src={activeImage} alt={getArtworkTitle(artwork, language)} />
+            <img
+              src={activeImage}
+              alt={getArtworkTitle(artwork, language)}
+              onClick={() => setLightboxOpen(true)}
+              className="cursor-zoom-in"
+            />
           </div>
           {gallery.length > 1 ? (
             <Grid columns={4} gap={12}>
@@ -131,5 +141,15 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
         </div>
       </div>
     </Modal>
+
+    {lightboxOpen ? (
+      <Lightbox
+        images={gallery}
+        initialIndex={lightboxIndex >= 0 ? lightboxIndex : 0}
+        onClose={() => setLightboxOpen(false)}
+        alt={getArtworkTitle(artwork, language)}
+      />
+    ) : null}
+    </>
   );
 };
