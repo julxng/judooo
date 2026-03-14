@@ -1,0 +1,50 @@
+@import "tailwindcss/theme.css" layer(theme) prefix(jd);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(jd);
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --color-judooo-ink: #171311;
+  --color-judooo-smoke: #65584c;
+  --color-judooo-paper: #fffdf9;
+  --color-judooo-canvas: #fbf7f2;
+  --color-judooo-mist: #efe7dc;
+  --color-judooo-stone: #ded3c5;
+  --color-judooo-ember: #f14c23;
+  --color-judooo-ember-deep: #d8431e;
+  --color-judooo-success: #256a45;
+
+  --shadow-judooo-card: 0 18px 40px rgba(23, 19, 17, 0.08);
+  --shadow-judooo-float: 0 28px 70px rgba(23, 19, 17, 0.14);
+  --shadow-judooo-line: 0 0 0 1px rgba(23, 19, 17, 0.1);
+}
+
+.judooo-ds {
+  min-height: 100vh;
+  color: #171311;
+  background:
+    radial-gradient(circle at top left, rgba(241, 76, 35, 0.12), transparent 24%),
+    radial-gradient(circle at top right, rgba(23, 19, 17, 0.05), transparent 20%),
+    linear-gradient(180deg, #fffdf9 0%, #fbf7f2 100%);
+}
+
+.judooo-ds__grid {
+  background-image:
+    linear-gradient(rgba(23, 19, 17, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 19, 17, 0.04) 1px, transparent 1px);
+  background-position: center;
+  background-size: 36px 36px;
+}
+
+.judooo-ds__hero-glow {
+  position: absolute;
+  inset: auto -4rem -6rem auto;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(241, 76, 35, 0.22), rgba(241, 76, 35, 0));
+  filter: blur(12px);
+  pointer-events: none;
+}
