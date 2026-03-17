@@ -193,7 +193,7 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
           </p>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="p-6">
             <p className="section-kicker">Applications</p>
             <p className="mt-3 text-4xl font-semibold">{creatorApplications.length}</p>
@@ -249,7 +249,7 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
             <Card className="p-6 sm:p-8">
               <div className="mb-6">
                 <p className="section-kicker">Pending Event Queue</p>
-                <h2 className="font-display text-[1.9rem] leading-[0.96] tracking-[-0.04em]">Approve or reject submitted events.</h2>
+                <h2 className="section-heading">Approve or reject submitted events.</h2>
               </div>
               <div className="space-y-4">
                 {pendingEvents.length === 0 ? (
@@ -288,7 +288,7 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
             <Card className="p-6 sm:p-8">
               <div className="mb-6">
                 <p className="section-kicker">Pending Artwork Queue</p>
-                <h2 className="font-display text-[1.9rem] leading-[0.96] tracking-[-0.04em]">Approve or reject marketplace submissions.</h2>
+                <h2 className="section-heading">Approve or reject marketplace submissions.</h2>
               </div>
               <div className="space-y-4">
                 {pendingArtworks.length === 0 ? (

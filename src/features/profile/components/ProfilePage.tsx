@@ -84,7 +84,7 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
   return (
     <SiteShell>
       <Container size="xl" className="space-y-8 py-8 sm:py-12">
-        <section className="grid gap-6 lg:grid-cols-[0.68fr_1.32fr]">
+        <section className="grid gap-6 xl:grid-cols-[0.68fr_1.32fr]">
           <Card className="p-8">
             <p className="section-kicker">Profile</p>
             <h1 className="section-heading mt-4">{currentUser.name}</h1>
@@ -121,7 +121,7 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
             {activeTab === 'saved' ? (
               <div className="grid gap-6 lg:grid-cols-2">
                 <Card className="p-6">
-                  <h2 className="font-display text-[1.5rem] leading-[0.98] tracking-[-0.04em]">Current events</h2>
+                  <h2 className="font-display text-[1.3rem] leading-[0.98] tracking-[-0.04em] xl:text-[1.5rem]">Current events</h2>
                   <div className="mt-4 space-y-3">
                     {currentSaved.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
@@ -138,7 +138,7 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
                   </div>
                 </Card>
                 <Card className="p-6">
-                  <h2 className="font-display text-[1.5rem] leading-[0.98] tracking-[-0.04em]">Past events</h2>
+                  <h2 className="font-display text-[1.3rem] leading-[0.98] tracking-[-0.04em] xl:text-[1.5rem]">Past events</h2>
                   <div className="mt-4 space-y-3">
                     {pastSaved.length === 0 ? (
                       <p className="text-sm text-muted-foreground">Past saved events will appear here automatically.</p>
@@ -171,7 +171,7 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
             {activeTab === 'verified' ? (
               <Card className="p-6">
                 <p className="section-kicker">Creator Access</p>
-                <h2 className="mt-4 font-display text-[1.9rem] leading-[0.96] tracking-[-0.04em]">Apply to submit events and artworks.</h2>
+                <h2 className="mt-4 section-heading">Apply to submit events and artworks.</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
                   Collector accounts can browse and save. Artist and gallery manager accounts can submit listings, and verified creators publish without waiting for approval.
                 </p>

@@ -26,7 +26,7 @@
   --motion-base: 220ms;
   --motion-slow: 320ms;
   --motion-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --container-width: 120rem;
+  --container-width: 84rem;
 }
 
 *,

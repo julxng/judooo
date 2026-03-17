@@ -193,10 +193,10 @@ export const MarketplaceHomePage = ({
   return (
     <SiteShell>
       <Container size="xl" className="space-y-16 py-8 md:py-10">
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_20rem]">
           <Card className="overflow-hidden">
             {featuredArtwork ? (
-              <div className="grid lg:grid-cols-[minmax(0,0.94fr)_minmax(20rem,0.78fr)]">
+              <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)]">
                 <button
                   type="button"
                   className="group relative min-h-[24rem] overflow-hidden bg-secondary text-left"
@@ -209,7 +209,7 @@ export const MarketplaceHomePage = ({
                   />
                 </button>
 
-                <div className="flex flex-col justify-between gap-8 border-t border-border p-6 sm:p-8 lg:border-l lg:border-t-0">
+                <div className="flex flex-col justify-between gap-8 border-t border-border p-6 sm:p-8 xl:border-l xl:border-t-0">
                   <div className="space-y-5">
                     <p className="section-kicker">{copy.featuredWork}</p>
                     <div className="space-y-3">
@@ -232,7 +232,7 @@ export const MarketplaceHomePage = ({
                   <div className="space-y-5 border-t border-border pt-5">
                     <div>
                       <p className="text-sm text-muted-foreground">{featuredArtwork.artist}</p>
-                      <h2 className="mt-2 font-display text-[2rem] leading-[0.94] tracking-[-0.045em] text-foreground sm:text-[2.4rem]">
+                      <h2 className="mt-2 font-display text-[1.6rem] leading-[0.94] tracking-[-0.045em] text-foreground sm:text-[1.8rem] xl:text-[2.1rem]">
                         {getArtworkTitle(featuredArtwork, language)}
                       </h2>
                       <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
@@ -245,7 +245,7 @@ export const MarketplaceHomePage = ({
                         <span className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                           {featuredArtwork.saleType === 'auction' ? copy.currentBid : copy.price}
                         </span>
-                        <p className="mt-2 font-display text-[1.8rem] tracking-[-0.04em] text-foreground">
+                        <p className="mt-2 font-display text-[1.4rem] tracking-[-0.04em] text-foreground xl:text-[1.6rem]">
                           {formatCurrency(
                             featuredArtwork.saleType === 'auction'
                               ? featuredArtwork.currentBid || featuredArtwork.price
@@ -325,7 +325,7 @@ export const MarketplaceHomePage = ({
             </Link>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {displayedArtworks.map((artwork) => (
               <ArtworkCard
                 key={artwork.id}
@@ -338,7 +338,7 @@ export const MarketplaceHomePage = ({
         </section>
 
         <section className="space-y-6 border-t border-border pt-10">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <CalendarDays size={16} className="text-foreground" />

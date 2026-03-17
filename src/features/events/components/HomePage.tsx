@@ -75,8 +75,8 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
         <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <Card className="overflow-hidden">
             {featuredEvents[0] ? (
-              <div className="grid min-h-[34rem] items-end bg-card lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="relative min-h-[22rem] overflow-hidden lg:min-h-full">
+              <div className="grid min-h-[28rem] items-end bg-card xl:min-h-[34rem] xl:grid-cols-[1.1fr_0.9fr]">
+                <div className="relative min-h-[22rem] overflow-hidden xl:min-h-full">
                   <img
                     src={featuredEvents[0].imageUrl}
                     alt={getEventTitle(featuredEvents[0], language)}
@@ -247,7 +247,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
           );
         })}
 
-        <section className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+        <section className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
           <Card className="p-8">
             <p className="section-kicker">Next Layer</p>
             <h2 className="section-heading mt-4">Marketplace and artist services come after the traffic layer works.</h2>
