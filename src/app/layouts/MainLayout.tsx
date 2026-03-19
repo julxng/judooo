@@ -1,10 +1,10 @@
 'use client';
 
 import type { PropsWithChildren } from 'react';
-import { Container, Stack } from '@components/layout/index';
-import { branding } from '@assets/branding';
-import { appTabs } from '@app/routes/tabs';
-import { Avatar, Button } from '@ui/index';
+import { appTabs } from '@/app/routes/tabs';
+import { branding } from '@/assets/branding';
+import { Container, Stack } from '@/components/layout';
+import { Avatar, Button } from '@/components/ui';
 import type { TabId, User } from '@/types';
 import type { Locale as Language } from '@/lib/i18n/translations';
 

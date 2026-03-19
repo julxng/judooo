@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { Language } from '@types';
+import type { Locale as Language } from '@/lib/i18n/translations';
 
 const dictionary = {
   'nav.events': { vn: 'Triển lãm', en: 'Exhibitions' },

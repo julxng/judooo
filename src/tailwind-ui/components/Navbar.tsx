@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { branding } from '@assets/branding';
+import { branding } from '@/assets/branding';
 import { cn } from '../cn';
 
 interface NavItem {
