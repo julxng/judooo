@@ -16,6 +16,8 @@ import type {
   ArtworkPriceFilter,
   ArtworkSaleFilter,
 } from '../types/artwork.types';
+import { PaymentModal } from '@/features/payment/components';
+import { ArtworkActionModal } from './ArtworkActionModal';
 import { ArtworkDetailModal } from './ArtworkDetailModal';
 import { MarketplaceFilters } from './MarketplaceFilters';
 import { MarketplaceGrid } from './MarketplaceGrid';
@@ -38,6 +40,11 @@ export const MarketplaceCollectionPage = ({
   const { notify } = useNotice();
   const [artworks, setArtworks] = useState<Artwork[]>(initialArtworks);
   const [activeArtwork, setActiveArtwork] = useState<Artwork | null>(null);
+  const [paymentArtwork, setPaymentArtwork] = useState<Artwork | null>(null);
+  const [actionArtwork, setActionArtwork] = useState<Artwork | null>(null);
+  const [actionMode, setActionMode] = useState<'bid' | 'auto-inquire' | null>(null);
+  const [bidValue, setBidValue] = useState(0);
+  const [collectorNote, setCollectorNote] = useState('');
   const [searchQuery, setSearchQuery] = useState(initialSearch ?? '');
   const [saleTypeFilter, setSaleTypeFilter] = useState<ArtworkSaleFilter>('all');
   const [priceFilter, setPriceFilter] = useState<ArtworkPriceFilter>('all');
@@ -51,6 +58,24 @@ export const MarketplaceCollectionPage = ({
   useEffect(() => {
     setSearchQuery(initialSearch ?? '');
   }, [initialSearch]);
+
+  // Handle VNPay / MoMo payment return
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    if (!paymentStatus) return;
+    if (paymentStatus === 'success') {
+      notify('Thanh toán thành công! Gallery sẽ liên hệ với bạn sớm.', 'success');
+    } else if (paymentStatus === 'failed' || paymentStatus === 'error') {
+      notify('Thanh toán thất bại. Vui lòng thử lại.', 'warning');
+    }
+    // Remove query params without page reload
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete('payment');
+    clean.searchParams.delete('ref');
+    window.history.replaceState({}, '', clean.toString());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (initialArtworks.length > 0) return;
@@ -67,6 +92,56 @@ export const MarketplaceCollectionPage = ({
 
     void loadArtworks();
   }, [initialArtworks.length]);
+
+  const openArtworkAction = (artwork: Artwork, mode: 'bid' | 'auto-inquire') => {
+    if (!currentUser) {
+      openAuthDialog();
+      return;
+    }
+    if (mode === 'auto-inquire') {
+      // Fixed-price → payment flow
+      setActiveArtwork(null);
+      setPaymentArtwork(artwork);
+      return;
+    }
+    setActionArtwork(artwork);
+    setActionMode(mode);
+    setCollectorNote('');
+    setBidValue((artwork.currentBid || artwork.price) + 500_000);
+  };
+
+  const submitArtworkAction = async () => {
+    if (!actionArtwork || !actionMode || !currentUser) return;
+
+    if (actionMode === 'auto-inquire') {
+      notify(
+        language === 'vi'
+          ? `Đã ghi nhận yêu cầu cho "${getArtworkTitle(actionArtwork, language)}".`
+          : `Inquiry noted for "${getArtworkTitle(actionArtwork, language)}".`,
+        'success',
+      );
+      setActionArtwork(null);
+      setActionMode(null);
+      setCollectorNote('');
+      return;
+    }
+
+    const minimumBid = actionArtwork.currentBid || actionArtwork.price;
+    if (bidValue <= minimumBid) {
+      notify('Bid must be higher than the current price.', 'warning');
+      return;
+    }
+
+    const success = await api.placeBid(actionArtwork.id, currentUser.id, bidValue);
+    if (success) {
+      notify('Bid submitted successfully.', 'success');
+      setActionArtwork(null);
+      setActionMode(null);
+      setCollectorNote('');
+    } else {
+      notify('Bid failed. Try again after checking your connection.', 'error');
+    }
+  };
 
   const publicArtworks = useMemo(
     () => artworks.filter(isApprovedArtwork),
@@ -133,7 +208,9 @@ export const MarketplaceCollectionPage = ({
           <MarketplaceGrid
             artworks={filteredArtworks}
             onOpenArtwork={setActiveArtwork}
-            onActionArtwork={setActiveArtwork}
+            onActionArtwork={(artwork) =>
+              openArtworkAction(artwork, artwork.saleType === 'auction' ? 'bid' : 'auto-inquire')
+            }
           />
         </section>
       </Container>
@@ -142,17 +219,42 @@ export const MarketplaceCollectionPage = ({
         <ArtworkDetailModal
           artwork={activeArtwork}
           onClose={() => setActiveArtwork(null)}
-          onAction={() => {
-            if (!currentUser) {
-              openAuthDialog();
-              return;
-            }
-            notify(
-              language === 'vi'
-                ? `Đã ghi nhận quan tâm cho ${getArtworkTitle(activeArtwork, language)}.`
-                : `Interest captured for ${getArtworkTitle(activeArtwork, language)}.`,
-              'success',
-            );
+          onAction={(artwork) =>
+            openArtworkAction(artwork, artwork.saleType === 'auction' ? 'bid' : 'auto-inquire')
+          }
+        />
+      ) : null}
+
+      {actionArtwork && actionMode ? (
+        <ArtworkActionModal
+          artwork={actionArtwork}
+          mode={actionMode}
+          bidValue={bidValue}
+          collectorNote={collectorNote}
+          onBidValueChange={setBidValue}
+          onCollectorNoteChange={setCollectorNote}
+          onClose={() => {
+            setActionArtwork(null);
+            setActionMode(null);
+            setCollectorNote('');
+          }}
+          onSubmit={submitArtworkAction}
+        />
+      ) : null}
+
+      {paymentArtwork ? (
+        <PaymentModal
+          context={{
+            artworkId: paymentArtwork.id,
+            artworkTitle: getArtworkTitle(paymentArtwork, language),
+            artist: paymentArtwork.artist,
+            amount: paymentArtwork.price,
+            imageUrl: paymentArtwork.imageUrl,
+          }}
+          onClose={() => setPaymentArtwork(null)}
+          onSuccess={() => {
+            notify('Đơn hàng đã được ghi nhận. Gallery sẽ liên hệ sớm.', 'success');
+            setPaymentArtwork(null);
           }}
         />
       ) : null}

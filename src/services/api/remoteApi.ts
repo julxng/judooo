@@ -323,14 +323,7 @@ export const placeBidRemote = async (
     });
 
     if (!bidError) return true;
-
-    const { error: fallbackError } = await client
-      .from('artworks')
-      .update({ currentBid: amount, bidCount: 1 })
-      .eq('id', artworkId);
-
-    if (fallbackError) throw fallbackError;
-    return true;
+    throw bidError;
   } catch (error) {
     console.error('Supabase placeBid error', error);
     return false;
@@ -344,7 +337,7 @@ export const syncUserRemote = async (user: User): Promise<boolean> => {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role || 'gallery',
+      role: user.role || 'art_lover',
       avatar: user.avatar,
     };
     const { error } = await client.from('profiles').upsert(payload);

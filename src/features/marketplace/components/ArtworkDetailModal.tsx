@@ -125,8 +125,8 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
 
           <div className="detail-panel__actions">
             {artwork.available ? (
-              <Button variant={isAuction ? 'primary' : 'secondary'} onClick={() => onAction(artwork)}>
-                {isAuction ? 'Place Bid' : 'Auto Inquire'}
+              <Button variant="primary" onClick={() => onAction(artwork)}>
+                {isAuction ? 'Place Bid' : 'Mua ngay · Buy Now'}
               </Button>
             ) : null}
             {artwork.sourceItemUrl ? (

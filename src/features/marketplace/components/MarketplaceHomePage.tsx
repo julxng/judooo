@@ -23,6 +23,8 @@ import {
 } from '@/features/events/utils/event-utils';
 import type { ArtEvent } from '@/features/events/types/event.types';
 import type { Artwork } from '../types/artwork.types';
+import { PaymentModal } from '@/features/payment/components';
+import { ArtworkActionModal } from './ArtworkActionModal';
 import { ArtworkCard } from './ArtworkCard';
 import { ArtworkDetailModal } from './ArtworkDetailModal';
 import {
@@ -158,6 +160,11 @@ export const MarketplaceHomePage = ({
   const copy = marketplaceHomeCopy[language];
   const [artworks, setArtworks] = useState<Artwork[]>(initialArtworks);
   const [activeArtwork, setActiveArtwork] = useState<Artwork | null>(null);
+  const [paymentArtwork, setPaymentArtwork] = useState<Artwork | null>(null);
+  const [actionArtwork, setActionArtwork] = useState<Artwork | null>(null);
+  const [actionMode, setActionMode] = useState<'bid' | 'auto-inquire' | null>(null);
+  const [bidValue, setBidValue] = useState(0);
+  const [collectorNote, setCollectorNote] = useState('');
 
   useEffect(() => {
     if (initialArtworks.length === 0) return;
@@ -189,6 +196,55 @@ export const MarketplaceHomePage = ({
     () => sortEventsBySavedCount(currentEvents).slice(0, 2),
     [currentEvents],
   );
+
+  const openArtworkAction = (artwork: Artwork, mode: 'bid' | 'auto-inquire') => {
+    if (!currentUser) {
+      openAuthDialog();
+      return;
+    }
+    if (mode === 'auto-inquire') {
+      setActiveArtwork(null);
+      setPaymentArtwork(artwork);
+      return;
+    }
+    setActionArtwork(artwork);
+    setActionMode(mode);
+    setCollectorNote('');
+    setBidValue((artwork.currentBid || artwork.price) + 500_000);
+  };
+
+  const submitArtworkAction = async () => {
+    if (!actionArtwork || !actionMode || !currentUser) return;
+
+    if (actionMode === 'auto-inquire') {
+      notify(
+        language === 'vi'
+          ? `Đã ghi nhận yêu cầu cho "${getArtworkTitle(actionArtwork, language)}".`
+          : `Inquiry noted for "${getArtworkTitle(actionArtwork, language)}".`,
+        'success',
+      );
+      setActionArtwork(null);
+      setActionMode(null);
+      setCollectorNote('');
+      return;
+    }
+
+    const minimumBid = actionArtwork.currentBid || actionArtwork.price;
+    if (bidValue <= minimumBid) {
+      notify('Bid must be higher than the current price.', 'warning');
+      return;
+    }
+
+    const success = await api.placeBid(actionArtwork.id, currentUser.id, bidValue);
+    if (success) {
+      notify('Bid submitted successfully.', 'success');
+      setActionArtwork(null);
+      setActionMode(null);
+      setCollectorNote('');
+    } else {
+      notify('Bid failed. Try again after checking your connection.', 'error');
+    }
+  };
 
   return (
     <SiteShell>
@@ -331,7 +387,9 @@ export const MarketplaceHomePage = ({
                 key={artwork.id}
                 artwork={artwork}
                 onOpen={setActiveArtwork}
-                onAction={setActiveArtwork}
+                onAction={(a) =>
+                  openArtworkAction(a, a.saleType === 'auction' ? 'bid' : 'auto-inquire')
+                }
               />
             ))}
           </div>
@@ -383,17 +441,42 @@ export const MarketplaceHomePage = ({
         <ArtworkDetailModal
           artwork={activeArtwork}
           onClose={() => setActiveArtwork(null)}
-          onAction={() => {
-            if (!currentUser) {
-              openAuthDialog();
-              return;
-            }
-            notify(
-              language === 'vi'
-                ? `Đã ghi nhận quan tâm cho ${getArtworkTitle(activeArtwork, language)}.`
-                : `Interest captured for ${getArtworkTitle(activeArtwork, language)}.`,
-              'success',
-            );
+          onAction={(artwork) =>
+            openArtworkAction(artwork, artwork.saleType === 'auction' ? 'bid' : 'auto-inquire')
+          }
+        />
+      ) : null}
+
+      {actionArtwork && actionMode ? (
+        <ArtworkActionModal
+          artwork={actionArtwork}
+          mode={actionMode}
+          bidValue={bidValue}
+          collectorNote={collectorNote}
+          onBidValueChange={setBidValue}
+          onCollectorNoteChange={setCollectorNote}
+          onClose={() => {
+            setActionArtwork(null);
+            setActionMode(null);
+            setCollectorNote('');
+          }}
+          onSubmit={submitArtworkAction}
+        />
+      ) : null}
+
+      {paymentArtwork ? (
+        <PaymentModal
+          context={{
+            artworkId: paymentArtwork.id,
+            artworkTitle: getArtworkTitle(paymentArtwork, language),
+            artist: paymentArtwork.artist,
+            amount: paymentArtwork.price,
+            imageUrl: paymentArtwork.imageUrl,
+          }}
+          onClose={() => setPaymentArtwork(null)}
+          onSuccess={() => {
+            notify('Đơn hàng đã được ghi nhận. Gallery sẽ liên hệ sớm.', 'success');
+            setPaymentArtwork(null);
           }}
         />
       ) : null}

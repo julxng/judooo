@@ -18,6 +18,7 @@ import { EventDetailModal } from '@/features/events/components/EventDetailModal'
 import { EventsScreen } from '@/features/events/components/EventsScreen';
 import { useEventFilters } from '@/features/events/hooks/useEventFilters';
 import type { EventCategory, EventTimeline } from '@/features/events/types/event.types';
+import { PaymentModal } from '@/features/payment/components';
 import { ArtworkActionModal } from '@/features/marketplace/components/ArtworkActionModal';
 import { ArtworkDetailModal } from '@/features/marketplace/components/ArtworkDetailModal';
 import { ArtworkShortlistView } from '@/features/marketplace/components/ArtworkShortlistView';
@@ -76,6 +77,7 @@ const App = () => {
   const [isShortlistOpen, setIsShortlistOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  const [paymentArtwork, setPaymentArtwork] = useState<Artwork | null>(null);
   const [actionArtwork, setActionArtwork] = useState<Artwork | null>(null);
   const [actionMode, setActionMode] = useState<'bid' | 'auto-inquire' | null>(null);
   const [bidValue, setBidValue] = useState(0);
@@ -204,6 +206,7 @@ const App = () => {
     setIsShortlistOpen(false);
     setSelectedEventId(null);
     setSelectedArtwork(null);
+    setPaymentArtwork(null);
     setActionArtwork(null);
   };
 
@@ -217,6 +220,12 @@ const App = () => {
   const openArtworkAction = (artwork: Artwork, mode: 'bid' | 'auto-inquire') => {
     if (!auth.currentUser) {
       auth.openAuthDialog();
+      return;
+    }
+
+    if (mode === 'auto-inquire') {
+      setSelectedArtwork(null);
+      setPaymentArtwork(artwork);
       return;
     }
 
@@ -449,6 +458,23 @@ const App = () => {
             setCollectorNote('');
           }}
           onSubmit={submitArtworkAction}
+        />
+      ) : null}
+
+      {paymentArtwork ? (
+        <PaymentModal
+          context={{
+            artworkId: paymentArtwork.id,
+            artworkTitle: paymentArtwork.title,
+            artist: paymentArtwork.artist,
+            amount: paymentArtwork.price,
+            imageUrl: paymentArtwork.imageUrl,
+          }}
+          onClose={() => setPaymentArtwork(null)}
+          onSuccess={() => {
+            notify('Đơn hàng đã được ghi nhận. Gallery sẽ liên hệ sớm.', 'success');
+            setPaymentArtwork(null);
+          }}
         />
       ) : null}
     </MainLayout>
