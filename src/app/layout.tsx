@@ -5,11 +5,11 @@ import "@/app/judooo-global.css";
 import { AppProviders } from '@/app/providers';
 
 const instrumentSans = Instrument_Sans({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   variable: "--font-sans",
 });
 const instrumentDisplay = Instrument_Sans({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   variable: "--font-display",
 });
 

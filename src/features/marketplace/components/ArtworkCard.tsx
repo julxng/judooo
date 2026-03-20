@@ -3,7 +3,7 @@ import { useLanguage } from '@/app/providers';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/format';
 import { Button } from '@/components/ui/Button';
-import { Card, CardFooter } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import type { Artwork } from '../types/artwork.types';
 import { getArtworkLocation, getArtworkMedium, getArtworkTitle } from '../utils/artwork-utils';
 
@@ -95,7 +95,7 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
         </div>
       </div>
 
-      <CardFooter className="artwork-card__footer">
+      <div className="artwork-card__footer">
         <div className="artwork-card__price">
           <span className="artwork-card__label">
             {isAuction ? 'Current bid' : 'Price'}
@@ -118,7 +118,7 @@ export const ArtworkCard = ({ artwork, onOpen, onAction }: ArtworkCardProps) => 
             {isAuction ? 'Place Bid' : 'Inquire'}
           </Button>
         ) : null}
-      </CardFooter>
+      </div>
     </Card>
   );
 };
