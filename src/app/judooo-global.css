@@ -864,11 +864,16 @@ img {
   height: 100%;
   object-fit: cover;
   transition: transform var(--motion-slow) var(--motion-easing);
+  will-change: transform;
 }
 
-.event-card:hover .event-card__image,
-.artwork-card:hover .artwork-card__image {
+.event-card:hover .event-card__image {
   transform: scale(1.02);
+}
+
+/* Artwork card image pan is handled via JS — default reset transition */
+.artwork-card__image {
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .event-card__overlay {
@@ -958,10 +963,107 @@ img {
   font-weight: 500;
 }
 
-.artwork-card__surface {
+.artwork-card {
   display: flex;
   flex-direction: column;
   cursor: pointer;
+}
+
+.artwork-card__body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: var(--space-3);
+  padding: 1rem;
+  border-top: 1px solid var(--color-border-subtle);
+  outline: none;
+}
+
+.artwork-card__footer {
+  margin-top: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+  padding: 1rem;
+}
+
+.artwork-card__badge-group {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  z-index: 1;
+}
+
+.artwork-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.artwork-card__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.artwork-card__header-text h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.artwork-card__bid-count {
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 4px 8px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-text-muted);
+}
+
+.artwork-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
+}
+
+.artwork-card__artist {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.artwork-card__medium {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.artwork-card__price {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.artwork-card__price strong {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
 }
 
 .artwork-card__sold {
@@ -1268,12 +1370,15 @@ img {
 .artwork-detail__hero {
   overflow: hidden;
   border-radius: var(--radius-md);
+  cursor: zoom-in;
 }
 
 .artwork-detail__hero img {
   width: 100%;
   max-height: 520px;
   object-fit: cover;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
 }
 
 .artwork-detail__thumb {

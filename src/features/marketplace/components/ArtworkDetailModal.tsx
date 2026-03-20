@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useLanguage } from '@/app/providers';
 import { Badge, Button, Card, Modal } from '@/components/ui';
 import { Lightbox } from '@/components/ui/Lightbox';
@@ -30,6 +30,7 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
   }, [artwork.imageGallery, artwork.imageUrl]);
   const [activeImage, setActiveImage] = useState(gallery[0] || artwork.imageUrl);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const heroRef = useRef<HTMLImageElement>(null);
   const isAuction = artwork.saleType === 'auction';
 
   useEffect(() => {
@@ -38,13 +39,34 @@ export const ArtworkDetailModal = ({ artwork, onClose, onAction }: ArtworkDetail
 
   const lightboxIndex = gallery.indexOf(activeImage);
 
+  const handleHeroMouseMove = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    const img = heroRef.current;
+    if (!img) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    img.style.transformOrigin = `${x}% ${y}%`;
+    img.style.transform = 'scale(1.6)';
+  }, []);
+
+  const handleHeroMouseLeave = useCallback(() => {
+    const img = heroRef.current;
+    if (!img) return;
+    img.style.transform = '';
+  }, []);
+
   return (
     <>
     <Modal title={getArtworkTitle(artwork, language)} onClose={onClose} size="xl">
       <div className="artwork-detail">
         <div className="artwork-detail__gallery">
-          <div className="artwork-detail__hero">
+          <div
+            className="artwork-detail__hero"
+            onMouseMove={handleHeroMouseMove}
+            onMouseLeave={handleHeroMouseLeave}
+          >
             <img
+              ref={heroRef}
               src={activeImage}
               alt={getArtworkTitle(artwork, language)}
               onClick={() => setLightboxOpen(true)}
