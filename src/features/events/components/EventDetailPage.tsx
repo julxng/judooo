@@ -290,6 +290,7 @@ export const EventDetailPage = ({
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                        onClick={() => window.plausible?.('inquire_click', { props: { gallery_name: event.organizer } })}
                       >
                         <MessageCircle size={12} />
                         {language === 'en' ? 'Inquire' : 'Lien he'}

@@ -247,8 +247,8 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
               {filteredEvents.map((event) => (
                 <div key={event.id} className="relative">
                   {hasArtworks(event.id) ? (
-                    <div className="absolute right-3 top-3 z-10">
-                      <Badge tone="success" className="shadow-sm">
+                    <div className="absolute right-3 top-3 z-10" onClick={() => window.plausible?.('artworks_badge_click', { props: { event_id: event.id } })}>
+                      <Badge tone="success" className="cursor-pointer shadow-sm">
                         <Palette size={12} className="mr-1" />
                         {t.artworksAvailable}
                       </Badge>

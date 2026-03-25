@@ -285,6 +285,9 @@ export const AdminDashboard = ({
             <Field label="Description">
               <Textarea value={eventForm.description || ''} onChange={(event) => setEventForm({ ...eventForm, description: event.target.value })} />
             </Field>
+            <Field label="Gallery Contact" hint="WhatsApp number or email for artwork inquiries">
+              <Input value={eventForm.gallery_contact || ''} onChange={(event) => setEventForm({ ...eventForm, gallery_contact: event.target.value })} />
+            </Field>
             <Field label="Featured">
               <label className="inline-flex items-center gap-2 text-sm">
                 <input

@@ -55,6 +55,7 @@ export const NewsletterSignup = ({ source = 'homepage', className }: NewsletterS
 
       setStatus('success');
       setEmail('');
+      window.plausible?.('email_signup', { props: { source } });
     } catch {
       setStatus('error');
     }
