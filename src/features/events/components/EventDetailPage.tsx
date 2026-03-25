@@ -23,6 +23,7 @@ import {
   isApprovedEvent,
 } from '../utils/event-utils';
 import { getArtworkTitle, getArtworkMedium } from '@/features/marketplace/utils/artwork-utils';
+import { ArtworkDetailModal } from '@/features/marketplace/components/ArtworkDetailModal';
 import { formatCurrency } from '@/lib/format';
 import { formatDateRange } from '@/lib/date';
 import type { ArtEvent } from '../types/event.types';
@@ -64,6 +65,7 @@ export const EventDetailPage = ({
       skipAutoRefresh: true,
     });
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [activeArtwork, setActiveArtwork] = useState<Artwork | null>(null);
 
   const event = useMemo(
     () => events.find((item) => item.id === eventId && isApprovedEvent(item)) || null,
@@ -264,7 +266,7 @@ export const EventDetailPage = ({
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {initialArtworks.slice(0, 5).map((artwork) => (
-                <Card key={artwork.id} className="overflow-hidden">
+                <Card key={artwork.id} className="cursor-pointer overflow-hidden transition-shadow hover:shadow-md" onClick={() => setActiveArtwork(artwork)}>
                   <div className="relative aspect-square">
                     <img
                       src={artwork.imageUrl}
@@ -328,6 +330,13 @@ export const EventDetailPage = ({
           </section>
         ) : null}
       </Container>
+      {activeArtwork ? (
+        <ArtworkDetailModal
+          artwork={activeArtwork}
+          onClose={() => setActiveArtwork(null)}
+          onAction={() => setActiveArtwork(null)}
+        />
+      ) : null}
     </SiteShell>
   );
 };
