@@ -58,6 +58,7 @@ export const mapEvent = (row: Record<string, any>): ArtEvent => ({
   submitter_name: row.submitter_name,
   submitter_email: row.submitter_email,
   submitter_organization: row.submitter_organization,
+  gallery_contact: row.gallery_contact,
 });
 
 export const mapArtwork = (row: Record<string, any>): Artwork => {
@@ -200,6 +201,7 @@ export const buildEventPayloads = (event: Partial<ArtEvent>) => {
       submitter_name: event.submitter_name,
       submitter_email: event.submitter_email,
       submitter_organization: event.submitter_organization,
+      gallery_contact: event.gallery_contact,
       created_by: event.createdBy,
     },
     {
@@ -250,6 +252,7 @@ export const buildEventPayloads = (event: Partial<ArtEvent>) => {
       submitter_name: event.submitter_name,
       submitter_email: event.submitter_email,
       submitter_organization: event.submitter_organization,
+      gallery_contact: event.gallery_contact,
       createdBy: event.createdBy,
     },
   ];

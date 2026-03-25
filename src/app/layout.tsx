@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Instrument_Sans } from "next/font/google";
 import "@/app/globals.css";
 import "@/app/judooo-global.css";
@@ -29,6 +30,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          defer
+          data-domain="judooo.com"
+          src="https://plausible.io/js/script.js"
+          strategy="afterInteractive"
+        />
+      </head>
       <body className={`${instrumentSans.variable} ${instrumentDisplay.variable} min-h-screen bg-background font-sans antialiased`}>
         <AppProviders>
           <div className="relative flex min-h-screen flex-col">
