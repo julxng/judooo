@@ -59,6 +59,7 @@ export interface ArtEvent {
   submitter_name?: string;
   submitter_email?: string;
   submitter_organization?: string;
+  gallery_contact?: string;
 }
 
 export type EventTimeline = 'active' | 'past' | 'all';

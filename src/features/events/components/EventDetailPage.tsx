@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ExternalLink, MapPinned, Share2 } from 'lucide-react';
+import { ExternalLink, MapPinned, MessageCircle, Palette, Share2 } from 'lucide-react';
 import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Badge } from '@/components/ui/Badge';
@@ -22,19 +22,24 @@ import {
   getEventTitle,
   isApprovedEvent,
 } from '../utils/event-utils';
+import { getArtworkTitle, getArtworkMedium } from '@/features/marketplace/utils/artwork-utils';
+import { formatCurrency } from '@/lib/format';
 import { formatDateRange } from '@/lib/date';
 import type { ArtEvent } from '../types/event.types';
+import type { Artwork } from '@/features/marketplace/types/artwork.types';
 
 interface EventDetailPageProps {
   eventId: string;
   initialEvent?: ArtEvent | null;
   initialRelatedEvents?: ArtEvent[];
+  initialArtworks?: Artwork[];
 }
 
 export const EventDetailPage = ({
   eventId,
   initialEvent = null,
   initialRelatedEvents = [],
+  initialArtworks = [],
 }: EventDetailPageProps) => {
   const router = useRouter();
   const { currentUser, openAuthDialog } = useAuth();
@@ -241,6 +246,62 @@ export const EventDetailPage = ({
             </div>
           </Card>
         </section>
+
+        {initialArtworks.length > 0 ? (
+          <section className="space-y-4">
+            <div>
+              <div className="inline-flex items-center gap-2">
+                <Palette size={16} className="text-foreground" />
+                <p className="section-kicker">
+                  {language === 'en' ? 'Gallery Artworks' : 'Tac pham cua gallery'}
+                </p>
+              </div>
+              <h2 className="section-heading">
+                {language === 'en'
+                  ? `Artworks from ${event.organizer}`
+                  : `Tac pham tu ${event.organizer}`}
+              </h2>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {initialArtworks.slice(0, 5).map((artwork) => (
+                <Card key={artwork.id} className="overflow-hidden">
+                  <div className="relative aspect-square">
+                    <img
+                      src={artwork.imageUrl}
+                      alt={getArtworkTitle(artwork, language)}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="space-y-2 p-4">
+                    <h3 className="text-sm font-semibold">{getArtworkTitle(artwork, language)}</h3>
+                    <p className="text-xs text-muted-foreground">{artwork.artist}</p>
+                    <p className="text-xs text-muted-foreground">{getArtworkMedium(artwork, language)}</p>
+                    {artwork.price ? (
+                      <p className="text-sm font-medium">{formatCurrency(artwork.price)}</p>
+                    ) : null}
+                    {event.gallery_contact ? (
+                      <a
+                        href={
+                          event.gallery_contact.includes('@')
+                            ? `mailto:${event.gallery_contact}?subject=Inquiry: ${getArtworkTitle(artwork, language)}`
+                            : `https://wa.me/${event.gallery_contact.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in "${getArtworkTitle(artwork, language)}"`)}`
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                        onClick={() => window.plausible?.('inquire_click', { props: { gallery_name: event.organizer } })}
+                      >
+                        <MessageCircle size={12} />
+                        {language === 'en' ? 'Inquire' : 'Lien he'}
+                      </a>
+                    ) : null}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {relatedEvents.length > 0 ? (
           <section className="space-y-4">

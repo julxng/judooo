@@ -1,18 +1,17 @@
-import { MarketplaceHomePage } from '@/features/marketplace/components/MarketplaceHomePage';
+import { CuratedEventsPage } from '@/features/events/components/CuratedEventsPage';
 import { getInitialEvents } from '@/features/events/api';
 import { getInitialArtworks } from '@/features/marketplace/api';
 
 export default async function Home() {
   const [initialEvents, initialArtworks] = await Promise.all([
-    getInitialEvents({ limit: 24 }),
-    getInitialArtworks(12),
+    getInitialEvents({ limit: 50 }),
+    getInitialArtworks(30),
   ]);
 
   return (
-    <MarketplaceHomePage
+    <CuratedEventsPage
       initialEvents={initialEvents}
       initialArtworks={initialArtworks}
-      artworkLimit={12}
     />
   );
 }

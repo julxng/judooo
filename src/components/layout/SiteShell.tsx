@@ -147,9 +147,7 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
   const showAdminLink = canAccessAdmin(currentUser?.role);
   const showCreatorLinks = hasCreatorWorkspaceAccess(currentUser?.role);
   const navigation = [
-    { href: '/marketplace', label: copy.navigation.marketplace },
     { href: '/events', label: copy.navigation.events },
-    { href: '/route-planner', label: copy.navigation.routePlanner },
   ];
   const footerLinks = [
     { href: '/about', label: copy.footerLinks.about },

@@ -201,6 +201,11 @@ export const AdminDashboard = ({
         render: (row: ArtEvent) => row.location,
       },
       {
+        key: 'featured',
+        header: 'Featured',
+        render: (row: ArtEvent) => (row.featured ? '★' : '—'),
+      },
+      {
         key: 'actions',
         header: 'Actions',
         render: (row: ArtEvent) => (
@@ -279,6 +284,20 @@ export const AdminDashboard = ({
             </Field>
             <Field label="Description">
               <Textarea value={eventForm.description || ''} onChange={(event) => setEventForm({ ...eventForm, description: event.target.value })} />
+            </Field>
+            <Field label="Gallery Contact" hint="WhatsApp number or email for artwork inquiries">
+              <Input value={eventForm.gallery_contact || ''} onChange={(event) => setEventForm({ ...eventForm, gallery_contact: event.target.value })} />
+            </Field>
+            <Field label="Featured">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={eventForm.featured || false}
+                  onChange={(event) => setEventForm({ ...eventForm, featured: event.target.checked })}
+                  className="h-4 w-4 rounded border-border"
+                />
+                Show on curated homepage
+              </label>
             </Field>
             <div className="admin-form__actions">
               <Button variant="ghost" onClick={resetEventForm}>Cancel</Button>

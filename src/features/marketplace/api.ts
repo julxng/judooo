@@ -52,3 +52,26 @@ export const getInitialArtworks = async (
 
   return loadInitialArtworks(limit);
 };
+
+export const getArtworksByEventId = async (eventId: string) => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return initialArtworks.filter((a) => a.eventId === eventId).slice(0, 5);
+  }
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data, error } = await supabase
+      .from('artworks')
+      .select('*')
+      .eq('event_id', eventId)
+      .limit(5);
+
+    if (error || !data) {
+      return initialArtworks.filter((a) => a.eventId === eventId).slice(0, 5);
+    }
+
+    return data.map(mapArtwork);
+  } catch {
+    return initialArtworks.filter((a) => a.eventId === eventId).slice(0, 5);
+  }
+};
