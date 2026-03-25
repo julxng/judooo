@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Mail, Lock, User } from 'lucide-react';
 import { useNotice } from '@/app/providers/NoticeProvider';
 import { Button, Input, Modal } from '@/components/ui';
-import { Field } from '@/components/shared/Field';
 import { cn } from '@/lib/utils';
 import type { SignUpRole } from '../types/auth.types';
 import { getRoleLabel } from '../utils/roles';
@@ -122,9 +122,12 @@ export const AuthDialog = ({
   };
 
   return (
-    <Modal title="Judooo Network" onClose={onClose} size="sm">
+    <Modal onClose={onClose} size="sm">
       <div className="auth-dialog">
-        <div className="auth-dialog__accent-line" />
+        <div className="auth-dialog__hero">
+          <p className="auth-dialog__subtitle">Welcome to</p>
+          <h2 className="auth-dialog__title">Judooo</h2>
+        </div>
 
         <div className="auth-dialog__modes">
           {(['signin', 'signup', 'reset'] as const).map((value) => (
@@ -145,9 +148,15 @@ export const AuthDialog = ({
         <div className="auth-dialog__fields">
           {mode === 'signup' ? (
             <>
-              <Field label="Full Name">
-                <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
-              </Field>
+              <div className="auth-dialog__input-group">
+                <User size={18} className="auth-dialog__input-icon" />
+                <Input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Full name"
+                  className="auth-dialog__input"
+                />
+              </div>
 
               <div className="space-y-3">
                 <p className="text-sm font-medium text-foreground">Account type</p>
@@ -179,44 +188,50 @@ export const AuthDialog = ({
             </>
           ) : null}
 
-          <Field label="Email">
+          <div className="auth-dialog__input-group">
+            <Mail size={18} className="auth-dialog__input-icon" />
             <Input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Email address"
+              className="auth-dialog__input"
             />
-          </Field>
+          </div>
 
           {mode !== 'reset' ? (
-            <Field label="Password">
+            <div className="auth-dialog__input-group">
+              <Lock size={18} className="auth-dialog__input-icon" />
               <Input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Password"
+                className="auth-dialog__input"
               />
-            </Field>
+            </div>
           ) : null}
 
           {mode === 'signup' ? (
-            <Field label="Confirm Password">
+            <div className="auth-dialog__input-group">
+              <Lock size={18} className="auth-dialog__input-icon" />
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="Confirm password"
+                className="auth-dialog__input"
               />
-            </Field>
+            </div>
           ) : null}
         </div>
 
         <div className="auth-dialog__actions">
-          <Button variant="default" className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button variant="default" className="auth-dialog__submit w-full" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting
               ? 'Working...'
               : mode === 'signin'
-                ? 'Sign in with Email'
+                ? 'Sign in'
                 : mode === 'signup'
                   ? 'Create account'
                   : 'Send reset link'}
@@ -224,11 +239,11 @@ export const AuthDialog = ({
 
           <div className="auth-dialog__divider">or</div>
 
-          <Button variant="outline" className="w-full gap-2" onClick={onLoginGoogle}>
+          <Button variant="outline" className="auth-dialog__social w-full gap-2" onClick={onLoginGoogle}>
             <GoogleIcon />
             Continue with Google
           </Button>
-          <Button variant="secondary" className="w-full" onClick={onLoginTestAdmin}>
+          <Button variant="ghost" className="auth-dialog__social w-full text-muted-foreground" onClick={onLoginTestAdmin}>
             Continue as Test Admin
           </Button>
         </div>
