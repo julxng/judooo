@@ -11,7 +11,7 @@ const AUTH_QUERY_KEY = 'auth';
 const REDIRECT_QUERY_KEY = 'redirectTo';
 const buildAvatar = (seed: string) =>
   `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(seed)}`;
-type AuthMode = 'signin' | 'signup' | 'reset';
+type AuthMode = 'signin' | 'signup' | 'reset' | 'update-password';
 
 type SessionUser = {
   id: string;
@@ -49,7 +49,9 @@ export const useAuthController = () => {
   const authMode = searchParams.get(AUTH_QUERY_KEY);
   const redirectTo = searchParams.get(REDIRECT_QUERY_KEY);
   const authDialogMode: AuthMode =
-    authMode === 'signin' || authMode === 'signup' || authMode === 'reset' ? authMode : 'signin';
+    authMode === 'signin' || authMode === 'signup' || authMode === 'reset' || authMode === 'update-password'
+      ? authMode
+      : 'signin';
   const isValidAuthMode = authDialogMode === authMode;
   const nextRedirectPath =
     redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
@@ -124,6 +126,14 @@ export const useAuthController = () => {
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   }, [currentUser, isValidAuthMode, nextRedirectPath, pathname, router, search]);
 
+  const clearAuthParams = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(AUTH_QUERY_KEY);
+    params.delete(REDIRECT_QUERY_KEY);
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+  };
+
   const openAuthDialog = () => setIsAuthDialogOpen(true);
   const closeAuthDialog = () => {
     setIsAuthDialogOpen(false);
@@ -132,11 +142,7 @@ export const useAuthController = () => {
       return;
     }
 
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete(AUTH_QUERY_KEY);
-    params.delete(REDIRECT_QUERY_KEY);
-    const nextQuery = params.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+    clearAuthParams();
   };
 
   const loginTestAdmin = () => {
@@ -248,7 +254,7 @@ export const useAuthController = () => {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
     });
 
     if (error) {
@@ -257,6 +263,23 @@ export const useAuthController = () => {
     }
 
     notify('If this email exists, a password reset link has been sent.', 'success');
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    if (!supabase) {
+      notify('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_* or VITE_SUPABASE_* env vars.', 'warning');
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      notify(`Password update failed: ${error.message}`, 'error');
+      return;
+    }
+
+    notify('Password updated successfully.', 'success');
+    setIsAuthDialogOpen(false);
+    clearAuthParams();
   };
 
   const logout = async () => {
@@ -282,6 +305,7 @@ export const useAuthController = () => {
     signUpWithPassword,
     requestCreatorRole,
     resetPassword,
+    updatePassword,
     logout,
   };
 };

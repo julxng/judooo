@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
           onLoginEmailPassword={auth.loginWithPassword}
           onSignUpEmailPassword={auth.signUpWithPassword}
           onResetPassword={auth.resetPassword}
+          onUpdatePassword={auth.updatePassword}
         />
       ) : null}
     </AuthContext.Provider>

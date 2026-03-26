@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import type { SignUpRole } from '../types/auth.types';
 import { getRoleLabel } from '../utils/roles';
 
-export type AuthMode = 'signin' | 'signup' | 'reset';
+export type AuthMode = 'signin' | 'signup' | 'reset' | 'update-password';
 
 type AuthDialogProps = {
   mode?: AuthMode;
@@ -20,6 +20,7 @@ type AuthDialogProps = {
     role: SignUpRole,
   ) => Promise<void>;
   onResetPassword: (email: string) => Promise<void>;
+  onUpdatePassword?: (newPassword: string) => Promise<void>;
 };
 
 const GoogleIcon = () => (
@@ -35,6 +36,7 @@ const modeLabels: Record<AuthMode, string> = {
   signin: 'Sign in',
   signup: 'Sign up',
   reset: 'Reset',
+  'update-password': 'New password',
 };
 
 const roleOptions = [
@@ -63,6 +65,7 @@ export const AuthDialog = ({
   onLoginEmailPassword,
   onSignUpEmailPassword,
   onResetPassword,
+  onUpdatePassword,
 }: AuthDialogProps) => {
   const { notify } = useNotice();
   const [mode, setMode] = useState<AuthMode>(initialMode);
@@ -82,6 +85,24 @@ export const AuthDialog = ({
   const handleSubmit = async () => {
     const trimmedEmail = email.trim();
     const trimmedName = name.trim();
+
+    if (mode === 'update-password') {
+      if (!password || password.length < 8) {
+        notify('Password must be at least 8 characters.', 'warning');
+        return;
+      }
+      if (password !== confirmPassword) {
+        notify('Passwords do not match.', 'warning');
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        await onUpdatePassword?.(password);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     if (!trimmedEmail || !validateEmail(trimmedEmail)) {
       notify('Please enter a valid email address.', 'warning');
@@ -130,6 +151,7 @@ export const AuthDialog = ({
     signin: { title: 'Welcome back', subtitle: 'Sign in to your Judooo account' },
     signup: { title: 'Create account', subtitle: 'Join the Judooo art network' },
     reset: { title: 'Reset password', subtitle: 'We\'ll send you a reset link' },
+    'update-password': { title: 'Set new password', subtitle: 'Choose a new password for your account' },
   };
 
   return (
@@ -140,21 +162,23 @@ export const AuthDialog = ({
           <p className="auth-dialog__subtitle">{headings[mode].subtitle}</p>
         </div>
 
-        <div className="auth-dialog__modes">
-          {(['signin', 'signup', 'reset'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              className={cn(
-                'auth-dialog__mode',
-                mode === value && 'auth-dialog__mode--active',
-              )}
-              onClick={() => setMode(value)}
-            >
-              {modeLabels[value]}
-            </button>
-          ))}
-        </div>
+        {mode !== 'update-password' ? (
+          <div className="auth-dialog__modes">
+            {(['signin', 'signup', 'reset'] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={cn(
+                  'auth-dialog__mode',
+                  mode === value && 'auth-dialog__mode--active',
+                )}
+                onClick={() => setMode(value)}
+              >
+                {modeLabels[value]}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <div className="auth-dialog__fields">
           {mode === 'signup' ? (
@@ -193,19 +217,21 @@ export const AuthDialog = ({
             </>
           ) : null}
 
-          <label className="auth-dialog__field">
-            <span className="auth-dialog__label">Email</span>
-            <Input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="name@example.com"
-            />
-          </label>
+          {mode !== 'update-password' ? (
+            <label className="auth-dialog__field">
+              <span className="auth-dialog__label">Email</span>
+              <Input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="name@example.com"
+              />
+            </label>
+          ) : null}
 
           {mode !== 'reset' ? (
             <label className="auth-dialog__field">
-              <span className="auth-dialog__label">Password</span>
+              <span className="auth-dialog__label">{mode === 'update-password' ? 'New password' : 'Password'}</span>
               <Input
                 type="password"
                 value={password}
@@ -215,7 +241,7 @@ export const AuthDialog = ({
             </label>
           ) : null}
 
-          {mode === 'signup' ? (
+          {mode === 'signup' || mode === 'update-password' ? (
             <label className="auth-dialog__field">
               <span className="auth-dialog__label">Confirm password</span>
               <Input
@@ -236,23 +262,29 @@ export const AuthDialog = ({
                 ? 'Sign in'
                 : mode === 'signup'
                   ? 'Create account'
-                  : 'Send reset link'}
+                  : mode === 'update-password'
+                    ? 'Update password'
+                    : 'Send reset link'}
           </Button>
 
-          <div className="auth-dialog__divider">or</div>
+          {mode !== 'update-password' ? (
+            <>
+              <div className="auth-dialog__divider">or</div>
 
-          <Button variant="outline" className="w-full gap-2" onClick={onLoginGoogle}>
-            <GoogleIcon />
-            Continue with Google
-          </Button>
-          {process.env.NODE_ENV !== 'production' && onLoginTestAdmin ? (
-            <button
-              type="button"
-              className="auth-dialog__test-admin"
-              onClick={onLoginTestAdmin}
-            >
-              Continue as Test Admin
-            </button>
+              <Button variant="outline" className="w-full gap-2" onClick={onLoginGoogle}>
+                <GoogleIcon />
+                Continue with Google
+              </Button>
+              {process.env.NODE_ENV !== 'production' && onLoginTestAdmin ? (
+                <button
+                  type="button"
+                  className="auth-dialog__test-admin"
+                  onClick={onLoginTestAdmin}
+                >
+                  Continue as Test Admin
+                </button>
+              ) : null}
+            </>
           ) : null}
         </div>
       </div>

@@ -15,6 +15,8 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const next = sanitizeRedirectPath(searchParams.get('next'));
 
+  const type = searchParams.get('type');
+
   if (code && supabaseUrl && supabaseAnonKey) {
     const cookieStore = await cookies();
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -32,6 +34,9 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      if (type === 'recovery') {
+        return NextResponse.redirect(`${origin}/?auth=update-password`);
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
