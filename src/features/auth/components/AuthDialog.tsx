@@ -11,7 +11,7 @@ type AuthDialogProps = {
   mode?: AuthMode;
   onClose: () => void;
   onLoginGoogle: () => void;
-  onLoginTestAdmin: () => void;
+  onLoginTestAdmin?: () => void;
   onLoginEmailPassword: (email: string, password: string) => Promise<void>;
   onSignUpEmailPassword: (
     name: string,
@@ -90,8 +90,11 @@ export const AuthDialog = ({
 
     if (mode === 'reset') {
       setIsSubmitting(true);
-      await onResetPassword(trimmedEmail);
-      setIsSubmitting(false);
+      try {
+        await onResetPassword(trimmedEmail);
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -112,12 +115,15 @@ export const AuthDialog = ({
     }
 
     setIsSubmitting(true);
-    if (mode === 'signin') {
-      await onLoginEmailPassword(trimmedEmail, password);
-    } else {
-      await onSignUpEmailPassword(trimmedName, trimmedEmail, password, signUpRole);
+    try {
+      if (mode === 'signin') {
+        await onLoginEmailPassword(trimmedEmail, password);
+      } else {
+        await onSignUpEmailPassword(trimmedName, trimmedEmail, password, signUpRole);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const headings: Record<AuthMode, { title: string; subtitle: string }> = {
@@ -239,13 +245,15 @@ export const AuthDialog = ({
             <GoogleIcon />
             Continue with Google
           </Button>
-          <button
-            type="button"
-            className="auth-dialog__test-admin"
-            onClick={onLoginTestAdmin}
-          >
-            Continue as Test Admin
-          </button>
+          {process.env.NODE_ENV !== 'production' && onLoginTestAdmin ? (
+            <button
+              type="button"
+              className="auth-dialog__test-admin"
+              onClick={onLoginTestAdmin}
+            >
+              Continue as Test Admin
+            </button>
+          ) : null}
         </div>
       </div>
     </Modal>

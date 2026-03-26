@@ -171,7 +171,6 @@ export const EventsDirectoryPage = ({
     }
   }, [filteredEvents, selectedEventId]);
 
-  const selectedEvent = filteredEvents.find((event) => event.id === selectedEventId) || null;
   const filterSelects: FilterSelectConfig[] = [
     { label: 'City', value: city, onChange: setCity, options: cityOptions },
     { label: 'District', value: district, onChange: setDistrict, options: districtOptions },
@@ -313,6 +312,7 @@ export const EventsDirectoryPage = ({
                         src={event.imageUrl}
                         alt={getEventTitle(event, language)}
                         className="h-20 w-16 shrink-0 rounded-md object-cover"
+                        loading="lazy"
                       />
                       <div className="flex flex-1 flex-col justify-between gap-2">
                         <div className="space-y-1">
