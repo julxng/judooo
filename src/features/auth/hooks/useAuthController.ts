@@ -5,6 +5,7 @@ import { canAccessAdmin, getRoleApplicationCopy } from '../utils/roles';
 import { api } from '@/services/api';
 import { supabase } from '@/services/supabase/client';
 import { useNotice } from '@/app/providers/NoticeProvider';
+import { LOCAL_DB_KEY } from '@/services/api/shared';
 
 const DEV_USER_STORAGE_KEY = 'judooo_dev_user';
 const AUTH_QUERY_KEY = 'auth';
@@ -312,6 +313,7 @@ export const useAuthController = () => {
     }
 
     localStorage.removeItem(DEV_USER_STORAGE_KEY);
+    localStorage.removeItem(LOCAL_DB_KEY);
     setCurrentUser(null);
     notify('Signed out.', 'info');
   };
