@@ -1107,14 +1107,19 @@ img {
 
 .event-map {
   padding: var(--space-4);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .event-map__header {
   margin-bottom: var(--space-4);
+  flex-shrink: 0;
 }
 
 .event-map__canvas {
   min-height: 560px;
+  flex: 1;
 }
 
 .route-planner {
@@ -1953,6 +1958,15 @@ img {
   width: 12px;
   height: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.judooo-map-pin--active {
+  width: 18px;
+  height: 18px;
+  border-width: 3px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  z-index: 10 !important;
 }
 
 @media (min-width: 768px) {

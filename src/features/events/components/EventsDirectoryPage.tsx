@@ -299,36 +299,37 @@ export const EventsDirectoryPage = ({
               </div>
             </div>
           ) : (
-            <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-              <div className="space-y-4">
+            <div className="grid gap-6 lg:grid-cols-[minmax(18rem,0.45fr)_1fr]">
+              <div className="max-h-[calc(100vh-10rem)] space-y-3 overflow-y-auto pr-1 lg:sticky lg:top-28 lg:self-start">
+                <p className="text-sm text-muted-foreground">{filteredEvents.length} events</p>
                 {filteredEvents.map((event) => (
                   <Card
                     key={event.id}
-                    className={`cursor-pointer p-4 transition-colors ${selectedEventId === event.id ? 'border-foreground bg-secondary' : 'hover:border-foreground'}`}
+                    className={`cursor-pointer p-3 transition-colors ${selectedEventId === event.id ? 'border-foreground bg-secondary' : 'hover:border-foreground'}`}
                     onClick={() => setSelectedEventId(event.id)}
                   >
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                       <img
                         src={event.imageUrl}
                         alt={getEventTitle(event, language)}
-                        className="h-28 w-24 rounded-md object-cover"
+                        className="h-20 w-16 shrink-0 rounded-md object-cover"
                       />
-                      <div className="flex flex-1 flex-col justify-between gap-3">
-                        <div className="space-y-2">
+                      <div className="flex flex-1 flex-col justify-between gap-2">
+                        <div className="space-y-1">
                           <Badge tone="accent">{event.event_type || event.category}</Badge>
-                          <h2 className="text-base font-semibold">{getEventTitle(event, language)}</h2>
-                          <p className="line-clamp-2 text-sm text-muted-foreground">
+                          <h2 className="text-sm font-semibold leading-snug">{getEventTitle(event, language)}</h2>
+                          <p className="line-clamp-1 text-xs text-muted-foreground">
                             {getEventDescription(event, language)}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Button variant="outline" size="sm" onClick={() => router.push(`/events/${event.id}`)}>
+                          <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); router.push(`/events/${event.id}`); }}>
                             View details
                           </Button>
                           <Button
                             variant={routeEventIds.includes(event.id) ? 'default' : 'ghost'}
                             size="sm"
-                            onClick={() => toggleRouteEvent(event.id)}
+                            onClick={(e) => { e.stopPropagation(); toggleRouteEvent(event.id); }}
                           >
                             {routeEventIds.includes(event.id) ? 'In route' : 'Save to route'}
                           </Button>
@@ -338,14 +339,7 @@ export const EventsDirectoryPage = ({
                   </Card>
                 ))}
               </div>
-              <div className="space-y-4">
-                {selectedEvent ? (
-                  <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">
-                      {getEventTitle(selectedEvent, language)} highlighted on map
-                    </p>
-                  </Card>
-                ) : null}
+              <div className="lg:sticky lg:top-28 lg:self-start" style={{ height: 'calc(100vh - 10rem)' }}>
                 <EventMap
                   events={filteredEvents}
                   routeIds={routeEventIds}
