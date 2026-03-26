@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { useAuth } from '@/app/providers';
+import { Check, ChevronDown, ChevronRight, ExternalLink, Pencil, X } from 'lucide-react';
+import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Field } from '@/components/shared/Field';
 import { Button } from '@/components/ui/Button';
@@ -10,13 +11,18 @@ import { Container } from '@/components/ui/Container';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
+import { Badge } from '@/components/ui/Badge';
 import { canAccessAdmin, getPendingRoleTarget, getRoleLabel, isCreatorApplicationPending } from '@/features/auth/utils/roles';
 import { useEventsCatalog } from '@/features/events/hooks/useEventsCatalog';
 import { getEventTitle } from '@/features/events/utils/event-utils';
+import { getArtworkTitle } from '@/features/marketplace/utils/artwork-utils';
 import type { User } from '@/features/auth/types/auth.types';
 import type { ArtEvent } from '@/features/events/types/event.types';
 import type { Artwork } from '@/features/marketplace/types/artwork.types';
 import { api } from '@/services/api';
+import { cn } from '@/lib/utils';
+
+type ModerationTab = 'pending' | 'approved' | 'rejected';
 
 const emptyForm: Partial<ArtEvent> = {
   category: 'exhibition',
@@ -32,8 +38,49 @@ interface AdminPageProps {
   initialArtworks?: Artwork[];
 }
 
+type EventGroup = {
+  gallery: string;
+  sourceUrl: string | undefined;
+  events: ArtEvent[];
+};
+
+type ArtworkGroup = {
+  artist: string;
+  sourceUrl: string | undefined;
+  artworks: Artwork[];
+};
+
+const groupEventsByGallery = (events: ArtEvent[]): EventGroup[] => {
+  const map = new Map<string, EventGroup>();
+  for (const event of events) {
+    const key = event.organizer || 'Unknown Gallery';
+    const existing = map.get(key);
+    if (existing) {
+      existing.events.push(event);
+    } else {
+      map.set(key, { gallery: key, sourceUrl: event.sourceUrl, events: [event] });
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.events.length - a.events.length);
+};
+
+const groupArtworksByArtist = (artworks: Artwork[]): ArtworkGroup[] => {
+  const map = new Map<string, ArtworkGroup>();
+  for (const artwork of artworks) {
+    const key = artwork.artist || 'Unknown Artist';
+    const existing = map.get(key);
+    if (existing) {
+      existing.artworks.push(artwork);
+    } else {
+      map.set(key, { artist: key, sourceUrl: artwork.sourceUrl, artworks: [artwork] });
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.artworks.length - a.artworks.length);
+};
+
 export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPageProps) => {
   const { currentUser, openAuthDialog } = useAuth();
+  const { language } = useLanguage();
   const { events, refresh, createEvent, updateEvent, uploadImage } = useEventsCatalog(initialEvents, {
     currentUser,
     onAuthRequired: openAuthDialog,
@@ -44,6 +91,11 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
   const [form, setForm] = useState<Partial<ArtEvent>>(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [bulkRows, setBulkRows] = useState('');
+  const [eventTab, setEventTab] = useState<ModerationTab>('pending');
+  const [artworkTab, setArtworkTab] = useState<ModerationTab>('pending');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<ArtEvent>>({});
 
   const refreshArtworks = async () => {
     const nextArtworks = await api.getArtworks();
@@ -66,18 +118,91 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
     () => profiles.filter((profile) => isCreatorApplicationPending(profile.role)),
     [profiles],
   );
-  const pendingEvents = useMemo(
-    () => events.filter((event) => event.moderation_status === 'pending'),
-    [events],
-  );
-  const pendingArtworks = useMemo(
-    () => artworks.filter((artwork) => artwork.moderation_status === 'pending'),
-    [artworks],
-  );
-  const publishedArtworks = useMemo(
-    () => artworks.filter((artwork) => !artwork.moderation_status || artwork.moderation_status === 'approved'),
-    [artworks],
-  );
+
+  const filterByStatus = (status: ModerationTab) => (item: { moderation_status?: string }) =>
+    status === 'approved'
+      ? !item.moderation_status || item.moderation_status === 'approved'
+      : item.moderation_status === status;
+
+  const eventsByTab = useMemo(() => events.filter(filterByStatus(eventTab)), [events, eventTab]);
+  const artworksByTab = useMemo(() => artworks.filter(filterByStatus(artworkTab)), [artworks, artworkTab]);
+
+  const eventGroups = useMemo(() => groupEventsByGallery(eventsByTab), [eventsByTab]);
+  const artworkGroups = useMemo(() => groupArtworksByArtist(artworksByTab), [artworksByTab]);
+
+  const pendingEventCount = useMemo(() => events.filter((e) => e.moderation_status === 'pending').length, [events]);
+  const pendingArtworkCount = useMemo(() => artworks.filter((a) => a.moderation_status === 'pending').length, [artworks]);
+  const approvedEventCount = useMemo(() => events.filter((e) => !e.moderation_status || e.moderation_status === 'approved').length, [events]);
+  const approvedArtworkCount = useMemo(() => artworks.filter((a) => !a.moderation_status || a.moderation_status === 'approved').length, [artworks]);
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleApproveAllEvents = async (group: EventGroup) => {
+    for (const event of group.events) {
+      await updateEvent(event.id, { moderation_status: 'approved' });
+    }
+  };
+
+  const handleRejectAllEvents = async (group: EventGroup) => {
+    for (const event of group.events) {
+      await updateEvent(event.id, { moderation_status: 'rejected' });
+    }
+  };
+
+  const handleApproveAllArtworks = async (group: ArtworkGroup) => {
+    for (const artwork of group.artworks) {
+      await api.updateArtwork(artwork.id, { moderation_status: 'approved' });
+    }
+    await refreshArtworks();
+  };
+
+  const handleRejectAllArtworks = async (group: ArtworkGroup) => {
+    for (const artwork of group.artworks) {
+      await api.updateArtwork(artwork.id, { moderation_status: 'rejected' });
+    }
+    await refreshArtworks();
+  };
+
+  const handleArtworkModeration = async (
+    artwork: Artwork,
+    moderation_status: Artwork['moderation_status'],
+  ) => {
+    const updated = await api.updateArtwork(artwork.id, { moderation_status });
+    if (!updated) return;
+    setArtworks((current) => current.map((item) => (item.id === artwork.id ? updated : item)));
+  };
+
+  const handleRoleApplication = async (profile: User, approved: boolean) => {
+    const nextRole = approved ? getPendingRoleTarget(profile.role) || 'art_lover' : 'art_lover';
+    await api.syncUser({ ...profile, role: nextRole });
+    await refreshProfiles();
+  };
+
+  const startEditEvent = (event: ArtEvent) => {
+    setEditingEventId(event.id);
+    setEditForm({
+      title: event.title,
+      organizer: event.organizer,
+      description: event.description,
+      city: event.city,
+      startDate: event.startDate,
+      endDate: event.endDate,
+    });
+  };
+
+  const saveEditEvent = async () => {
+    if (!editingEventId) return;
+    await updateEvent(editingEventId, editForm);
+    setEditingEventId(null);
+    setEditForm({});
+  };
 
   const handleCreateEvent = async (event: FormEvent) => {
     event.preventDefault();
@@ -135,20 +260,20 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
     setBulkRows('');
   };
 
-  const handleArtworkModeration = async (
-    artwork: Artwork,
-    moderation_status: Artwork['moderation_status'],
-  ) => {
-    const updated = await api.updateArtwork(artwork.id, { moderation_status });
-    if (!updated) return;
-    setArtworks((current) => current.map((item) => (item.id === artwork.id ? updated : item)));
-  };
-
-  const handleRoleApplication = async (profile: User, approved: boolean) => {
-    const nextRole = approved ? getPendingRoleTarget(profile.role) || 'art_lover' : 'art_lover';
-    await api.syncUser({ ...profile, role: nextRole });
-    await refreshProfiles();
-  };
+  const tabButton = (label: string, count: number, isActive: boolean, onClick: () => void) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+        isActive
+          ? 'bg-foreground text-background'
+          : 'text-muted-foreground hover:text-foreground',
+      )}
+    >
+      {label} ({count})
+    </button>
+  );
 
   if (!currentUser) {
     return (
@@ -157,9 +282,7 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
           <Card className="p-8">
             <p className="section-kicker">Admin</p>
             <h1 className="section-heading mt-4">Sign in to manage approvals.</h1>
-            <Button className="mt-6" onClick={openAuthDialog}>
-              Sign in
-            </Button>
+            <Button className="mt-6" onClick={openAuthDialog}>Sign in</Button>
           </Card>
         </Container>
       </SiteShell>
@@ -187,45 +310,47 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
       <Container size="xl" className="space-y-8 py-8 sm:py-12">
         <section className="border-b border-border pb-8">
           <p className="section-kicker">Admin</p>
-          <h1 className="section-heading mt-4 max-w-4xl">Approvals, manual publishing, and creator access in one editorial control room.</h1>
+          <h1 className="section-heading mt-4 max-w-4xl">Moderation queue</h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-muted-foreground">
-            This is the operational layer for the current MVP: review creator applications, moderate submissions, and publish missing events directly when needed.
+            Review crawled and submitted content grouped by gallery. Edit, approve, or reject before it goes live.
           </p>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Stats */}
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Card className="p-6">
             <p className="section-kicker">Applications</p>
             <p className="mt-3 text-4xl font-semibold">{creatorApplications.length}</p>
           </Card>
           <Card className="p-6">
             <p className="section-kicker">Pending Events</p>
-            <p className="mt-3 text-4xl font-semibold">{pendingEvents.length}</p>
+            <p className="mt-3 text-4xl font-semibold">{pendingEventCount}</p>
+          </Card>
+          <Card className="p-6">
+            <p className="section-kicker">Live Events</p>
+            <p className="mt-3 text-4xl font-semibold">{approvedEventCount}</p>
           </Card>
           <Card className="p-6">
             <p className="section-kicker">Pending Artworks</p>
-            <p className="mt-3 text-4xl font-semibold">{pendingArtworks.length}</p>
+            <p className="mt-3 text-4xl font-semibold">{pendingArtworkCount}</p>
           </Card>
           <Card className="p-6">
-            <p className="section-kicker">Published Artworks</p>
-            <p className="mt-3 text-4xl font-semibold">{publishedArtworks.length}</p>
+            <p className="section-kicker">Live Artworks</p>
+            <p className="mt-3 text-4xl font-semibold">{approvedArtworkCount}</p>
           </Card>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
-            <Card className="p-6 sm:p-8">
-              <div className="mb-6">
-                <p className="section-kicker">Creator Applications</p>
-                <h2 className="section-heading mt-4">Approve artist and gallery manager access.</h2>
-              </div>
-              <div className="space-y-4">
-                {creatorApplications.length === 0 ? (
-                  <Card className="border-dashed p-5">
-                    <p className="text-sm text-muted-foreground">No creator applications are waiting.</p>
-                  </Card>
-                ) : (
-                  creatorApplications.map((profile) => (
+            {/* Creator Applications */}
+            {creatorApplications.length > 0 ? (
+              <Card className="p-6 sm:p-8">
+                <div className="mb-6">
+                  <p className="section-kicker">Creator Applications</p>
+                  <h2 className="section-heading mt-4">Approve artist and gallery manager access.</h2>
+                </div>
+                <div className="space-y-4">
+                  {creatorApplications.map((profile) => (
                     <Card key={profile.id} className="p-5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
@@ -241,102 +366,294 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
                         </div>
                       </div>
                     </Card>
-                  ))
+                  ))}
+                </div>
+              </Card>
+            ) : null}
+
+            {/* Events Queue */}
+            <Card className="p-6 sm:p-8">
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="section-kicker">Events</p>
+                  <h2 className="section-heading mt-2">Grouped by gallery</h2>
+                </div>
+                <div className="flex gap-1 rounded-lg bg-secondary p-1">
+                  {tabButton('Pending', pendingEventCount, eventTab === 'pending', () => setEventTab('pending'))}
+                  {tabButton('Approved', approvedEventCount, eventTab === 'approved', () => setEventTab('approved'))}
+                  {tabButton('Rejected', events.filter((e) => e.moderation_status === 'rejected').length, eventTab === 'rejected', () => setEventTab('rejected'))}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {eventGroups.length === 0 ? (
+                  <Card className="border-dashed p-5">
+                    <p className="text-sm text-muted-foreground">No {eventTab} events.</p>
+                  </Card>
+                ) : (
+                  eventGroups.map((group) => {
+                    const isExpanded = expandedGroups.has(`evt-${group.gallery}`);
+                    return (
+                      <Card key={group.gallery} className="overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(`evt-${group.gallery}`)}
+                          className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-secondary/50"
+                        >
+                          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{group.gallery}</span>
+                              <Badge tone="default">{group.events.length}</Badge>
+                            </div>
+                            {group.sourceUrl ? (
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">{group.sourceUrl}</p>
+                            ) : null}
+                          </div>
+                          {eventTab === 'pending' ? (
+                            <div className="flex shrink-0 gap-2" onClick={(e) => e.stopPropagation()}>
+                              <Button size="sm" onClick={() => void handleApproveAllEvents(group)}>
+                                Approve all
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => void handleRejectAllEvents(group)}>
+                                Reject all
+                              </Button>
+                            </div>
+                          ) : null}
+                        </button>
+                        {isExpanded ? (
+                          <div className="border-t border-border">
+                            {group.events.map((event) => (
+                              <div key={event.id} className="border-b border-border/50 p-4 last:border-b-0">
+                                {editingEventId === event.id ? (
+                                  <div className="space-y-3">
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                      <Field label="Title">
+                                        <Input
+                                          value={editForm.title || ''}
+                                          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                                        />
+                                      </Field>
+                                      <Field label="Organizer">
+                                        <Input
+                                          value={editForm.organizer || ''}
+                                          onChange={(e) => setEditForm({ ...editForm, organizer: e.target.value })}
+                                        />
+                                      </Field>
+                                    </div>
+                                    <div className="grid gap-3 sm:grid-cols-3">
+                                      <Field label="City">
+                                        <Input
+                                          value={editForm.city || ''}
+                                          onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                                        />
+                                      </Field>
+                                      <Field label="Start date">
+                                        <Input
+                                          type="date"
+                                          value={editForm.startDate || ''}
+                                          onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                                        />
+                                      </Field>
+                                      <Field label="End date">
+                                        <Input
+                                          type="date"
+                                          value={editForm.endDate || ''}
+                                          onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                                        />
+                                      </Field>
+                                    </div>
+                                    <Field label="Description">
+                                      <Textarea
+                                        value={editForm.description || ''}
+                                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                        rows={3}
+                                      />
+                                    </Field>
+                                    <div className="flex gap-2">
+                                      <Button size="sm" onClick={() => void saveEditEvent()}>
+                                        <Check size={14} className="mr-1" /> Save
+                                      </Button>
+                                      <Button size="sm" variant="outline" onClick={() => setEditingEventId(null)}>
+                                        <X size={14} className="mr-1" /> Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="min-w-0 flex-1 space-y-1">
+                                      <div className="flex items-start gap-2">
+                                        {event.imageUrl ? (
+                                          <img
+                                            src={event.imageUrl}
+                                            alt=""
+                                            className="h-12 w-12 shrink-0 rounded-md object-cover"
+                                          />
+                                        ) : null}
+                                        <div className="min-w-0">
+                                          <h3 className="font-medium">{getEventTitle(event, language)}</h3>
+                                          <p className="text-xs text-muted-foreground">
+                                            {event.city} • {event.startDate} → {event.endDate}
+                                          </p>
+                                          {event.sourceUrl ? (
+                                            <a
+                                              href={event.sourceUrl}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                                            >
+                                              <ExternalLink size={10} /> source
+                                            </a>
+                                          ) : null}
+                                        </div>
+                                      </div>
+                                      {event.description ? (
+                                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                                          {event.description}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                    <div className="flex shrink-0 gap-1.5">
+                                      <Button size="sm" variant="ghost" onClick={() => startEditEvent(event)}>
+                                        <Pencil size={14} />
+                                      </Button>
+                                      {eventTab === 'pending' ? (
+                                        <>
+                                          <Button size="sm" onClick={() => void updateEvent(event.id, { moderation_status: 'approved' })}>
+                                            <Check size={14} />
+                                          </Button>
+                                          <Button size="sm" variant="outline" onClick={() => void updateEvent(event.id, { moderation_status: 'rejected' })}>
+                                            <X size={14} />
+                                          </Button>
+                                        </>
+                                      ) : eventTab === 'rejected' ? (
+                                        <Button size="sm" onClick={() => void updateEvent(event.id, { moderation_status: 'approved' })}>
+                                          Restore
+                                        </Button>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </Card>
+                    );
+                  })
                 )}
               </div>
             </Card>
 
+            {/* Artworks Queue */}
             <Card className="p-6 sm:p-8">
-              <div className="mb-6">
-                <p className="section-kicker">Pending Event Queue</p>
-                <h2 className="section-heading">Approve or reject submitted events.</h2>
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="section-kicker">Artworks</p>
+                  <h2 className="section-heading mt-2">Grouped by artist</h2>
+                </div>
+                <div className="flex gap-1 rounded-lg bg-secondary p-1">
+                  {tabButton('Pending', pendingArtworkCount, artworkTab === 'pending', () => setArtworkTab('pending'))}
+                  {tabButton('Approved', approvedArtworkCount, artworkTab === 'approved', () => setArtworkTab('approved'))}
+                  {tabButton('Rejected', artworks.filter((a) => a.moderation_status === 'rejected').length, artworkTab === 'rejected', () => setArtworkTab('rejected'))}
+                </div>
               </div>
-              <div className="space-y-4">
-                {pendingEvents.length === 0 ? (
+              <div className="space-y-3">
+                {artworkGroups.length === 0 ? (
                   <Card className="border-dashed p-5">
-                    <p className="text-sm text-muted-foreground">No pending events right now.</p>
+                    <p className="text-sm text-muted-foreground">No {artworkTab} artworks.</p>
                   </Card>
                 ) : (
-                  pendingEvents.map((event) => (
-                    <Card key={event.id} className="p-5">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-semibold">{getEventTitle(event)}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {event.submitter_name || 'Unknown submitter'} • {event.submitter_email || 'No email'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{event.city || event.location}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button onClick={() => void updateEvent(event.id, { moderation_status: 'approved' })}>
-                            Approve
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => void updateEvent(event.id, { moderation_status: 'rejected' })}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </Card>
-
-            <Card className="p-6 sm:p-8">
-              <div className="mb-6">
-                <p className="section-kicker">Pending Artwork Queue</p>
-                <h2 className="section-heading">Approve or reject marketplace submissions.</h2>
-              </div>
-              <div className="space-y-4">
-                {pendingArtworks.length === 0 ? (
-                  <Card className="border-dashed p-5">
-                    <p className="text-sm text-muted-foreground">No pending artworks right now.</p>
-                  </Card>
-                ) : (
-                  pendingArtworks.map((artwork) => (
-                    <Card key={artwork.id} className="p-5">
-                      <div className="flex flex-col gap-4 md:grid md:grid-cols-[6rem_1fr]">
-                        <img
-                          src={artwork.imageUrl}
-                          alt={artwork.title}
-                          className="h-24 w-24 rounded-md object-cover"
-                        />
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                          <div>
-                            <h3 className="text-lg font-semibold">{artwork.title}</h3>
-                            <p className="text-sm text-muted-foreground">{artwork.artist}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              {artwork.city || artwork.country || 'Vietnam'}
-                            </p>
+                  artworkGroups.map((group) => {
+                    const isExpanded = expandedGroups.has(`art-${group.artist}`);
+                    return (
+                      <Card key={group.artist} className="overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => toggleGroup(`art-${group.artist}`)}
+                          className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-secondary/50"
+                        >
+                          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{group.artist}</span>
+                              <Badge tone="default">{group.artworks.length}</Badge>
+                            </div>
+                            {group.sourceUrl ? (
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">{group.sourceUrl}</p>
+                            ) : null}
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button onClick={() => void handleArtworkModeration(artwork, 'approved')}>
-                              Approve
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => void handleArtworkModeration(artwork, 'rejected')}
-                            >
-                              Reject
-                            </Button>
+                          {artworkTab === 'pending' ? (
+                            <div className="flex shrink-0 gap-2" onClick={(e) => e.stopPropagation()}>
+                              <Button size="sm" onClick={() => void handleApproveAllArtworks(group)}>
+                                Approve all
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => void handleRejectAllArtworks(group)}>
+                                Reject all
+                              </Button>
+                            </div>
+                          ) : null}
+                        </button>
+                        {isExpanded ? (
+                          <div className="border-t border-border">
+                            {group.artworks.map((artwork) => (
+                              <div key={artwork.id} className="flex items-center gap-3 border-b border-border/50 p-4 last:border-b-0">
+                                {artwork.imageUrl ? (
+                                  <img
+                                    src={artwork.imageUrl}
+                                    alt=""
+                                    className="h-14 w-14 shrink-0 rounded-md object-cover"
+                                  />
+                                ) : null}
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="text-sm font-medium">{getArtworkTitle(artwork, language)}</h3>
+                                  <p className="text-xs text-muted-foreground">
+                                    {artwork.medium} {artwork.price ? `• ${artwork.price} ${'VND'}` : ''}
+                                  </p>
+                                  {artwork.sourceUrl ? (
+                                    <a
+                                      href={artwork.sourceUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                                    >
+                                      <ExternalLink size={10} /> source
+                                    </a>
+                                  ) : null}
+                                </div>
+                                <div className="flex shrink-0 gap-1.5">
+                                  {artworkTab === 'pending' ? (
+                                    <>
+                                      <Button size="sm" onClick={() => void handleArtworkModeration(artwork, 'approved')}>
+                                        <Check size={14} />
+                                      </Button>
+                                      <Button size="sm" variant="outline" onClick={() => void handleArtworkModeration(artwork, 'rejected')}>
+                                        <X size={14} />
+                                      </Button>
+                                    </>
+                                  ) : artworkTab === 'rejected' ? (
+                                    <Button size="sm" onClick={() => void handleArtworkModeration(artwork, 'approved')}>
+                                      Restore
+                                    </Button>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))
+                        ) : null}
+                      </Card>
+                    );
+                  })
                 )}
               </div>
             </Card>
           </div>
 
+          {/* Right column: manual publish + bulk */}
           <div className="space-y-6">
             <Card className="p-6 sm:p-8">
               <p className="section-kicker">Publish manually</p>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                Use this when the directory needs a fast manual publish rather than a creator-submitted workflow.
+                Admin-published events go live immediately (auto-approved).
               </p>
               <form className="mt-6 grid gap-4" onSubmit={handleCreateEvent}>
                 <Field label="Title">
@@ -354,6 +671,14 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
                     <option value="talk">Talk</option>
                   </Select>
                 </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Start date">
+                    <Input type="date" value={form.startDate || ''} onChange={(event) => setForm({ ...form, startDate: event.target.value })} />
+                  </Field>
+                  <Field label="End date">
+                    <Input type="date" value={form.endDate || ''} onChange={(event) => setForm({ ...form, endDate: event.target.value })} />
+                  </Field>
+                </div>
                 <Field label="Image file">
                   <Input type="file" accept="image/*" onChange={(event) => setImageFile(event.target.files?.[0] || null)} />
                 </Field>
@@ -362,6 +687,9 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
                 </Field>
                 <Field label="City">
                   <Input value={form.city || ''} onChange={(event) => setForm({ ...form, city: event.target.value, location: event.target.value })} />
+                </Field>
+                <Field label="Gallery Contact" hint="WhatsApp number or email for inquiries">
+                  <Input value={form.gallery_contact || ''} onChange={(event) => setForm({ ...form, gallery_contact: event.target.value })} />
                 </Field>
                 <Field label="Description">
                   <Textarea value={form.description || ''} onChange={(event) => setForm({ ...form, description: event.target.value })} />
@@ -373,7 +701,7 @@ export const AdminPage = ({ initialEvents = [], initialArtworks = [] }: AdminPag
             <Card className="p-6 sm:p-8">
               <p className="section-kicker">Bulk paste</p>
               <p className="mt-3 text-sm text-muted-foreground">
-                CSV columns: `title, organizer, startDate, endDate, city, district, location, imageUrl, description, eventType, artMedium, placeType, isFree`
+                CSV: title, organizer, startDate, endDate, city, district, location, imageUrl, description, eventType, artMedium, placeType, isFree
               </p>
               <Textarea className="mt-4" value={bulkRows} onChange={(event) => setBulkRows(event.target.value)} />
               <Button className="mt-4" onClick={handleBulkCreate} disabled={!bulkRows.trim()}>
