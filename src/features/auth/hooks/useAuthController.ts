@@ -55,15 +55,17 @@ export const useAuthController = () => {
     redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
 
   useEffect(() => {
-    const storedDevUser = localStorage.getItem(DEV_USER_STORAGE_KEY);
-    if (storedDevUser) {
-      try {
-        const parsed = JSON.parse(storedDevUser) as User;
-        if (parsed?.id && parsed?.role) {
-          setCurrentUser(parsed);
+    if (process.env.NODE_ENV !== 'production') {
+      const storedDevUser = localStorage.getItem(DEV_USER_STORAGE_KEY);
+      if (storedDevUser) {
+        try {
+          const parsed = JSON.parse(storedDevUser) as User;
+          if (parsed?.id && parsed?.role) {
+            setCurrentUser(parsed);
+          }
+        } catch (error) {
+          console.error('Failed to parse local test user', error);
         }
-      } catch (error) {
-        console.error('Failed to parse local test user', error);
       }
     }
 
@@ -138,6 +140,8 @@ export const useAuthController = () => {
   };
 
   const loginTestAdmin = () => {
+    if (process.env.NODE_ENV === 'production') return;
+
     const testAdminUser: User = {
       id: 'test-admin',
       name: 'Admin Preview',

@@ -3,10 +3,17 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseUrl, supabaseAnonKey } from '@/lib/supabase/env';
 
+const sanitizeRedirectPath = (value: string | null): string => {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) {
+    return '/';
+  }
+  return value;
+};
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  const next = sanitizeRedirectPath(searchParams.get('next'));
 
   if (code && supabaseUrl && supabaseAnonKey) {
     const cookieStore = await cookies();
