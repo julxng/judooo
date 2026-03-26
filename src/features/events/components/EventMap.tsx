@@ -1,3 +1,4 @@
+import 'leaflet/dist/leaflet.css';
 import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '@/app/providers';
 import { Card } from '@/components/ui/Card';
@@ -101,7 +102,9 @@ const EventMap = ({
       getComputedStyle(document.documentElement).getPropertyValue('--brand-strong').trim() ||
       getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
 
-    events.forEach((event) => {
+    const geoEvents = events.filter((event) => typeof event.lat === 'number' && typeof event.lng === 'number');
+
+    geoEvents.forEach((event) => {
       const marker = L.divIcon({
         className: `judooo-map-pin ${selectedEventId === event.id ? 'judooo-map-pin--active' : ''}`,
         iconSize: [12, 12],
@@ -134,8 +137,8 @@ const EventMap = ({
       }
     }
 
-    if (events.length > 0) {
-      const bounds = L.latLngBounds(events.map((event) => [event.lat, event.lng]));
+    if (geoEvents.length > 0) {
+      const bounds = L.latLngBounds(geoEvents.map((event) => [event.lat, event.lng]));
       map.fitBounds(bounds, { padding: [32, 32] });
     }
   }, [events, isMapReady, language, onSelectEvent, routeIds, selectedEventId]);
