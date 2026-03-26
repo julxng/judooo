@@ -61,9 +61,10 @@ export const useEventsCatalog = (
   };
 
   useEffect(() => {
-    if (skipAutoRefresh || initialEvents.length > 0) return;
+    if (skipAutoRefresh) return;
     void refresh();
-  }, [initialEvents.length, skipAutoRefresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skipAutoRefresh]);
 
   useEffect(() => {
     if (!currentUser) {
