@@ -252,7 +252,7 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
                     value={desktopSearchQuery}
                     onChange={(event) => setDesktopSearchQuery(event.target.value)}
                     placeholder={copy.search}
-                    className="pl-9"
+                    className="h-9 pl-9"
                   />
                 </div>
                 <Button type="submit" size="sm">
@@ -266,7 +266,7 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      'whitespace-nowrap border-b border-transparent pb-1 text-sm transition-colors hover:text-foreground',
+                      'whitespace-nowrap border-b border-transparent py-1 text-sm transition-colors hover:text-foreground',
                       isActive(item.href) ? 'border-foreground text-foreground' : 'text-muted-foreground',
                     )}
                   >
@@ -277,7 +277,7 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
                   <div ref={managementMenuRef} className="relative">
                     <div
                       className={cn(
-                        'inline-flex items-center gap-1 whitespace-nowrap border-b border-transparent pb-1 text-sm transition-colors hover:text-foreground',
+                        'inline-flex items-center gap-1 whitespace-nowrap border-b border-transparent py-1 text-sm transition-colors hover:text-foreground',
                         isManagementActive || isManagementMenuOpen
                           ? 'border-foreground text-foreground'
                           : 'text-muted-foreground',

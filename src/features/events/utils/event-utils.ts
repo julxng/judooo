@@ -11,7 +11,7 @@ export const matchesEventTimeline = (event: ArtEvent, timeline: EventTimeline): 
   timeline === 'all' ? true : timeline === 'past' ? isPastEvent(event) : isCurrentEvent(event);
 
 export const isApprovedEvent = (event: ArtEvent): boolean =>
-  !event.moderation_status || event.moderation_status === 'approved';
+  event.moderation_status === 'approved';
 
 export const getEventTitle = (event: ArtEvent, language: Locale = 'en'): string =>
   getLocalizedValue(language, event.name_vie, event.name_en, event.title);

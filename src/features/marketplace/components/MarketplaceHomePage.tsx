@@ -36,7 +36,7 @@ import {
 } from '../utils/artwork-utils';
 
 const isApprovedArtwork = (artwork: Artwork) =>
-  !artwork.moderation_status || artwork.moderation_status === 'approved';
+  artwork.moderation_status === 'approved';
 
 interface MarketplaceHomePageProps {
   initialEvents?: ArtEvent[];

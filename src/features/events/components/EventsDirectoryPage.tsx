@@ -4,10 +4,9 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Filter, Map, Rows3, Search } from 'lucide-react';
-import { useAuth, useLanguage } from '@/app/providers';
+import { ChevronLeft, ChevronRight, Filter, Map, Rows3, Search } from 'lucide-react';
+import { useAuth } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -17,8 +16,6 @@ import { Select } from '@/components/ui/Select';
 import { EventCard } from './EventCard';
 import { useEventsCatalog } from '../hooks/useEventsCatalog';
 import {
-  getEventDescription,
-  getEventTitle,
   isApprovedEvent,
   matchesEventTimeline,
   sortEventsByEndDate,
@@ -55,7 +52,6 @@ export const EventsDirectoryPage = ({
 }: EventsDirectoryPageProps) => {
   const router = useRouter();
   const { currentUser, openAuthDialog } = useAuth();
-  const { language } = useLanguage();
   const { events, isLoading, savedEventIds, routeEventIds, toggleSavedEvent, toggleRouteEvent } =
     useEventsCatalog(initialEvents, { currentUser, onAuthRequired: openAuthDialog });
 
@@ -72,6 +68,7 @@ export const EventsDirectoryPage = ({
   const [onlyVirtual, setOnlyVirtual] = useState(false);
   const [registrationRequired, setRegistrationRequired] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     setOnlyFree(initialSection === 'free');
@@ -171,7 +168,6 @@ export const EventsDirectoryPage = ({
     }
   }, [filteredEvents, selectedEventId]);
 
-  const selectedEvent = filteredEvents.find((event) => event.id === selectedEventId) || null;
   const filterSelects: FilterSelectConfig[] = [
     { label: 'City', value: city, onChange: setCity, options: cityOptions },
     { label: 'District', value: district, onChange: setDistrict, options: districtOptions },
@@ -212,67 +208,69 @@ export const EventsDirectoryPage = ({
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[19rem_1fr]">
-          <Card className="h-fit p-5 xl:sticky xl:top-28">
-            <div className="mb-5 flex items-center gap-2">
-              <Filter size={16} className="text-foreground" />
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Filters
-              </p>
-            </div>
+        <section className={`grid gap-6 ${viewMode === 'grid' ? 'xl:grid-cols-[19rem_1fr]' : ''}`}>
+          {viewMode === 'grid' ? (
+            <Card className="h-fit p-5 xl:sticky xl:top-28">
+              <div className="mb-5 flex items-center gap-2">
+                <Filter size={16} className="text-foreground" />
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Filters
+                </p>
+              </div>
 
-            <div className="space-y-4">
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">Search</span>
-                <div className="relative">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" placeholder="Search all event fields" />
-                </div>
-              </label>
+              <div className="space-y-4">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">Search</span>
+                  <div className="relative">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" placeholder="Search all event fields" />
+                  </div>
+                </label>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">Timeline</span>
-                  <Select value={timeline} onChange={(event) => setTimeline(event.target.value as EventTimeline)}>
-                  <option value="all">All</option>
-                  <option value="active">Current</option>
-                  <option value="past">Past</option>
-                </Select>
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">Sort</span>
-                <Select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
-                  <option value="recently-imported">Recently imported</option>
-                  <option value="newest">Newest</option>
-                  <option value="ending-soon">Ending soon</option>
-                  <option value="hot">Hot</option>
-                </Select>
-              </label>
-
-              {filterSelects.map(({ label, value, onChange, options }) => (
-                <label key={label} className="block space-y-2">
-                  <span className="text-sm font-medium">{label}</span>
-                  <Select value={value} onChange={(event) => onChange(event.target.value)}>
-                    {options.map((option) => (
-                      <option key={option} value={option}>
-                        {option === 'all' ? `All ${label}` : option}
-                      </option>
-                    ))}
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">Timeline</span>
+                    <Select value={timeline} onChange={(event) => setTimeline(event.target.value as EventTimeline)}>
+                    <option value="all">All</option>
+                    <option value="active">Current</option>
+                    <option value="past">Past</option>
                   </Select>
                 </label>
-              ))}
 
-              <div className="space-y-3 border-t border-border pt-4">
-                <Checkbox label="Free events only" checked={onlyFree} onChange={(event) => setOnlyFree(event.target.checked)} />
-                <Checkbox label="Virtual events only" checked={onlyVirtual} onChange={(event) => setOnlyVirtual(event.target.checked)} />
-                <Checkbox
-                  label="Registration required"
-                  checked={registrationRequired}
-                  onChange={(event) => setRegistrationRequired(event.target.checked)}
-                />
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">Sort</span>
+                  <Select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
+                    <option value="recently-imported">Recently imported</option>
+                    <option value="newest">Newest</option>
+                    <option value="ending-soon">Ending soon</option>
+                    <option value="hot">Hot</option>
+                  </Select>
+                </label>
+
+                {filterSelects.map(({ label, value, onChange, options }) => (
+                  <label key={label} className="block space-y-2">
+                    <span className="text-sm font-medium">{label}</span>
+                    <Select value={value} onChange={(event) => onChange(event.target.value)}>
+                      {options.map((option) => (
+                        <option key={option} value={option}>
+                          {option === 'all' ? `All ${label}` : option}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                ))}
+
+                <div className="space-y-3 border-t border-border pt-4">
+                  <Checkbox label="Free events only" checked={onlyFree} onChange={(event) => setOnlyFree(event.target.checked)} />
+                  <Checkbox label="Virtual events only" checked={onlyVirtual} onChange={(event) => setOnlyVirtual(event.target.checked)} />
+                  <Checkbox
+                    label="Registration required"
+                    checked={registrationRequired}
+                    onChange={(event) => setRegistrationRequired(event.target.checked)}
+                  />
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          ) : null}
 
           {viewMode === 'grid' ? (
             <div className="space-y-4">
@@ -299,60 +297,68 @@ export const EventsDirectoryPage = ({
               </div>
             </div>
           ) : (
-            <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-              <div className="space-y-4">
-                {filteredEvents.map((event) => (
-                  <Card
-                    key={event.id}
-                    className={`cursor-pointer p-4 transition-colors ${selectedEventId === event.id ? 'border-foreground bg-secondary' : 'hover:border-foreground'}`}
-                    onClick={() => setSelectedEventId(event.id)}
-                  >
-                    <div className="flex gap-4">
-                      <img
-                        src={event.imageUrl}
-                        alt={getEventTitle(event, language)}
-                        className="h-28 w-24 rounded-md object-cover"
-                      />
-                      <div className="flex flex-1 flex-col justify-between gap-3">
-                        <div className="space-y-2">
-                          <Badge tone="accent">{event.event_type || event.category}</Badge>
-                          <h2 className="text-base font-semibold">{getEventTitle(event, language)}</h2>
-                          <p className="line-clamp-2 text-sm text-muted-foreground">
-                            {getEventDescription(event, language)}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="outline" size="sm" onClick={() => router.push(`/events/${event.id}`)}>
-                            View details
-                          </Button>
-                          <Button
-                            variant={routeEventIds.includes(event.id) ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => toggleRouteEvent(event.id)}
-                          >
-                            {routeEventIds.includes(event.id) ? 'In route' : 'Save to route'}
-                          </Button>
-                        </div>
+            <div className="relative" style={{ height: 'calc(100vh - 10rem)' }}>
+              <button
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                className="absolute left-3 top-3 z-[1000] flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium shadow-md transition-colors hover:bg-secondary"
+              >
+                <Filter size={14} />
+                Filters
+                {filtersOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+              </button>
+
+              {filtersOpen && (
+                <Card className="absolute left-3 top-14 z-[1000] max-h-[calc(100%-4rem)] w-72 overflow-y-auto p-4 shadow-lg">
+                  <div className="space-y-3">
+                    <label className="block space-y-1">
+                      <span className="text-xs font-medium">Search</span>
+                      <div className="relative">
+                        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Input value={search} onChange={(event) => setSearch(event.target.value)} className="h-8 pl-8 text-xs" placeholder="Search events" />
                       </div>
+                    </label>
+
+                    <label className="block space-y-1">
+                      <span className="text-xs font-medium">Timeline</span>
+                      <Select className="h-8 text-xs" value={timeline} onChange={(event) => setTimeline(event.target.value as EventTimeline)}>
+                        <option value="all">All</option>
+                        <option value="active">Current</option>
+                        <option value="past">Past</option>
+                      </Select>
+                    </label>
+
+                    {filterSelects.map(({ label, value, onChange, options }) => (
+                      <label key={label} className="block space-y-1">
+                        <span className="text-xs font-medium">{label}</span>
+                        <Select className="h-8 text-xs" value={value} onChange={(event) => onChange(event.target.value)}>
+                          {options.map((option) => (
+                            <option key={option} value={option}>
+                              {option === 'all' ? `All ${label}` : option}
+                            </option>
+                          ))}
+                        </Select>
+                      </label>
+                    ))}
+
+                    <div className="space-y-2 border-t border-border pt-3">
+                      <Checkbox label="Free only" checked={onlyFree} onChange={(event) => setOnlyFree(event.target.checked)} />
+                      <Checkbox label="Virtual only" checked={onlyVirtual} onChange={(event) => setOnlyVirtual(event.target.checked)} />
                     </div>
-                  </Card>
-                ))}
+                  </div>
+                </Card>
+              )}
+
+              <div className="absolute bottom-3 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-background/90 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-md backdrop-blur-sm">
+                {filteredEvents.length} events — click a pin to view
               </div>
-              <div className="space-y-4">
-                {selectedEvent ? (
-                  <Card className="p-4">
-                    <p className="text-sm text-muted-foreground">
-                      {getEventTitle(selectedEvent, language)} highlighted on map
-                    </p>
-                  </Card>
-                ) : null}
-                <EventMap
-                  events={filteredEvents}
-                  routeIds={routeEventIds}
-                  selectedEventId={selectedEventId}
-                  onSelectEvent={setSelectedEventId}
-                />
-              </div>
+
+              <EventMap
+                events={filteredEvents}
+                routeIds={routeEventIds}
+                selectedEventId={selectedEventId}
+                onSelectEvent={setSelectedEventId}
+                onEventNavigate={(id) => router.push(`/events/${id}`)}
+              />
             </div>
           )}
         </section>
