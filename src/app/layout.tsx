@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Inter } from "next/font/google";
 import "@/app/globals.css";
 import "@/app/judooo-global.css";
+import { Analytics } from "@vercel/analytics/next";
 import { AppProviders } from '@/app/providers';
 
 const inter = Inter({
@@ -44,6 +45,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
           </div>
         </AppProviders>
+        <Analytics />
       </body>
     </html>
   );

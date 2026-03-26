@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Mail, Lock, User } from 'lucide-react';
 import { useNotice } from '@/app/providers/NoticeProvider';
 import { Button, Input, Modal } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -121,12 +120,18 @@ export const AuthDialog = ({
     setIsSubmitting(false);
   };
 
+  const headings: Record<AuthMode, { title: string; subtitle: string }> = {
+    signin: { title: 'Welcome back', subtitle: 'Sign in to your Judooo account' },
+    signup: { title: 'Create account', subtitle: 'Join the Judooo art network' },
+    reset: { title: 'Reset password', subtitle: 'We\'ll send you a reset link' },
+  };
+
   return (
     <Modal onClose={onClose} size="sm">
       <div className="auth-dialog">
         <div className="auth-dialog__hero">
-          <p className="auth-dialog__subtitle">Welcome to</p>
-          <h2 className="auth-dialog__title">Judooo</h2>
+          <h2 className="auth-dialog__title">{headings[mode].title}</h2>
+          <p className="auth-dialog__subtitle">{headings[mode].subtitle}</p>
         </div>
 
         <div className="auth-dialog__modes">
@@ -148,39 +153,33 @@ export const AuthDialog = ({
         <div className="auth-dialog__fields">
           {mode === 'signup' ? (
             <>
-              <div className="auth-dialog__input-group">
-                <User size={18} className="auth-dialog__input-icon" />
+              <label className="auth-dialog__field">
+                <span className="auth-dialog__label">Name</span>
                 <Input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="Full name"
-                  className="auth-dialog__input"
+                  placeholder="Your full name"
                 />
-              </div>
+              </label>
 
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-foreground">Account type</p>
-                <div className="grid gap-2">
+              <div className="auth-dialog__field">
+                <span className="auth-dialog__label">Account type</span>
+                <div className="auth-dialog__roles">
                   {roleOptions.map((option) => (
                     <button
                       key={option.id}
                       type="button"
                       className={cn(
-                        'auth-dialog__role-card border px-4 py-3 text-left transition-colors',
-                        signUpRole === option.id
-                          ? 'border-foreground bg-secondary'
-                          : 'border-border bg-background hover:border-foreground/60 hover:bg-secondary',
+                        'auth-dialog__role-card',
+                        signUpRole === option.id && 'auth-dialog__role-card--active',
                       )}
                       onClick={() => setSignUpRole(option.id)}
                     >
-                      <span
-                        className={cn(
-                          'auth-dialog__role-indicator',
-                          signUpRole === option.id && 'auth-dialog__role-indicator--active',
-                        )}
-                      />
-                      <span className="block text-sm font-semibold text-foreground">{option.title}</span>
-                      <span className="mt-1 block text-sm leading-6 text-muted-foreground">{option.body}</span>
+                      <span className="auth-dialog__role-dot" />
+                      <div>
+                        <span className="auth-dialog__role-title">{option.title}</span>
+                        <span className="auth-dialog__role-desc">{option.body}</span>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -188,46 +187,43 @@ export const AuthDialog = ({
             </>
           ) : null}
 
-          <div className="auth-dialog__input-group">
-            <Mail size={18} className="auth-dialog__input-icon" />
+          <label className="auth-dialog__field">
+            <span className="auth-dialog__label">Email</span>
             <Input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Email address"
-              className="auth-dialog__input"
+              placeholder="name@example.com"
             />
-          </div>
+          </label>
 
           {mode !== 'reset' ? (
-            <div className="auth-dialog__input-group">
-              <Lock size={18} className="auth-dialog__input-icon" />
+            <label className="auth-dialog__field">
+              <span className="auth-dialog__label">Password</span>
               <Input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Password"
-                className="auth-dialog__input"
+                placeholder="8+ characters"
               />
-            </div>
+            </label>
           ) : null}
 
           {mode === 'signup' ? (
-            <div className="auth-dialog__input-group">
-              <Lock size={18} className="auth-dialog__input-icon" />
+            <label className="auth-dialog__field">
+              <span className="auth-dialog__label">Confirm password</span>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Confirm password"
-                className="auth-dialog__input"
+                placeholder="Repeat password"
               />
-            </div>
+            </label>
           ) : null}
         </div>
 
         <div className="auth-dialog__actions">
-          <Button variant="default" className="auth-dialog__submit w-full" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button variant="default" className="w-full" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting
               ? 'Working...'
               : mode === 'signin'
@@ -239,13 +235,17 @@ export const AuthDialog = ({
 
           <div className="auth-dialog__divider">or</div>
 
-          <Button variant="outline" className="auth-dialog__social w-full gap-2" onClick={onLoginGoogle}>
+          <Button variant="outline" className="w-full gap-2" onClick={onLoginGoogle}>
             <GoogleIcon />
             Continue with Google
           </Button>
-          <Button variant="ghost" className="auth-dialog__social w-full text-muted-foreground" onClick={onLoginTestAdmin}>
+          <button
+            type="button"
+            className="auth-dialog__test-admin"
+            onClick={onLoginTestAdmin}
+          >
             Continue as Test Admin
-          </Button>
+          </button>
         </div>
       </div>
     </Modal>
