@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import type { SignUpRole, User } from '../types/auth.types';
+import type { SignUpRole, User, UserRole } from '../types/auth.types';
 import { canAccessAdmin, getRoleApplicationCopy } from '../utils/roles';
 import { api } from '@/services/api';
 import { supabase } from '@/services/supabase/client';
@@ -20,18 +20,20 @@ type SessionUser = {
   user_metadata?: {
     full_name?: string;
     avatar_url?: string;
+    role?: string;
   };
 };
 
 const mapSessionUser = async (sessionUser: SessionUser): Promise<User> => {
   const profile = sessionUser?.id ? await api.getProfile(sessionUser.id) : null;
   const fallbackName = sessionUser.user_metadata?.full_name || sessionUser.email || 'User';
+  const metadataRole = sessionUser.user_metadata?.role as UserRole | undefined;
 
   return {
     id: sessionUser.id,
     name: profile?.name || fallbackName,
     email: profile?.email || sessionUser.email || '',
-    role: profile?.role || 'art_lover',
+    role: profile?.role || metadataRole || 'art_lover',
     avatar:
       profile?.avatar ||
       sessionUser.user_metadata?.avatar_url ||
