@@ -183,7 +183,7 @@ export const EventDetailPage = ({
             <div className="space-y-4">
               <Badge tone="accent">{event.event_type || event.category}</Badge>
               <h1 className="section-heading">{getEventTitle(event, language)}</h1>
-              <p className="text-sm leading-7 text-muted-foreground">{getEventDescription(event, language)}</p>
+              <p className="text-sm leading-6 text-muted-foreground">{getEventDescription(event, language)}</p>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -201,24 +201,24 @@ export const EventDetailPage = ({
               </Card>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button variant={savedEventIds.includes(event.id) ? 'default' : 'outline'} onClick={() => toggleSavedEvent(event.id)}>
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <Button size="sm" variant={savedEventIds.includes(event.id) ? 'default' : 'outline'} onClick={() => toggleSavedEvent(event.id)}>
                 {savedEventIds.includes(event.id) ? 'Saved' : 'Save to route'}
               </Button>
-              <Button variant={routeEventIds.includes(event.id) ? 'default' : 'secondary'} onClick={() => toggleRouteEvent(event.id)}>
+              <Button size="sm" variant={routeEventIds.includes(event.id) ? 'default' : 'secondary'} onClick={() => toggleRouteEvent(event.id)}>
                 {routeEventIds.includes(event.id) ? 'In route' : 'Add to route'}
               </Button>
-              <Button variant="ghost" onClick={shareEvent}>
-                <Share2 size={16} />
+              <Button size="sm" variant="ghost" onClick={shareEvent}>
+                <Share2 size={14} />
                 Share
               </Button>
               <a
                 href={buildGoogleMapsUrl(event)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-card px-5 text-sm font-medium text-foreground transition-colors hover:border-foreground"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border bg-card px-3.5 text-xs font-medium text-foreground transition-colors hover:border-foreground"
               >
-                <MapPinned size={16} />
+                <MapPinned size={14} />
                 Get direction
               </a>
               {event.registration_link ? (
@@ -226,10 +226,10 @@ export const EventDetailPage = ({
                   href={event.registration_link}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand"
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-3.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-brand"
                 >
                   Register
-                  <ExternalLink size={16} />
+                  <ExternalLink size={14} />
                 </a>
               ) : null}
             </div>
