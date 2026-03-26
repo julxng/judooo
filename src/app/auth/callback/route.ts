@@ -33,6 +33,9 @@ export async function GET(request: Request) {
     });
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      console.error('[auth/callback] exchangeCodeForSession failed:', error.message, error.status);
+    }
     if (!error) {
       // Detect recovery: explicit type param OR recent recovery_sent_at on user
       const isRecovery = type === 'recovery' || (() => {
