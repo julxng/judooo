@@ -44,15 +44,18 @@ export const useAuthController = () => {
   const { notify } = useNotice();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(false);
   const search = typeof window === 'undefined' ? '' : window.location.search;
   const searchParams = new URLSearchParams(search);
   const authMode = searchParams.get(AUTH_QUERY_KEY);
   const redirectTo = searchParams.get(REDIRECT_QUERY_KEY);
   const authDialogMode: AuthMode =
-    authMode === 'signin' || authMode === 'signup' || authMode === 'reset' || authMode === 'update-password'
-      ? authMode
-      : 'signin';
-  const isValidAuthMode = authDialogMode === authMode;
+    recoveryMode
+      ? 'update-password'
+      : authMode === 'signin' || authMode === 'signup' || authMode === 'reset' || authMode === 'update-password'
+        ? authMode
+        : 'signin';
+  const isValidAuthMode = recoveryMode || authDialogMode === authMode;
   const nextRedirectPath =
     redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
 
@@ -74,6 +77,22 @@ export const useAuthController = () => {
     if (!supabase) return;
 
     const init = async () => {
+      // Handle ?code= param from old password reset emails that bypass /auth/callback
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      if (code) {
+        const { error } = await supabase!.auth.exchangeCodeForSession(code);
+        if (!error) {
+          // Clean up the code param from URL
+          params.delete('code');
+          const remaining = params.toString();
+          const cleanUrl = remaining
+            ? `${window.location.pathname}?${remaining}`
+            : window.location.pathname;
+          window.history.replaceState({}, '', cleanUrl);
+        }
+      }
+
       const { data } = await supabase!.auth.getSession();
       if (data.session?.user) {
         const user = await mapSessionUser(data.session.user);
@@ -84,13 +103,20 @@ export const useAuthController = () => {
 
     void init();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecoveryMode(true);
+        setIsAuthDialogOpen(true);
+      }
+
       if (session?.user) {
         const user = await mapSessionUser(session.user);
         setCurrentUser(user);
         await api.syncUser(user);
         localStorage.removeItem(DEV_USER_STORAGE_KEY);
-        setIsAuthDialogOpen(false);
+        if (event !== 'PASSWORD_RECOVERY') {
+          setIsAuthDialogOpen(false);
+        }
       } else {
         setCurrentUser(null);
       }
@@ -137,6 +163,7 @@ export const useAuthController = () => {
   const openAuthDialog = () => setIsAuthDialogOpen(true);
   const closeAuthDialog = () => {
     setIsAuthDialogOpen(false);
+    setRecoveryMode(false);
 
     if (!isValidAuthMode) {
       return;
@@ -278,6 +305,7 @@ export const useAuthController = () => {
     }
 
     notify('Password updated successfully.', 'success');
+    setRecoveryMode(false);
     setIsAuthDialogOpen(false);
     clearAuthParams();
   };
