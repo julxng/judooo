@@ -140,13 +140,17 @@ export const api = {
     const localEvents = readLocalDb().events;
 
     if (shouldUseRemote()) {
+      console.log('[api.getEvents] fetching remote…');
       const remoteEvents = await withTimeout(getEventsRemote(), 8000);
+      console.log('[api.getEvents] remote result:', remoteEvents ? `${remoteEvents.length} events` : 'null (timeout or error)');
       if (remoteEvents) {
         const merged = mergeById(remoteEvents, localEvents);
         updateLocalDb((state) => ({ ...state, events: merged }));
         void flushPendingWrites();
         return merged;
       }
+    } else {
+      console.log('[api.getEvents] shouldUseRemote() = false, using local only');
     }
 
     return localEvents;
