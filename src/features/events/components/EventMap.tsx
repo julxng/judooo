@@ -12,11 +12,16 @@ interface EventMapProps {
   routeDescription?: string;
   selectedEventId?: string | null;
   onSelectEvent?: (eventId: string) => void;
+  onEventNavigate?: (eventId: string) => void;
 }
 
-const buildPopupNode = (event: ArtEvent, language: 'en' | 'vi') => {
+const buildPopupNode = (event: ArtEvent, language: 'en' | 'vi', onNavigate?: () => void) => {
   const root = document.createElement('div');
   root.className = 'map-popup';
+  if (onNavigate) {
+    root.style.cursor = 'pointer';
+    root.addEventListener('click', onNavigate);
+  }
 
   const image = document.createElement('img');
   image.src = event.imageUrl;
@@ -28,7 +33,12 @@ const buildPopupNode = (event: ArtEvent, language: 'en' | 'vi') => {
   title.textContent = getEventTitle(event, language);
   const subtitle = document.createElement('p');
   subtitle.textContent = `${event.organizer} • ${getEventLocation(event, language)}`;
-  body.append(title, subtitle);
+
+  const cta = document.createElement('p');
+  cta.className = 'map-popup__cta';
+  cta.textContent = 'View details →';
+
+  body.append(title, subtitle, cta);
   root.appendChild(body);
 
   return root;
@@ -41,6 +51,7 @@ const EventMap = ({
   routeDescription,
   selectedEventId,
   onSelectEvent,
+  onEventNavigate,
 }: EventMapProps) => {
   const { language } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -112,7 +123,7 @@ const EventMap = ({
 
       const point = L.marker([event.lat, event.lng], { icon: marker })
         .addTo(markerLayer)
-        .bindPopup(buildPopupNode(event, language), { closeButton: false });
+        .bindPopup(buildPopupNode(event, language, onEventNavigate ? () => onEventNavigate(event.id) : undefined), { closeButton: false, className: 'map-popup-wrapper' });
 
       point.on('click', () => {
         onSelectEvent?.(event.id);
@@ -141,19 +152,23 @@ const EventMap = ({
       const bounds = L.latLngBounds(geoEvents.map((event) => [event.lat, event.lng]));
       map.fitBounds(bounds, { padding: [32, 32] });
     }
-  }, [events, isMapReady, language, onSelectEvent, routeIds, selectedEventId]);
+  }, [events, isMapReady, language, onEventNavigate, onSelectEvent, routeIds, selectedEventId]);
+
+  const showHeader = !onEventNavigate;
 
   return (
     <Card className="event-map">
-      <div className="event-map__header">
-        <p className="eyebrow">{routeIds?.length ? routeLabel || 'Art Trail' : 'Exhibition Explorer'}</p>
-        <p className="muted-text">
-          {routeIds?.length
-            ? routeDescription || `Navigating ${routeIds.length} saved stops.`
-            : `Showing ${events.length} exhibitions across Vietnam.`}
-        </p>
-      </div>
-      <div ref={containerRef} className="event-map__canvas" />
+      {showHeader && (
+        <div className="event-map__header">
+          <p className="eyebrow">{routeIds?.length ? routeLabel || 'Art Trail' : 'Exhibition Explorer'}</p>
+          <p className="muted-text">
+            {routeIds?.length
+              ? routeDescription || `Navigating ${routeIds.length} saved stops.`
+              : `Showing ${events.length} exhibitions across Vietnam.`}
+          </p>
+        </div>
+      )}
+      <div ref={containerRef} className={`event-map__canvas ${!showHeader ? 'event-map__canvas--full' : ''}`} />
     </Card>
   );
 };
