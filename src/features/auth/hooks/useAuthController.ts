@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { SignUpRole, User } from '../types/auth.types';
 import { canAccessAdmin, getRoleApplicationCopy } from '../utils/roles';
@@ -45,6 +45,7 @@ export const useAuthController = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
+  const recoveryRef = useRef(false);
   const search = typeof window === 'undefined' ? '' : window.location.search;
   const searchParams = new URLSearchParams(search);
   const authMode = searchParams.get(AUTH_QUERY_KEY);
@@ -105,6 +106,7 @@ export const useAuthController = () => {
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
+        recoveryRef.current = true;
         setRecoveryMode(true);
         setIsAuthDialogOpen(true);
       }
@@ -114,7 +116,7 @@ export const useAuthController = () => {
         setCurrentUser(user);
         await api.syncUser(user);
         localStorage.removeItem(DEV_USER_STORAGE_KEY);
-        if (event !== 'PASSWORD_RECOVERY') {
+        if (!recoveryRef.current) {
           setIsAuthDialogOpen(false);
         }
       } else {
@@ -136,7 +138,7 @@ export const useAuthController = () => {
   }, [currentUser, isValidAuthMode]);
 
   useEffect(() => {
-    if (!currentUser || !isValidAuthMode) {
+    if (!currentUser || !isValidAuthMode || recoveryMode) {
       return;
     }
 
@@ -150,7 +152,7 @@ export const useAuthController = () => {
     params.delete(REDIRECT_QUERY_KEY);
     const nextQuery = params.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
-  }, [currentUser, isValidAuthMode, nextRedirectPath, pathname, router, search]);
+  }, [currentUser, isValidAuthMode, recoveryMode, nextRedirectPath, pathname, router, search]);
 
   const clearAuthParams = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -164,6 +166,7 @@ export const useAuthController = () => {
   const closeAuthDialog = () => {
     setIsAuthDialogOpen(false);
     setRecoveryMode(false);
+    recoveryRef.current = false;
 
     if (!isValidAuthMode) {
       return;
@@ -305,6 +308,7 @@ export const useAuthController = () => {
     }
 
     notify('Password updated successfully.', 'success');
+    recoveryRef.current = false;
     setRecoveryMode(false);
     setIsAuthDialogOpen(false);
     clearAuthParams();
