@@ -78,20 +78,12 @@ export const useAuthController = () => {
     if (!supabase) return;
 
     const init = async () => {
-      // Handle ?code= param from old password reset emails that bypass /auth/callback
+      // Redirect ?code= to server-side callback for proper PKCE exchange
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
       if (code) {
-        const { error } = await supabase!.auth.exchangeCodeForSession(code);
-        if (!error) {
-          // Clean up the code param from URL
-          params.delete('code');
-          const remaining = params.toString();
-          const cleanUrl = remaining
-            ? `${window.location.pathname}?${remaining}`
-            : window.location.pathname;
-          window.history.replaceState({}, '', cleanUrl);
-        }
+        window.location.href = `/auth/callback?code=${encodeURIComponent(code)}`;
+        return;
       }
 
       const { data } = await supabase!.auth.getSession();

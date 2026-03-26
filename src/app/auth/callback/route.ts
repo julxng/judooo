@@ -32,9 +32,17 @@ export async function GET(request: Request) {
       },
     });
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      if (type === 'recovery') {
+      // Detect recovery: explicit type param OR recent recovery_sent_at on user
+      const isRecovery = type === 'recovery' || (() => {
+        const sentAt = data.session?.user?.recovery_sent_at;
+        if (!sentAt) return false;
+        const elapsed = Date.now() - new Date(sentAt).getTime();
+        return elapsed < 60 * 60 * 1000; // within last hour
+      })();
+
+      if (isRecovery) {
         return NextResponse.redirect(`${origin}/?auth=update-password`);
       }
       return NextResponse.redirect(`${origin}${next}`);
