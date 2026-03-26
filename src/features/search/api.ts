@@ -12,7 +12,7 @@ const normalizeQueryTokens = (query: string) =>
     .filter(Boolean);
 
 const isApprovedArtwork = (artwork: Artwork) =>
-  !artwork.moderation_status || artwork.moderation_status === 'approved';
+  artwork.moderation_status === 'approved';
 
 const isApprovedEvent = (event: ArtEvent) =>
   !event.moderation_status || event.moderation_status === 'approved';
