@@ -24,6 +24,7 @@ const shellCopy: Record<
     navigation: {
       marketplace: string;
       events: string;
+      saved: string;
       routePlanner: string;
       workspace: string;
       submitEvent: string;
@@ -54,6 +55,7 @@ const shellCopy: Record<
     navigation: {
       marketplace: 'Marketplace',
       events: 'Events',
+      saved: 'Saved',
       routePlanner: 'Route Planner',
       workspace: 'Workspace',
       submitEvent: 'Submit Event',
@@ -84,6 +86,7 @@ const shellCopy: Record<
     navigation: {
       marketplace: 'Tác phẩm',
       events: 'Sự kiện',
+      saved: 'Đã lưu',
       routePlanner: 'Lộ trình',
       workspace: 'Không gian',
       submitEvent: 'Đăng sự kiện',
@@ -148,6 +151,12 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
   const showCreatorLinks = hasCreatorWorkspaceAccess(currentUser?.role);
   const navigation = [
     { href: '/events', label: copy.navigation.events },
+    ...(currentUser
+      ? [
+          { href: '/profile', label: copy.navigation.saved },
+          { href: '/route-planner', label: copy.navigation.routePlanner },
+        ]
+      : []),
   ];
   const footerLinks = [
     { href: '/about', label: copy.footerLinks.about },
