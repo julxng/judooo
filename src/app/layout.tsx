@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Instrument_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "@/app/globals.css";
 import "@/app/judooo-global.css";
+import { Analytics } from "@vercel/analytics/next";
 import { AppProviders } from '@/app/providers';
 
-const instrumentSans = Instrument_Sans({
-  subsets: ["latin", "latin-ext"],
+const inter = Inter({
+  subsets: ["latin", "latin-ext", "vietnamese"],
   variable: "--font-sans",
 });
-const instrumentDisplay = Instrument_Sans({
-  subsets: ["latin", "latin-ext"],
+const interDisplay = Inter({
+  subsets: ["latin", "latin-ext", "vietnamese"],
   variable: "--font-display",
 });
 
@@ -38,12 +39,13 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className={`${instrumentSans.variable} ${instrumentDisplay.variable} min-h-screen bg-background font-sans antialiased`}>
+      <body className={`${inter.variable} ${interDisplay.variable} min-h-screen bg-background font-sans antialiased`}>
         <AppProviders>
           <div className="relative flex min-h-screen flex-col">
             <main className="flex-1">{children}</main>
           </div>
         </AppProviders>
+        <Analytics />
       </body>
     </html>
   );

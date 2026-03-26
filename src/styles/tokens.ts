@@ -48,8 +48,8 @@ export const radius = {
 } as const;
 
 export const typography = {
-  fontSans: "\"Instrument Sans\", ui-sans-serif, system-ui, sans-serif",
-  fontDisplay: "\"Instrument Sans\", ui-sans-serif, system-ui, sans-serif",
+  fontSans: "\"Inter\", ui-sans-serif, system-ui, sans-serif",
+  fontDisplay: "\"Inter\", ui-sans-serif, system-ui, sans-serif",
   fontMono: "ui-monospace, SFMono-Regular, monospace",
   scale: {
     xs: "0.75rem",

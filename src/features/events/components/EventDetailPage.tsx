@@ -23,6 +23,7 @@ import {
   isApprovedEvent,
 } from '../utils/event-utils';
 import { getArtworkTitle, getArtworkMedium } from '@/features/marketplace/utils/artwork-utils';
+import { ArtworkDetailModal } from '@/features/marketplace/components/ArtworkDetailModal';
 import { formatCurrency } from '@/lib/format';
 import { formatDateRange } from '@/lib/date';
 import type { ArtEvent } from '../types/event.types';
@@ -64,6 +65,7 @@ export const EventDetailPage = ({
       skipAutoRefresh: true,
     });
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [activeArtwork, setActiveArtwork] = useState<Artwork | null>(null);
 
   const event = useMemo(
     () => events.find((item) => item.id === eventId && isApprovedEvent(item)) || null,
@@ -181,7 +183,7 @@ export const EventDetailPage = ({
             <div className="space-y-4">
               <Badge tone="accent">{event.event_type || event.category}</Badge>
               <h1 className="section-heading">{getEventTitle(event, language)}</h1>
-              <p className="text-sm leading-7 text-muted-foreground">{getEventDescription(event, language)}</p>
+              <p className="text-sm leading-6 text-muted-foreground">{getEventDescription(event, language)}</p>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -199,24 +201,24 @@ export const EventDetailPage = ({
               </Card>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button variant={savedEventIds.includes(event.id) ? 'default' : 'outline'} onClick={() => toggleSavedEvent(event.id)}>
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <Button size="sm" variant={savedEventIds.includes(event.id) ? 'default' : 'outline'} onClick={() => toggleSavedEvent(event.id)}>
                 {savedEventIds.includes(event.id) ? 'Saved' : 'Save to route'}
               </Button>
-              <Button variant={routeEventIds.includes(event.id) ? 'default' : 'secondary'} onClick={() => toggleRouteEvent(event.id)}>
+              <Button size="sm" variant={routeEventIds.includes(event.id) ? 'default' : 'secondary'} onClick={() => toggleRouteEvent(event.id)}>
                 {routeEventIds.includes(event.id) ? 'In route' : 'Add to route'}
               </Button>
-              <Button variant="ghost" onClick={shareEvent}>
-                <Share2 size={16} />
+              <Button size="sm" variant="ghost" onClick={shareEvent}>
+                <Share2 size={14} />
                 Share
               </Button>
               <a
                 href={buildGoogleMapsUrl(event)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-card px-5 text-sm font-medium text-foreground transition-colors hover:border-foreground"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border bg-card px-3.5 text-xs font-medium text-foreground transition-colors hover:border-foreground"
               >
-                <MapPinned size={16} />
+                <MapPinned size={14} />
                 Get direction
               </a>
               {event.registration_link ? (
@@ -224,10 +226,10 @@ export const EventDetailPage = ({
                   href={event.registration_link}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand"
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-3.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-brand"
                 >
                   Register
-                  <ExternalLink size={16} />
+                  <ExternalLink size={14} />
                 </a>
               ) : null}
             </div>
@@ -264,7 +266,7 @@ export const EventDetailPage = ({
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {initialArtworks.slice(0, 5).map((artwork) => (
-                <Card key={artwork.id} className="overflow-hidden">
+                <Card key={artwork.id} className="cursor-pointer overflow-hidden transition-shadow hover:shadow-md" onClick={() => setActiveArtwork(artwork)}>
                   <div className="relative aspect-square">
                     <img
                       src={artwork.imageUrl}
@@ -328,6 +330,13 @@ export const EventDetailPage = ({
           </section>
         ) : null}
       </Container>
+      {activeArtwork ? (
+        <ArtworkDetailModal
+          artwork={activeArtwork}
+          onClose={() => setActiveArtwork(null)}
+          onAction={() => setActiveArtwork(null)}
+        />
+      ) : null}
     </SiteShell>
   );
 };

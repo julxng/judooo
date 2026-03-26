@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, type PropsWithChildren } from 'react';
-import { Button } from './Button';
+import { X } from 'lucide-react';
 import { Card } from './Card';
 
 interface ModalProps extends PropsWithChildren {
@@ -30,11 +30,16 @@ export const Modal = ({ children, title, onClose, size = 'lg' }: ModalProps) => 
     <div className="ui-modal" role="dialog" aria-modal="true">
       <div className="ui-modal__backdrop" onClick={onClose} aria-label="Close dialog" />
       <Card className={`ui-modal__panel ui-modal__panel--${size}`}>
-        <div className="ui-modal__header">
+        <div className={`ui-modal__header${title ? '' : ' ui-modal__header--no-title'}`}>
           {title ? <h2 className="section-title">{title}</h2> : <span />}
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            Close
-          </Button>
+          <button
+            type="button"
+            className="ui-modal__close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
         </div>
         {children}
       </Card>

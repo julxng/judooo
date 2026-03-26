@@ -96,8 +96,8 @@ export const AboutPage = ({ language: languageProp }: AboutPageProps) => {
           {copy.title}
         </h1>
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <p className="text-sm leading-7 text-muted-foreground">{copy.primaryBody}</p>
-          <p className="text-sm leading-7 text-muted-foreground">{copy.secondaryBody}</p>
+          <p className="text-sm leading-6 text-muted-foreground">{copy.primaryBody}</p>
+          <p className="text-sm leading-6 text-muted-foreground">{copy.secondaryBody}</p>
         </div>
       </section>
 
@@ -105,14 +105,14 @@ export const AboutPage = ({ language: languageProp }: AboutPageProps) => {
         <Card className="p-6">
           <p className="section-kicker">{copy.whatWeDo.kicker}</p>
           <h2 className="mt-4 font-display text-[1.5rem] leading-[0.98] tracking-[-0.04em]">{copy.whatWeDo.title}</h2>
-          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {copy.whatWeDo.body}
           </p>
         </Card>
         <Card className="p-6">
           <p className="section-kicker">{copy.whyItMatters.kicker}</p>
           <h2 className="mt-4 font-display text-[1.5rem] leading-[0.98] tracking-[-0.04em]">{copy.whyItMatters.title}</h2>
-          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {copy.whyItMatters.body}
           </p>
         </Card>
