@@ -115,10 +115,13 @@ const EventMap = ({
 
     const geoEvents = events.filter((event) => typeof event.lat === 'number' && typeof event.lng === 'number');
 
+    let selectedMarker: any = null;
+
     geoEvents.forEach((event) => {
+      const isSelected = selectedEventId === event.id;
       const marker = L.divIcon({
-        className: `judooo-map-pin ${selectedEventId === event.id ? 'judooo-map-pin--active' : ''}`,
-        iconSize: [12, 12],
+        className: `judooo-map-pin ${isSelected ? 'judooo-map-pin--active' : ''}`,
+        iconSize: isSelected ? [18, 18] : [12, 12],
       });
 
       const point = L.marker([event.lat, event.lng], { icon: marker })
@@ -128,7 +131,15 @@ const EventMap = ({
       point.on('click', () => {
         onSelectEvent?.(event.id);
       });
+
+      if (isSelected) {
+        selectedMarker = point;
+      }
     });
+
+    if (selectedMarker) {
+      selectedMarker.openPopup();
+    }
 
     if (routeIds && routeIds.length > 1) {
       const routePoints = routeIds
