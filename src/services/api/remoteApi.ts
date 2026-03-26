@@ -65,7 +65,7 @@ export const updateEventRemote = async (
     const canonicalTitle = event.name_en || event.name_vie || event.title;
     const canonicalDescription = event.description_en || event.description_vie || event.description;
 
-    const payloadV2 = {
+    const payloadV2Raw = {
       title: canonicalTitle,
       name_vie: event.name_vie,
       name_en: event.name_en,
@@ -106,13 +106,17 @@ export const updateEventRemote = async (
       registration_link: event.registration_link,
       google_map_link: event.google_map_link,
       socialvideo_url: event.socialvideo_url,
-      moderation: event.moderation_status,
       moderation_status: event.moderation_status,
       featured: event.featured,
       submitter_name: event.submitter_name,
       submitter_email: event.submitter_email,
       submitter_organization: event.submitter_organization,
     };
+
+    // Strip undefined values to avoid sending non-existent columns
+    const payloadV2 = Object.fromEntries(
+      Object.entries(payloadV2Raw).filter(([, v]) => v !== undefined),
+    );
 
     let { data, error } = await client.from('events').update(payloadV2).eq('id', id).select('*').single();
     if (error) {
