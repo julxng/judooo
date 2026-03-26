@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 import { hasSupabaseEnv, supabaseAnonKey, supabaseUrl } from '@/lib/supabase/env';
 
 export const supabase = (() => {
@@ -9,5 +9,5 @@ export const supabase = (() => {
     return null;
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient(supabaseUrl, supabaseAnonKey);
 })();
