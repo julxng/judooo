@@ -153,7 +153,7 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
     { href: '/events', label: copy.navigation.events },
     ...(currentUser
       ? [
-          { href: '/profile', label: copy.navigation.saved },
+          { href: '/saved', label: copy.navigation.saved },
           { href: '/route-planner', label: copy.navigation.routePlanner },
         ]
       : []),

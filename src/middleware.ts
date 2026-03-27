@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = [
   '/privacy',
   '/profile',
   '/route-planner',
+  '/saved',
   '/search',
   '/signup',
   '/submit-event',
