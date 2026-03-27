@@ -290,6 +290,26 @@ export const useAuthController = () => {
     notify('If this email exists, a password reset link has been sent.', 'success');
   };
 
+  const updateName = async (newName: string) => {
+    if (!currentUser) return;
+
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      notify('Name cannot be empty.', 'error');
+      return;
+    }
+
+    const updated: User = { ...currentUser, name: trimmed, avatar: buildAvatar(trimmed) };
+    setCurrentUser(updated);
+    await api.syncUser(updated);
+
+    if (supabase) {
+      await supabase.auth.updateUser({ data: { full_name: trimmed } });
+    }
+
+    notify('Name updated.', 'success');
+  };
+
   const updatePassword = async (newPassword: string) => {
     if (!supabase) {
       notify('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_* or VITE_SUPABASE_* env vars.', 'warning');
@@ -333,6 +353,7 @@ export const useAuthController = () => {
     signUpWithPassword,
     requestCreatorRole,
     resetPassword,
+    updateName,
     updatePassword,
     logout,
   };
