@@ -57,30 +57,6 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
     );
   }
 
-  if (!hasCreatorAccess) {
-    return (
-      <SiteShell>
-        <Container size="lg" className="py-12">
-          <Card className="p-8">
-            <p className="section-kicker">Profile</p>
-            <h1 className="section-heading mt-4">Collector accounts do not get a profile workspace.</h1>
-            <p className="mt-4 text-sm leading-7 text-muted-foreground">
-              Sign up as an artist or gallery manager to access creator tools, submissions, and this profile area.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button onClick={() => void requestCreatorRole('artist_pending')}>
-                Apply as artist
-              </Button>
-              <Button variant="outline" onClick={() => void requestCreatorRole('gallery_manager_pending')}>
-                Apply as gallery manager
-              </Button>
-            </div>
-          </Card>
-        </Container>
-      </SiteShell>
-    );
-  }
-
   return (
     <SiteShell>
       <Container size="xl" className="space-y-8 py-8 sm:py-12">
@@ -114,7 +90,7 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
               options={[
                 { id: 'saved', label: 'Saved events' },
                 { id: 'account', label: 'Account' },
-                { id: 'verified', label: 'Creator access' },
+                ...(hasCreatorAccess ? [{ id: 'verified' as const, label: 'Creator access' }] : []),
               ]}
             />
 
@@ -162,13 +138,28 @@ export const ProfilePage = ({ initialEvents = [] }: ProfilePageProps) => {
                 <p className="mt-2 text-sm text-muted-foreground">
                   Role: {getRoleLabel(currentUser.role)}
                 </p>
+                {!hasCreatorAccess ? (
+                  <div className="mt-6 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Want to submit events and artworks? Apply for a creator role.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <Button size="sm" onClick={() => void requestCreatorRole('artist_pending')}>
+                        Apply as artist
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => void requestCreatorRole('gallery_manager_pending')}>
+                        Apply as gallery manager
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
                 <Button className="mt-6" variant="outline" onClick={() => void logout()}>
                   Sign out
                 </Button>
               </Card>
             ) : null}
 
-            {activeTab === 'verified' ? (
+            {activeTab === 'verified' && hasCreatorAccess ? (
               <Card className="p-6">
                 <p className="section-kicker">Creator Access</p>
                 <h2 className="mt-4 section-heading">Apply to submit events and artworks.</h2>
