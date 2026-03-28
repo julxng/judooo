@@ -1552,6 +1552,30 @@ img {
   }
 }
 
+/* ── Events masonry layout ── */
+
+.events-masonry {
+  columns: 3;
+  column-gap: var(--space-6);
+}
+
+.events-masonry__item {
+  break-inside: avoid;
+  margin-bottom: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+  .events-masonry {
+    columns: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .events-masonry {
+    columns: 1;
+  }
+}
+
 /* ── Enhanced card hover ── */
 
 .event-card,
@@ -1577,18 +1601,27 @@ img {
 
 .content-grid > *,
 [class*="grid-cols"] > .event-card,
-[class*="grid-cols"] > .artwork-card {
+[class*="grid-cols"] > .artwork-card,
+.events-masonry__item {
   animation: card-entrance var(--motion-slow) var(--motion-easing) both;
 }
 
-[class*="grid-cols"] > :nth-child(1) { animation-delay: 0ms; }
-[class*="grid-cols"] > :nth-child(2) { animation-delay: 60ms; }
-[class*="grid-cols"] > :nth-child(3) { animation-delay: 120ms; }
-[class*="grid-cols"] > :nth-child(4) { animation-delay: 180ms; }
-[class*="grid-cols"] > :nth-child(5) { animation-delay: 240ms; }
-[class*="grid-cols"] > :nth-child(6) { animation-delay: 300ms; }
-[class*="grid-cols"] > :nth-child(7) { animation-delay: 360ms; }
-[class*="grid-cols"] > :nth-child(8) { animation-delay: 420ms; }
+[class*="grid-cols"] > :nth-child(1),
+.events-masonry__item:nth-child(1) { animation-delay: 0ms; }
+[class*="grid-cols"] > :nth-child(2),
+.events-masonry__item:nth-child(2) { animation-delay: 60ms; }
+[class*="grid-cols"] > :nth-child(3),
+.events-masonry__item:nth-child(3) { animation-delay: 120ms; }
+[class*="grid-cols"] > :nth-child(4),
+.events-masonry__item:nth-child(4) { animation-delay: 180ms; }
+[class*="grid-cols"] > :nth-child(5),
+.events-masonry__item:nth-child(5) { animation-delay: 240ms; }
+[class*="grid-cols"] > :nth-child(6),
+.events-masonry__item:nth-child(6) { animation-delay: 300ms; }
+[class*="grid-cols"] > :nth-child(7),
+.events-masonry__item:nth-child(7) { animation-delay: 360ms; }
+[class*="grid-cols"] > :nth-child(8),
+.events-masonry__item:nth-child(8) { animation-delay: 420ms; }
 
 /* ── Toast / Notice animations ── */
 

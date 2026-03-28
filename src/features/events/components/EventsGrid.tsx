@@ -1,4 +1,3 @@
-import { Grid } from '@/components/layout/Grid';
 import { EmptyState } from '@/components/shared/EmptyState';
 import type { ArtEvent } from '../types/event.types';
 import { EventCard } from './EventCard';
@@ -28,16 +27,17 @@ export const EventsGrid = ({
   }
 
   return (
-    <Grid min={320}>
+    <div className="events-masonry">
       {events.map((event) => (
-        <EventCard
-          key={event.id}
-          event={event}
-          isSaved={savedEventIds.includes(event.id)}
-          onOpen={() => onOpenEvent(event.slug)}
-          onToggleSave={() => onToggleSave(event.id)}
-        />
+        <div key={event.id} className="events-masonry__item">
+          <EventCard
+            event={event}
+            isSaved={savedEventIds.includes(event.id)}
+            onOpen={() => onOpenEvent(event.slug)}
+            onToggleSave={() => onToggleSave(event.id)}
+          />
+        </div>
       ))}
-    </Grid>
+    </div>
   );
 };
