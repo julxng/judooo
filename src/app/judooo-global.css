@@ -893,9 +893,8 @@ img {
 
 .event-card__image {
   width: 100%;
-  height: auto;
   display: block;
-  object-fit: contain;
+  object-fit: cover;
   transition: transform var(--motion-slow) var(--motion-easing);
   will-change: transform;
 }
