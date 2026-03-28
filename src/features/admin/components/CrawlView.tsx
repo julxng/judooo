@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Globe, Loader2, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { supabaseAnonKey } from '@/lib/supabase/env';
 
 type CrawlResult = {
   success: boolean;
@@ -43,7 +44,7 @@ export const CrawlView = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-token': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+          'x-admin-token': supabaseAnonKey,
         },
       });
 

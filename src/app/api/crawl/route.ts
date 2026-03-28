@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
+import { supabaseAnonKey } from '@/lib/supabase/env';
 
 const CRAWL_STEPS = [
   { label: 'Crawling events', command: 'npm', args: ['run', 'crawl:events'] },
@@ -9,8 +10,7 @@ const CRAWL_STEPS = [
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get('x-admin-token');
-  const expectedToken = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!authHeader || !expectedToken || authHeader !== expectedToken) {
+  if (!authHeader || !supabaseAnonKey || authHeader !== supabaseAnonKey) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
