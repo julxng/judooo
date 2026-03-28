@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "@/app/globals.css";
 import "@/app/judooo-global.css";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AppProviders } from '@/app/providers';
 
 const inter = Inter({
@@ -46,6 +47,7 @@ export default function RootLayout({
           </div>
         </AppProviders>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
