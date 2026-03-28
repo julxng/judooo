@@ -1553,21 +1553,15 @@ img {
 /* ── Events masonry layout (CSS columns — Artsy-style) ── */
 
 .events-masonry {
-  columns: 4;
-  column-gap: var(--space-5);
+  columns: 3;
+  column-gap: var(--space-6);
 }
 
 .events-masonry > * {
   break-inside: avoid;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-6);
   display: inline-block !important;
   width: 100%;
-}
-
-@media (max-width: 1280px) {
-  .events-masonry {
-    columns: 3;
-  }
 }
 
 @media (max-width: 1024px) {
