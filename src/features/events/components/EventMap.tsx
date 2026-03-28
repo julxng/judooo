@@ -69,7 +69,7 @@ const EventMap = ({
       if (!mounted || !containerRef.current || mapRef.current) return;
 
       leafletRef.current = L;
-      const map = L.map(containerRef.current, { zoomControl: false }).setView([10.7769, 106.7009], 6);
+      const map = L.map(containerRef.current, { zoomControl: false }).setView([21.0285, 105.8542], 12);
       mapRef.current = map;
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; CARTO',

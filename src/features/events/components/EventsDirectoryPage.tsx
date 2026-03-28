@@ -436,7 +436,6 @@ export const EventsDirectoryPage = ({
 
               <EventMap
                 events={filteredEvents}
-                routeIds={routeEventIds}
                 selectedEventId={selectedEventId}
                 onSelectEvent={setSelectedEventId}
                 onEventNavigate={(slug) => router.push(`/events/${slug}`)}
