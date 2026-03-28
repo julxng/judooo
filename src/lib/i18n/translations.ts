@@ -36,6 +36,28 @@ type TranslationSchema = {
       button: string;
     };
   };
+  routePlanner: {
+    kicker: string;
+    heading: string;
+    description: string;
+    signInPrompt: string;
+    signInButton: string;
+    savedEventsKicker: string;
+    currentStops: string;
+    browseMore: string;
+    emptyMessage: string;
+    eventsDirectory: string;
+    inRoute: string;
+    addToRoute: string;
+    remove: string;
+    directions: string;
+    routingKicker: string;
+    selectedStops: string;
+    planMyRoute: string;
+    emptyRouteMessage: string;
+    up: string;
+    down: string;
+  };
   about: {
     title: string;
     body: string;
@@ -95,6 +117,28 @@ export const translations: Record<Locale, TranslationSchema> = {
           'Tham gia Judooo để giới thiệu tác phẩm và kết nối với người yêu nghệ thuật khắp Việt Nam và thế giới.',
         button: 'Tham gia với tư cách nghệ sĩ',
       },
+    },
+    routePlanner: {
+      kicker: 'Lộ trình tham quan',
+      heading: 'Biến sự kiện đã lưu thành lộ trình nghệ thuật trong ngày.',
+      description: 'Sự kiện đã lưu nằm bên trái. Mục lộ trình là những điểm bạn thực sự muốn ghé thăm theo thứ tự. Khi có từ hai điểm dừng trở lên, hệ thống sẽ mở Google Maps với lộ trình đó.',
+      signInPrompt: 'Đăng nhập để lưu sự kiện và đồng bộ lộ trình của bạn.',
+      signInButton: 'Đăng nhập để lưu',
+      savedEventsKicker: 'Sự kiện đã lưu',
+      currentStops: 'điểm dừng hiện tại',
+      browseMore: 'Xem thêm sự kiện',
+      emptyMessage: 'Chưa có gì được lưu. Bắt đầu từ',
+      eventsDirectory: 'danh mục sự kiện',
+      inRoute: 'Trong lộ trình',
+      addToRoute: 'Thêm vào lộ trình',
+      remove: 'Xoá',
+      directions: 'Chỉ đường',
+      routingKicker: 'Cột lộ trình',
+      selectedStops: 'điểm dừng đã chọn',
+      planMyRoute: 'Lên lộ trình',
+      emptyRouteMessage: 'Thêm ít nhất một sự kiện đã lưu vào cột lộ trình để bắt đầu sắp xếp điểm dừng.',
+      up: 'Lên',
+      down: 'Xuống',
     },
     about: {
       title: 'Về chúng mình',
@@ -196,6 +240,28 @@ export const translations: Record<Locale, TranslationSchema> = {
           'Join Judooo to showcase your work and connect with collectors across Vietnam and beyond.',
         button: 'Join as Artist',
       },
+    },
+    routePlanner: {
+      kicker: 'Route Planner',
+      heading: 'Turn saved events into a workable art-day route.',
+      description: 'Saved events stay on the left. Route items are the subset you actually want to visit in order. When two or more stops are ready, the planner opens Google Maps with that sequence.',
+      signInPrompt: 'Sign in to save events and keep your route planner synced.',
+      signInButton: 'Sign in to save',
+      savedEventsKicker: 'Current Saved Events',
+      currentStops: 'current stops',
+      browseMore: 'Browse more events',
+      emptyMessage: 'Nothing saved yet. Start from the',
+      eventsDirectory: 'events directory',
+      inRoute: 'In route',
+      addToRoute: 'Add to route',
+      remove: 'Remove',
+      directions: 'Directions',
+      routingKicker: 'Routing Column',
+      selectedStops: 'selected stops',
+      planMyRoute: 'Plan My Route',
+      emptyRouteMessage: 'Add at least one saved event into the route column to start ordering stops.',
+      up: 'Up',
+      down: 'Down',
     },
     about: {
       title: 'About Us',

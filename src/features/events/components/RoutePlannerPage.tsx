@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Container } from '@/components/ui/Container';
+import { translations } from '@/lib/i18n/translations';
 import { useEventsCatalog } from '../hooks/useEventsCatalog';
 import { buildGoogleMapsUrl, getEventTitle, isApprovedEvent, isCurrentEvent } from '../utils/event-utils';
 import type { ArtEvent } from '../types/event.types';
@@ -40,6 +41,7 @@ interface RoutePlannerPageProps {
 export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) => {
   const { currentUser, openAuthDialog } = useAuth();
   const { language } = useLanguage();
+  const t = translations[language].routePlanner;
   const {
     savedEvents,
     routeEvents,
@@ -63,18 +65,18 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
     <SiteShell>
       <Container size="xl" className="space-y-8 py-8 sm:py-12">
         <section className="space-y-3">
-          <p className="section-kicker">Route Planner</p>
-          <h1 className="section-heading max-w-4xl">Turn saved events into a workable art-day route.</h1>
+          <p className="section-kicker">{t.kicker}</p>
+          <h1 className="section-heading max-w-4xl">{t.heading}</h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-            Saved events stay on the left. Route items are the subset you actually want to visit in order. When two or more stops are ready, the planner opens Google Maps with that sequence.
+            {t.description}
           </p>
           {!currentUser ? (
             <Card className="border-dashed p-5">
               <p className="text-sm text-muted-foreground">
-                Sign in to save events and keep your route planner synced.
+                {t.signInPrompt}
               </p>
               <Button className="mt-4" onClick={openAuthDialog}>
-                Sign in to save
+                {t.signInButton}
               </Button>
             </Card>
           ) : null}
@@ -84,11 +86,11 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
           <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="section-kicker">Current Saved Events</p>
-                <h2 className="mt-3 text-2xl font-semibold">{currentSavedEvents.length} current stops</h2>
+                <p className="section-kicker">{t.savedEventsKicker}</p>
+                <h2 className="mt-3 text-2xl font-semibold">{currentSavedEvents.length} {t.currentStops}</h2>
               </div>
               <Link href="/events" className="text-sm font-medium text-foreground hover:text-muted-foreground">
-                Browse more events
+                {t.browseMore}
               </Link>
             </div>
 
@@ -96,7 +98,7 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
               {currentSavedEvents.length === 0 ? (
                 <Card className="border-dashed p-6">
                   <p className="text-sm text-muted-foreground">
-                    Nothing saved yet. Start from the <Link href="/events" className="font-semibold text-foreground">events directory</Link>.
+                    {t.emptyMessage} <Link href="/events" className="font-semibold text-foreground">{t.eventsDirectory}</Link>.
                   </p>
                 </Card>
               ) : (
@@ -116,11 +118,11 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
                             size="sm"
                             onClick={() => toggleRouteEvent(event.id)}
                           >
-                            {routeEventIds.includes(event.id) ? 'In route' : 'Add to route'}
+                            {routeEventIds.includes(event.id) ? t.inRoute : t.addToRoute}
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => toggleSavedEvent(event.id)}>
                             <Trash2 size={15} />
-                            Remove
+                            {t.remove}
                           </Button>
                           <a
                             href={buildGoogleMapsUrl(event)}
@@ -128,7 +130,7 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
                             rel="noreferrer"
                             className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-transparent px-4 text-xs font-medium text-foreground transition-colors hover:border-border hover:bg-secondary"
                           >
-                            Directions
+                            {t.directions}
                           </a>
                         </div>
                       </div>
@@ -142,8 +144,8 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
           <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="section-kicker">Routing Column</p>
-                <h2 className="mt-3 text-2xl font-semibold">{routeEvents.length} selected stops</h2>
+                <p className="section-kicker">{t.routingKicker}</p>
+                <h2 className="mt-3 text-2xl font-semibold">{routeEvents.length} {t.selectedStops}</h2>
               </div>
               {routeUrl ? (
                 <a
@@ -152,12 +154,12 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
                   rel="noreferrer"
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand"
                 >
-                  Plan My Route
+                  {t.planMyRoute}
                   <ExternalLink size={16} />
                 </a>
               ) : (
                 <Button variant="outline" disabled>
-                  Plan My Route
+                  {t.planMyRoute}
                 </Button>
               )}
             </div>
@@ -166,7 +168,7 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
               {routeEvents.length === 0 ? (
                 <Card className="border-dashed p-6">
                   <p className="text-sm text-muted-foreground">
-                    Add at least one saved event into the route column to start ordering stops.
+                    {t.emptyRouteMessage}
                   </p>
                 </Card>
               ) : (
@@ -182,15 +184,15 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
                         <div className="flex flex-wrap gap-2">
                           <Button variant="ghost" size="sm" onClick={() => moveRouteEvent(event.id, 'up')}>
                             <MoveUp size={15} />
-                            Up
+                            {t.up}
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => moveRouteEvent(event.id, 'down')}>
                             <MoveDown size={15} />
-                            Down
+                            {t.down}
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => removeFromRoute(event.id)}>
                             <Trash2 size={15} />
-                            Remove
+                            {t.remove}
                           </Button>
                         </div>
                       </div>
