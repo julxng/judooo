@@ -17,7 +17,6 @@ interface MarketplaceScreenProps {
   saleTypeFilter: ArtworkSaleFilter;
   priceFilter: ArtworkPriceFilter;
   dbReadError: string | null;
-  pendingWritesCount: number;
   swipedCount: number;
   onSearchChange: (value: string) => void;
   onToggleInterest: (value: string) => void;
@@ -40,7 +39,6 @@ export const MarketplaceScreen = ({
   saleTypeFilter,
   priceFilter,
   dbReadError,
-  pendingWritesCount,
   swipedCount,
   onSearchChange,
   onToggleInterest,
@@ -143,9 +141,6 @@ export const MarketplaceScreen = ({
       </section>
 
       {dbReadError ? <AsyncStatusBanner message={dbReadError} /> : null}
-      {pendingWritesCount > 0 ? (
-        <AsyncStatusBanner message={`${pendingWritesCount} pending offline writes waiting to sync.`} />
-      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_24rem]">
         <section className="overflow-hidden border border-border bg-card p-5 sm:p-6">

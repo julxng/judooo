@@ -14,7 +14,6 @@ import { Container } from '@/components/ui/Container';
 import { formatCurrency } from '@/lib/format';
 import type { Locale } from '@/lib/i18n/translations';
 import { api } from '@/services/api';
-import { hydrateLocalCatalogSnapshot } from '@/services/api/localDb';
 import { EventCard } from '@/features/events/components/EventCard';
 import {
   isApprovedEvent,
@@ -165,11 +164,6 @@ export const MarketplaceHomePage = ({
   const [actionMode, setActionMode] = useState<'bid' | 'auto-inquire' | null>(null);
   const [bidValue, setBidValue] = useState(0);
   const [collectorNote, setCollectorNote] = useState('');
-
-  useEffect(() => {
-    if (initialArtworks.length === 0) return;
-    hydrateLocalCatalogSnapshot({ artworks: initialArtworks });
-  }, [initialArtworks]);
 
   useEffect(() => {
     if (initialArtworks.length > 0) return;

@@ -3,11 +3,8 @@ import type { User } from '@/features/auth/types/auth.types';
 import type { ArtEvent } from '@/features/events/types/event.types';
 import type { Artwork } from '@/features/marketplace/types/artwork.types';
 import { api } from '@/services/api';
-import { supabase } from '@/services/supabase/client';
 import { useNotice } from '@/app/providers/NoticeProvider';
 import { canAccessAdmin } from '@/features/auth/utils/roles';
-import { initialArtworks } from '@/features/marketplace/services/artworkFixtures';
-import { initialEvents } from '@/features/events/services/eventFixtures';
 
 export const useCatalogData = (currentUser: User | null) => {
   const { notify } = useNotice();
@@ -15,9 +12,6 @@ export const useCatalogData = (currentUser: User | null) => {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dbReadError, setDbReadError] = useState<string | null>(null);
-  const [pendingWritesCount, setPendingWritesCount] = useState(0);
-
-  const refreshPendingWrites = () => setPendingWritesCount(api.getPendingWritesCount());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,37 +22,17 @@ export const useCatalogData = (currentUser: User | null) => {
         const [fetchedEvents, fetchedArtworks] = await Promise.all([api.getEvents(), api.getArtworks()]);
         setEvents(fetchedEvents);
         setArtworks(fetchedArtworks);
-
-        if (supabase && fetchedArtworks.length === 0) {
-          const diagnostics = await supabase.from('artworks').select('*', { count: 'exact', head: true });
-          if (diagnostics.error) {
-            setDbReadError(`Supabase artworks read failed: ${diagnostics.error.message}`);
-          } else if ((diagnostics.count || 0) > 0) {
-            setDbReadError(
-              `Supabase has ${diagnostics.count} artworks, but the UI received none. Check FE mapping or filtering.`,
-            );
-          }
-        }
       } catch (error) {
         console.error('Failed to fetch catalog data', error);
-        setDbReadError('Failed to fetch data from Supabase. Showing local sample data.');
-        setEvents(initialEvents);
-        setArtworks(initialArtworks);
-        notify('Falling back to local sample data.', 'warning');
+        setDbReadError('Failed to fetch data from Supabase.');
+        notify('Failed to load catalog data.', 'warning');
       } finally {
         setIsLoading(false);
-        refreshPendingWrites();
       }
     };
 
     void fetchData();
   }, [notify]);
-
-  useEffect(() => {
-    if (pendingWritesCount === 0) return;
-    const interval = window.setInterval(refreshPendingWrites, 3000);
-    return () => window.clearInterval(interval);
-  }, [pendingWritesCount]);
 
   const getWritableUser = (): User | null => {
     if (!currentUser) {
@@ -85,7 +59,6 @@ export const useCatalogData = (currentUser: User | null) => {
     }
 
     setEvents((current) => [created, ...current]);
-    refreshPendingWrites();
     notify('Event saved.', 'success');
     return created;
   };
@@ -101,7 +74,6 @@ export const useCatalogData = (currentUser: User | null) => {
     }
 
     setArtworks((current) => [created, ...current]);
-    refreshPendingWrites();
     notify('Artwork saved.', 'success');
     return created;
   };
@@ -119,7 +91,6 @@ export const useCatalogData = (currentUser: User | null) => {
     }
 
     setEvents((current) => current.map((event) => (event.id === id ? updated : event)));
-    refreshPendingWrites();
     notify('Event updated.', 'success');
     return updated;
   };
@@ -134,7 +105,6 @@ export const useCatalogData = (currentUser: User | null) => {
     const successful = created.filter((event): event is ArtEvent => Boolean(event));
     if (successful.length > 0) {
       setEvents((current) => [...successful, ...current]);
-      refreshPendingWrites();
       notify(`Saved ${successful.length}/${newEvents.length} events.`, 'success');
     }
     return successful;
@@ -150,7 +120,6 @@ export const useCatalogData = (currentUser: User | null) => {
     const successful = created.filter((artwork): artwork is Artwork => Boolean(artwork));
     if (successful.length > 0) {
       setArtworks((current) => [...successful, ...current]);
-      refreshPendingWrites();
       notify(`Saved ${successful.length}/${newArtworks.length} artworks.`, 'success');
     }
     return successful;
@@ -179,7 +148,6 @@ export const useCatalogData = (currentUser: User | null) => {
           : artwork,
       ),
     );
-    refreshPendingWrites();
     return true;
   };
 
@@ -188,7 +156,6 @@ export const useCatalogData = (currentUser: User | null) => {
     artworks,
     isLoading,
     dbReadError,
-    pendingWritesCount,
     createEvent,
     createArtwork,
     updateEvent,

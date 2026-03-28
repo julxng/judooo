@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNotice } from '@/app/providers/NoticeProvider';
 import { api } from '@/services/api';
-import { hydrateLocalCatalogSnapshot } from '@/services/api/localDb';
 import type { User } from '@/features/auth/types/auth.types';
 import type { ArtEvent } from '../types/event.types';
 
@@ -44,11 +43,6 @@ export const useEventsCatalog = (
   const [isLoading, setIsLoading] = useState(initialEvents.length === 0);
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [routeEventIds, setRouteEventIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (initialEvents.length === 0) return;
-    hydrateLocalCatalogSnapshot({ events: initialEvents });
-  }, [initialEvents]);
 
   const refresh = async () => {
     setIsLoading(true);

@@ -12,3 +12,12 @@ export const supabaseAnonKey =
   '';
 
 export const hasSupabaseEnv = Boolean(supabaseUrl && supabaseAnonKey);
+
+/**
+ * Canonical site origin used for auth redirects.
+ * Set NEXT_PUBLIC_SITE_URL in Vercel env vars to your custom domain
+ * (e.g. "https://judooo.art") so OAuth callbacks redirect correctly
+ * instead of landing on the *.vercel.app URL.
+ */
+export const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL || '';

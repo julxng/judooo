@@ -20,6 +20,7 @@ const createDefaultLocalState = (): LocalDbState => ({
 });
 
 let inMemoryDb: LocalDbState = createDefaultLocalState();
+let inMemoryDbInitialized = false;
 
 const normalizeLocalState = (raw: unknown): LocalDbState => {
   const fallback = createDefaultLocalState();
@@ -38,18 +39,24 @@ const normalizeLocalState = (raw: unknown): LocalDbState => {
 export const readLocalDb = (): LocalDbState => {
   if (!hasBrowserStorage()) return inMemoryDb;
 
+  // Return the in-memory copy if we've already loaded from localStorage.
+  // writeLocalDb keeps inMemoryDb in sync, so re-parsing is unnecessary.
+  if (inMemoryDbInitialized) return inMemoryDb;
+
   try {
     const raw = window.localStorage.getItem(LOCAL_DB_KEY);
 
     if (!raw) {
       const fresh = createDefaultLocalState();
       inMemoryDb = fresh;
+      inMemoryDbInitialized = true;
       window.localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(fresh));
       return fresh;
     }
 
     const parsed = normalizeLocalState(JSON.parse(raw));
     inMemoryDb = parsed;
+    inMemoryDbInitialized = true;
     return parsed;
   } catch (error) {
     console.error('Failed to read local db', error);
@@ -59,6 +66,7 @@ export const readLocalDb = (): LocalDbState => {
 
 export const writeLocalDb = (next: LocalDbState): void => {
   inMemoryDb = next;
+  inMemoryDbInitialized = true;
   if (!hasBrowserStorage()) return;
 
   try {

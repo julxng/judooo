@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Container';
 import { api } from '@/services/api';
-import { hydrateLocalCatalogSnapshot } from '@/services/api/localDb';
 import { useArtworkFilters } from '../hooks/useArtworkFilters';
 import type {
   Artwork,
@@ -49,11 +48,6 @@ export const MarketplaceCollectionPage = ({
   const [saleTypeFilter, setSaleTypeFilter] = useState<ArtworkSaleFilter>('all');
   const [priceFilter, setPriceFilter] = useState<ArtworkPriceFilter>('all');
   const [dbReadError, setDbReadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (initialArtworks.length === 0) return;
-    hydrateLocalCatalogSnapshot({ artworks: initialArtworks });
-  }, [initialArtworks]);
 
   useEffect(() => {
     setSearchQuery(initialSearch ?? '');

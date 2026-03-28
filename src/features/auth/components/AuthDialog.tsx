@@ -10,7 +10,7 @@ export type AuthMode = 'signin' | 'signup' | 'reset' | 'update-password';
 type AuthDialogProps = {
   mode?: AuthMode;
   onClose: () => void;
-  onLoginGoogle: () => void;
+  onLoginGoogle: () => Promise<void> | void;
   onLoginTestAdmin?: () => void;
   onLoginEmailPassword: (email: string, password: string) => Promise<void>;
   onSignUpEmailPassword: (
@@ -75,6 +75,7 @@ export const AuthDialog = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [signUpRole, setSignUpRole] = useState<SignUpRole>('art_lover');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -271,9 +272,21 @@ export const AuthDialog = ({
             <>
               <div className="auth-dialog__divider">or</div>
 
-              <Button variant="outline" className="w-full gap-2" onClick={onLoginGoogle}>
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                disabled={isGoogleLoading || isSubmitting}
+                onClick={async () => {
+                  setIsGoogleLoading(true);
+                  try {
+                    await onLoginGoogle();
+                  } catch {
+                    setIsGoogleLoading(false);
+                  }
+                }}
+              >
                 <GoogleIcon />
-                Continue with Google
+                {isGoogleLoading ? 'Redirecting to Google...' : 'Continue with Google'}
               </Button>
               {process.env.NODE_ENV !== 'production' && onLoginTestAdmin ? (
                 <button

@@ -10,7 +10,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const auth = useAuthController();
-  const value = useMemo(() => auth, [auth]);
+  // Memoize on primitive deps so context only updates when auth state actually changes,
+  // not on every parent re-render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const value = useMemo(() => auth, [auth.currentUser, auth.isAuthLoading, auth.isAuthDialogOpen, auth.authDialogMode, auth.canAccessAdmin]);
 
   return (
     <AuthContext.Provider value={value}>

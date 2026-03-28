@@ -170,7 +170,6 @@ const App = () => {
       admin: [
         { label: 'Events', value: String(catalog.events.length) },
         { label: 'Artworks', value: String(catalog.artworks.length) },
-        { label: 'Pending sync', value: String(catalog.pendingWritesCount) },
       ],
       about: [
         { label: 'Events tracked', value: String(catalog.events.length) },
@@ -178,7 +177,7 @@ const App = () => {
         { label: 'Languages', value: '2' },
       ],
     };
-  }, [catalog.artworks, catalog.events, catalog.pendingWritesCount, savedEvents, watchlist.savedEventIds.length]);
+  }, [catalog.artworks, catalog.events, savedEvents, watchlist.savedEventIds.length]);
 
   const handleTabChange = (tab: TabId) => {
     if ((tab === 'saved' || tab === 'admin') && !auth.currentUser) {
@@ -369,7 +368,6 @@ const App = () => {
           saleTypeFilter={saleTypeFilter}
           priceFilter={priceFilter}
           dbReadError={catalog.dbReadError}
-          pendingWritesCount={catalog.pendingWritesCount}
           swipedCount={swipedArtworkIds.length}
           onSearchChange={setArtworkSearchQuery}
           onToggleInterest={handleToggleInterest}

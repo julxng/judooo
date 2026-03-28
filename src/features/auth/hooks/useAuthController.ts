@@ -6,9 +6,11 @@ import { api } from '@/services/api';
 import { supabase } from '@/services/supabase/client';
 import { useNotice } from '@/app/providers/NoticeProvider';
 import { LOCAL_DB_KEY } from '@/services/api/shared';
+import { siteUrl } from '@/lib/supabase/env';
 
 const DEV_USER_STORAGE_KEY = 'judooo_dev_user';
 const AUTH_QUERY_KEY = 'auth';
+const AUTH_ERROR_KEY = 'auth_error';
 const REDIRECT_QUERY_KEY = 'redirectTo';
 const buildAvatar = (seed: string) =>
   `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(seed)}`;
@@ -46,12 +48,15 @@ export const useAuthController = () => {
   const router = useRouter();
   const { notify } = useNotice();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [recoveryMode, setRecoveryMode] = useState(false);
   const recoveryRef = useRef(false);
+  const initRef = useRef(false);
   const search = typeof window === 'undefined' ? '' : window.location.search;
   const searchParams = new URLSearchParams(search);
   const authMode = searchParams.get(AUTH_QUERY_KEY);
+  const authError = searchParams.get(AUTH_ERROR_KEY);
   const redirectTo = searchParams.get(REDIRECT_QUERY_KEY);
   const authDialogMode: AuthMode =
     recoveryMode
@@ -63,7 +68,25 @@ export const useAuthController = () => {
   const nextRedirectPath =
     redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : null;
 
+  // Show auth errors returned from the callback route
   useEffect(() => {
+    if (!authError) return;
+
+    notify(decodeURIComponent(authError), 'error');
+
+    // Clean the error param from the URL
+    const params = new URLSearchParams(window.location.search);
+    params.delete(AUTH_ERROR_KEY);
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+  }, [authError, notify, pathname, router]);
+
+  // Session initialization + auth state listener
+  useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
+    // Dev-only: restore local test user
     if (process.env.NODE_ENV !== 'production') {
       const storedDevUser = localStorage.getItem(DEV_USER_STORAGE_KEY);
       if (storedDevUser) {
@@ -71,6 +94,7 @@ export const useAuthController = () => {
           const parsed = JSON.parse(storedDevUser) as User;
           if (parsed?.id && parsed?.role) {
             setCurrentUser(parsed);
+            setIsAuthLoading(false);
           }
         } catch (error) {
           console.error('Failed to parse local test user', error);
@@ -78,26 +102,19 @@ export const useAuthController = () => {
       }
     }
 
-    if (!supabase) return;
+    if (!supabase) {
+      setIsAuthLoading(false);
+      return;
+    }
 
-    const init = async () => {
-      // Redirect ?code= to server-side callback for proper PKCE exchange
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      if (code) {
-        window.location.href = `/auth/callback?code=${encodeURIComponent(code)}`;
-        return;
-      }
-
-      const { data } = await supabase!.auth.getSession();
-      if (data.session?.user) {
-        const user = await mapSessionUser(data.session.user);
-        setCurrentUser(user);
-        await api.syncUser(user);
-      }
-    };
-
-    void init();
+    // If a stray ?code= landed on the client (shouldn't happen with proper
+    // redirectTo, but handle it as a safety net), forward to the server callback.
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      window.location.href = `/auth/callback?code=${encodeURIComponent(code)}`;
+      return;
+    }
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -107,16 +124,33 @@ export const useAuthController = () => {
       }
 
       if (session?.user) {
-        const user = await mapSessionUser(session.user);
-        setCurrentUser(user);
-        await api.syncUser(user);
-        localStorage.removeItem(DEV_USER_STORAGE_KEY);
-        if (!recoveryRef.current) {
-          setIsAuthDialogOpen(false);
+        try {
+          const user = await mapSessionUser(session.user);
+          setCurrentUser(user);
+          await api.syncUser(user);
+          localStorage.removeItem(DEV_USER_STORAGE_KEY);
+          if (!recoveryRef.current) {
+            setIsAuthDialogOpen(false);
+          }
+        } catch (err) {
+          console.error('[auth] Failed to map session user:', err);
+          // Session exists but profile sync failed — still set a basic user
+          setCurrentUser({
+            id: session.user.id,
+            name: session.user.user_metadata?.full_name || session.user.email || 'User',
+            email: session.user.email || '',
+            role: (session.user.user_metadata?.role as UserRole) || 'art_lover',
+            avatar: session.user.user_metadata?.avatar_url || buildAvatar(session.user.email || 'User'),
+          });
+          if (!recoveryRef.current) {
+            setIsAuthDialogOpen(false);
+          }
         }
-      } else {
+      } else if (event !== 'INITIAL_SESSION') {
         setCurrentUser(null);
       }
+
+      setIsAuthLoading(false);
     });
 
     return () => {
@@ -145,6 +179,7 @@ export const useAuthController = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(AUTH_QUERY_KEY);
     params.delete(REDIRECT_QUERY_KEY);
+    params.delete(AUTH_ERROR_KEY);
     const nextQuery = params.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   }, [currentUser, isValidAuthMode, recoveryMode, nextRedirectPath, pathname, router, search]);
@@ -153,6 +188,7 @@ export const useAuthController = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete(AUTH_QUERY_KEY);
     params.delete(REDIRECT_QUERY_KEY);
+    params.delete(AUTH_ERROR_KEY);
     const nextQuery = params.toString();
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   };
@@ -193,10 +229,17 @@ export const useAuthController = () => {
       return;
     }
 
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: `${siteUrl || window.location.origin}/auth/callback`,
+      },
     });
+
+    if (error) {
+      console.error('[auth] Google sign-in failed:', error);
+      notify(`Google sign-in failed: ${error.message}`, 'error');
+    }
   };
 
   const loginWithPassword = async (email: string, password: string) => {
@@ -230,7 +273,7 @@ export const useAuthController = () => {
       password,
       options: {
         data: { full_name: name, role },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${siteUrl || window.location.origin}/auth/callback`,
       },
     });
 
@@ -279,7 +322,7 @@ export const useAuthController = () => {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      redirectTo: `${siteUrl || window.location.origin}/auth/callback?type=recovery`,
     });
 
     if (error) {
@@ -342,6 +385,7 @@ export const useAuthController = () => {
 
   return {
     currentUser,
+    isAuthLoading,
     isAuthDialogOpen,
     authDialogMode,
     canAccessAdmin: canAccessAdmin(currentUser?.role),
