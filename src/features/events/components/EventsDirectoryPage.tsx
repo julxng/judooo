@@ -161,6 +161,10 @@ export const EventsDirectoryPage = ({
     setSearch(initialSearch ?? '');
   }, [initialSearch]);
 
+  useEffect(() => {
+    setDistrict('all');
+  }, [city]);
+
   const deferredSearch = useDeferredValue(search);
   const publicEvents = useMemo(() => events.filter(isApprovedEvent), [events]);
   const toStringOptions = (values: Array<string | undefined>) => [
@@ -172,8 +176,13 @@ export const EventsDirectoryPage = ({
     [publicEvents],
   );
   const districtOptions = useMemo(
-    () => toStringOptions(publicEvents.map((event) => event.district)),
-    [publicEvents],
+    () =>
+      toStringOptions(
+        publicEvents
+          .filter((event) => city === 'all' || event.city === city)
+          .map((event) => event.district),
+      ),
+    [publicEvents, city],
   );
   const artMediumOptions = useMemo(
     () => toStringOptions(publicEvents.map((event) => event.art_medium)),
