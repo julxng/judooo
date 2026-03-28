@@ -183,6 +183,71 @@ const ART_SOURCE_DOMAINS = [
   'vnfam.vn',
 ];
 
+// Aggregator sites that write ABOUT events but don't host them.
+// For these sources, we should extract the actual venue/organizer from the content
+// instead of crediting the aggregator.
+const AGGREGATOR_DOMAINS = [
+  'hanoigrapevine.com',
+  'saigoneer.com',
+  'news.google.com',
+];
+
+const isAggregatorSource = (sourceUrl: string): boolean => {
+  try {
+    const host = new URL(sourceUrl).hostname.replace(/^www\./, '');
+    return AGGREGATOR_DOMAINS.some((d) => host.includes(d));
+  } catch {
+    return false;
+  }
+};
+
+// Known venue names — used to extract the actual organizer from article text
+const KNOWN_VENUES = [
+  'Galerie Quynh', 'The Factory Contemporary Arts Centre', 'The Factory',
+  'Manzi Art Space', 'Manzi', 'Cuc Gallery', 'VCCA', 'San Art',
+  'Nguyen Art Gallery', 'Nguyen Art Foundation', 'Art Vietnam Gallery',
+  'Vietnam Fine Arts Museum', 'Bảo tàng Mỹ thuật', 'Heritage Space',
+  'Vincom Center for Contemporary Art', 'A.Farm', 'Salon Saigon',
+  'Dia Projects', '6 Gallery', 'Vin Gallery', 'Craig Thomas Gallery',
+  'Dogma Collection', 'Matca Space for Photography', 'Hanoi Studio Gallery',
+  'L\'Espace', "L'Espace", 'Institut Français', 'Japan Foundation',
+  'Goethe-Institut', 'British Council', 'The Observatory',
+  'Toong', 'Zone 9', 'Tadioto', 'Nhà Sàn Collective', 'Nha San Collective',
+  'Bến Thành Fine Arts Gallery', 'Post Vidai', 'Work Room Four',
+  'Mơ Art Space', 'A Sông Gallery', 'Lộ Gallery', 'Tháp Nước Gallery',
+  'Bùi Gallery', 'Đông Phong Art Gallery', 'Mai Gallery',
+];
+
+/**
+ * Try to extract the actual venue/organizer from article text.
+ * Returns the venue name if found, or empty string.
+ */
+const extractVenueFromText = (text: string): string => {
+  if (!text) return '';
+  for (const venue of KNOWN_VENUES) {
+    if (text.includes(venue)) return venue;
+  }
+  // Try patterns like "at <Venue Name>" or "tại <Tên địa điểm>"
+  const atMatch = text.match(
+    /(?:^|\s)(?:at|@|tại|held at|hosted by|organized by|tổ chức (?:bởi|tại))\s+([A-ZÀ-Ỹ][A-Za-zÀ-ỹ''\-]+(?:\s+[A-ZÀ-Ỹ][A-Za-zÀ-ỹ''\-]+){0,5})/,
+  );
+  if (atMatch) return atMatch[1].trim();
+  return '';
+};
+
+/**
+ * Try to extract a more specific location/address from text.
+ */
+const extractLocationFromText = (text: string): string => {
+  if (!text) return '';
+  // Common patterns: "123 Street Name, District, City"
+  const addressMatch = text.match(
+    /(\d{1,4}[A-Za-z]?\s+[A-ZÀ-Ỹ][A-Za-zÀ-ỹ\s''\-]+(?:Street|St\.|Đường|đường|Phố|phố|Road|Rd\.)[\s,]+[A-Za-zÀ-ỹ\s,]+)/,
+  );
+  if (addressMatch) return addressMatch[1].trim().slice(0, 200);
+  return '';
+};
+
 const isArtEventItem = (item: SourceItem): boolean => {
   // Items from dedicated art sources always pass
   try {
@@ -536,6 +601,12 @@ const parseRssItems = (xml: string, sourceUrl: string): SourceItem[] => {
       link ||
       crypto.createHash('sha1').update(`${sourceUrl}:${title}`).digest('hex');
 
+    // For aggregator sites, try to extract venue/organizer from article content
+    const isAggregator = isAggregatorSource(sourceUrl);
+    const contentText = `${title} ${fullText}`;
+    const extractedVenue = isAggregator ? extractVenueFromText(contentText) : '';
+    const extractedLocation = isAggregator ? extractLocationFromText(contentText) : '';
+
     return {
       source_url: sourceUrl,
       external_id: externalId,
@@ -556,6 +627,9 @@ const parseRssItems = (xml: string, sourceUrl: string): SourceItem[] => {
         image_url: imageUrl || null,
         gallery_images: extractAllImagesFromXmlBlock(item),
         pubDate: pubDateRaw || null,
+        ...(extractedVenue && { organizer: extractedVenue }),
+        ...(extractedLocation && { location_name: extractedLocation }),
+        ...(isAggregator && { is_aggregator_source: true }),
       },
       crawl_status: 'new',
     };
@@ -1571,9 +1645,12 @@ const buildEventRow = (item: SourceItem) => {
   const imageUrl =
     (item?.raw_payload?.image_url as string) ||
     'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?w=1200';
+  const isAggregator = item?.raw_payload?.is_aggregator_source === true || isAggregatorSource(item.source_url);
   const sourceHost = (() => {
     try {
-      return new URL(item.source_url).hostname.replace(/^www\./, '');
+      // For aggregator sources, prefer the item_url domain as the "source"
+      const urlToUse = isAggregator && item.item_url ? item.item_url : item.source_url;
+      return new URL(urlToUse).hostname.replace(/^www\./, '');
     } catch {
       return 'Internet Source';
     }
@@ -1588,13 +1665,28 @@ const buildEventRow = (item: SourceItem) => {
     item.item_url || `${item.source_url}:${item.external_id}`;
   const galleryImages = (item?.raw_payload?.gallery_images as string[]) || [];
 
+  // For aggregator sources, try harder to find the actual organizer
+  const organizer = (() => {
+    // 1. Use explicitly extracted organizer from content
+    const payloadOrganizer = (item?.raw_payload?.organizer as string) || '';
+    if (payloadOrganizer) return payloadOrganizer;
+    // 2. Use source_name (set by HTML scrapers for direct gallery sites)
+    const sourceName = (item?.raw_payload?.source_name as string) || '';
+    if (sourceName && !isAggregator) return sourceName;
+    // 3. For aggregators, try extracting from full text one more time
+    if (isAggregator) {
+      const fullText = `${item.title} ${(item?.raw_payload?.full_text as string) || ''} ${item.summary || ''}`;
+      const venue = extractVenueFromText(fullText);
+      if (venue) return venue;
+    }
+    // 4. Fallback to source host (but NOT the aggregator domain)
+    return sourceHost;
+  })();
+
   return {
     title: item.title,
     slug: `${toSlug(item.title || 'event')}-${crypto.createHash('sha1').update(slugSeed).digest('hex').slice(0, 8)}`,
-    organizer:
-      (item?.raw_payload?.organizer as string) ||
-      (item?.raw_payload?.source_name as string) ||
-      sourceHost,
+    organizer,
     startDate,
     endDate,
     location: (item?.raw_payload?.location_name as string) || city,
