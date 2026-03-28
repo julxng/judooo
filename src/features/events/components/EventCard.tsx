@@ -1,4 +1,5 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/app/providers';
 import { Badge, Card } from '@/components/ui';
 import { formatDateRange } from '@/lib/date';
@@ -111,7 +112,7 @@ export const EventCard = ({ event, isSaved = false, onOpen, onToggleSave }: Even
               {event.is_free ? <Badge tone="success">{copy.free}</Badge> : null}
               {event.is_virtual ? <Badge>{copy.virtual}</Badge> : null}
             </div>
-            <span className="event-card__link">{copy.viewEvent}</span>
+            <ArrowRight size={16} className="event-card__link" />
           </div>
         </div>
       </div>
