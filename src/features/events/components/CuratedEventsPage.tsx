@@ -233,7 +233,7 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
           </div>
 
           {isLoading ? (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="events-masonry">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="h-[28rem] animate-pulse bg-secondary" />
               ))}
@@ -243,7 +243,7 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
               <p className="text-sm text-muted-foreground">{t.noEvents}</p>
             </Card>
           ) : (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="events-masonry">
               {filteredEvents.map((event) => (
                 <div key={event.id} className="relative">
                   {hasArtworks(event.id) ? (
