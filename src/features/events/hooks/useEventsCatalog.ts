@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNotice } from '@/app/providers/NoticeProvider';
 import { api } from '@/services/api';
 import type { User } from '@/features/auth/types/auth.types';
@@ -44,7 +44,7 @@ export const useEventsCatalog = (
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [routeEventIds, setRouteEventIds] = useState<string[]>([]);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
       const catalog = await api.getEvents();
@@ -52,7 +52,7 @@ export const useEventsCatalog = (
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (skipAutoRefresh) return;
@@ -81,28 +81,28 @@ export const useEventsCatalog = (
     writeStoredIds(getRouteStorageKey(currentUser.id), routeEventIds);
   }, [currentUser, routeEventIds]);
 
-  const requireAuth = () => {
+  const requireAuth = useCallback(() => {
     if (currentUser) return true;
     notify('Sign in to save events and build your route.', 'warning');
     onAuthRequired?.();
     return false;
-  };
+  }, [currentUser, notify, onAuthRequired]);
 
-  const createEvent = async (event: Partial<ArtEvent>) => {
+  const createEvent = useCallback(async (event: Partial<ArtEvent>) => {
     const created = await api.createEvent(event);
     if (created) {
       setEvents((current) => [created, ...current.filter((item) => item.id !== created.id)]);
     }
     return created;
-  };
+  }, []);
 
-  const updateEvent = async (id: string, next: Partial<ArtEvent>) => {
+  const updateEvent = useCallback(async (id: string, next: Partial<ArtEvent>) => {
     const updated = await api.updateEvent(id, next);
     if (updated) {
       setEvents((current) => current.map((item) => (item.id === id ? updated : item)));
     }
     return updated;
-  };
+  }, []);
 
   const toggleSavedEvent = async (eventId: string) => {
     if (!requireAuth() || !currentUser) return 'auth-required' as const;
