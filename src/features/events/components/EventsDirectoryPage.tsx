@@ -424,7 +424,7 @@ export const EventsDirectoryPage = ({
                   {t.openRoutePlanner}
                 </Link>
               </div>
-              <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid items-start gap-5 md:grid-cols-2 2xl:grid-cols-3">
                 {isLoading
                   ? Array.from({ length: 6 }).map((_, index) => (
                     <Card key={index} className="min-h-[28rem] animate-pulse bg-secondary" />

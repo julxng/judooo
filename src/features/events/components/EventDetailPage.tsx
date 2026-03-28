@@ -327,7 +327,7 @@ export const EventDetailPage = ({
                 Back to directory
               </Link>
             </div>
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid items-start gap-5 md:grid-cols-3">
               {relatedEvents.map((relatedEvent) => (
                 <EventCard
                   key={relatedEvent.id}
