@@ -862,7 +862,6 @@ img {
   flex-direction: column;
 }
 
-.event-card__surface,
 .artwork-card__surface {
   height: 100%;
 }
@@ -893,8 +892,8 @@ img {
 
 .event-card__image {
   width: 100%;
+  height: auto;
   display: block;
-  object-fit: contain;
   transition: transform var(--motion-slow) var(--motion-easing);
   will-change: transform;
 }
@@ -1561,6 +1560,8 @@ img {
 .events-masonry > * {
   break-inside: avoid;
   margin-bottom: var(--space-5);
+  display: inline-block;
+  width: 100%;
 }
 
 @media (max-width: 1280px) {
