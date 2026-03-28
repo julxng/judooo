@@ -165,15 +165,16 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
             </Link>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="events-masonry">
             {latestCrawlEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                isSaved={savedEventIds.includes(event.id)}
-                onOpen={() => router.push(`/events/${event.slug}`)}
-                onToggleSave={() => toggleSavedEvent(event.id)}
-              />
+              <div key={event.id} className="events-masonry__item">
+                <EventCard
+                  event={event}
+                  isSaved={savedEventIds.includes(event.id)}
+                  onOpen={() => router.push(`/events/${event.slug}`)}
+                  onToggleSave={() => toggleSavedEvent(event.id)}
+                />
+              </div>
             ))}
           </div>
         </section>
