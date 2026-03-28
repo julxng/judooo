@@ -2057,6 +2057,14 @@ img {
   pointer-events: none;
 }
 
+.judooo-sovereignty-label--lg span {
+  font-size: 14px;
+  font-style: italic;
+  letter-spacing: 0.2em;
+  color: #4a7fb5;
+  text-shadow: 0 0 6px #fff, 0 0 6px #fff, 0 0 6px #fff, 0 0 6px #fff;
+}
+
 @media (min-width: 768px) {
   .container {
     width: min(var(--container-width), calc(100% - 64px));

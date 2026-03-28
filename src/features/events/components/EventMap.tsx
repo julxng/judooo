@@ -76,17 +76,18 @@ const EventMap = ({
       }).addTo(map);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-      const sovereigntyLabel = (latlng: [number, number], name: string) =>
+      const sovereigntyLabel = (latlng: [number, number], name: string, size: 'sm' | 'lg' = 'sm') =>
         L.marker(latlng, {
           icon: L.divIcon({
-            className: 'judooo-sovereignty-label',
+            className: `judooo-sovereignty-label ${size === 'lg' ? 'judooo-sovereignty-label--lg' : ''}`,
             html: `<span>${name}</span>`,
-            iconSize: [120, 20],
-            iconAnchor: [60, 10],
+            iconSize: size === 'lg' ? [160, 28] : [120, 20],
+            iconAnchor: size === 'lg' ? [80, 14] : [60, 10],
           }),
           interactive: false,
         }).addTo(map);
 
+      sovereigntyLabel([12.5, 112.0], 'Biển Đông', 'lg');
       sovereigntyLabel([16.5, 112.0], 'Hoàng Sa');
       sovereigntyLabel([8.6, 111.9], 'Trường Sa');
 
