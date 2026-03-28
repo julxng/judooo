@@ -53,6 +53,7 @@ export const useAuthController = () => {
   const [recoveryMode, setRecoveryMode] = useState(false);
   const recoveryRef = useRef(false);
   const initRef = useRef(false);
+  const sessionFoundRef = useRef(false);
   const search = typeof window === 'undefined' ? '' : window.location.search;
   const searchParams = new URLSearchParams(search);
   const authMode = searchParams.get(AUTH_QUERY_KEY);
@@ -116,7 +117,39 @@ export const useAuthController = () => {
       return;
     }
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const setSessionUser = (sessionUser: SessionUser) => {
+      sessionFoundRef.current = true;
+
+      // Set basic user immediately so the UI shows logged-in state without
+      // waiting for the profile network request
+      const basicUser: User = {
+        id: sessionUser.id,
+        name: sessionUser.user_metadata?.full_name || sessionUser.email || 'User',
+        email: sessionUser.email || '',
+        role: (sessionUser.user_metadata?.role as UserRole) || 'art_lover',
+        avatar:
+          sessionUser.user_metadata?.avatar_url ||
+          buildAvatar(sessionUser.user_metadata?.full_name || sessionUser.email || 'User'),
+      };
+      setCurrentUser(basicUser);
+      setIsAuthLoading(false);
+      localStorage.removeItem(DEV_USER_STORAGE_KEY);
+      if (!recoveryRef.current) {
+        setIsAuthDialogOpen(false);
+      }
+
+      // Then async-upgrade with full profile data (role, name overrides, etc.)
+      mapSessionUser(sessionUser)
+        .then((fullUser) => {
+          setCurrentUser(fullUser);
+          api.syncUser(fullUser);
+        })
+        .catch((err) => {
+          console.error('[auth] Profile sync failed, using basic user:', err);
+        });
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         recoveryRef.current = true;
         setRecoveryMode(true);
@@ -124,33 +157,21 @@ export const useAuthController = () => {
       }
 
       if (session?.user) {
-        try {
-          const user = await mapSessionUser(session.user);
-          setCurrentUser(user);
-          await api.syncUser(user);
-          localStorage.removeItem(DEV_USER_STORAGE_KEY);
-          if (!recoveryRef.current) {
-            setIsAuthDialogOpen(false);
-          }
-        } catch (err) {
-          console.error('[auth] Failed to map session user:', err);
-          // Session exists but profile sync failed — still set a basic user
-          setCurrentUser({
-            id: session.user.id,
-            name: session.user.user_metadata?.full_name || session.user.email || 'User',
-            email: session.user.email || '',
-            role: (session.user.user_metadata?.role as UserRole) || 'art_lover',
-            avatar: session.user.user_metadata?.avatar_url || buildAvatar(session.user.email || 'User'),
-          });
-          if (!recoveryRef.current) {
-            setIsAuthDialogOpen(false);
-          }
-        }
+        setSessionUser(session.user);
       } else if (event !== 'INITIAL_SESSION') {
         setCurrentUser(null);
+        setIsAuthLoading(false);
       }
+    });
 
-      setIsAuthLoading(false);
+    // Belt-and-suspenders: if onAuthStateChange INITIAL_SESSION missed the
+    // session (e.g. cookie read race), proactively check the server.
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user && !sessionFoundRef.current) {
+        setSessionUser(data.user);
+      } else if (!data.user && !sessionFoundRef.current) {
+        setIsAuthLoading(false);
+      }
     });
 
     return () => {
