@@ -1,11 +1,17 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Globe, Loader2, CheckCircle2, XCircle, RefreshCw, Play } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
 type SourceStatus = 'idle' | 'crawling' | 'done' | 'error';
+
+type CrawlSourceDef = {
+  name: string;
+  type: string;
+  url: string;
+};
 
 type SourceState = {
   name: string;
@@ -20,22 +26,6 @@ type CrawlLog = {
   message: string;
 };
 
-const SOURCES = [
-  { type: 'rss', name: 'Hanoi Grapevine', url: 'hanoigrapevine.com' },
-  { type: 'rss', name: 'Saigoneer (Arts)', url: 'saigoneer.com' },
-  { type: 'rss', name: 'Galerie Quynh', url: 'galeriequynh.com' },
-  { type: 'rss', name: 'The Factory', url: 'factoryartscentre.com' },
-  { type: 'nguyen', name: 'Nguyen Art Foundation', url: 'nguyenartfoundation.com' },
-  { type: 'wp', name: 'The Factory (WP)', url: 'factoryartscentre.com' },
-  { type: 'wp', name: 'Art Vietnam Gallery', url: 'artvietnamgallery.com' },
-  { type: 'wp', name: 'Nguyen Art Gallery', url: 'nguyenartgallery.com' },
-  { type: 'wp', name: 'San Art', url: 'san-art.co' },
-  { type: 'html', name: 'Manzi Art Space', url: 'manziart.space' },
-  { type: 'html', name: 'Cuc Gallery', url: 'cucgallery.vn' },
-  { type: 'html', name: 'VCCA', url: 'vccavietnam.com' },
-  { type: 'html', name: 'Vietnam Fine Arts Museum', url: 'vnfam.vn' },
-];
-
 const typeBadgeClass = (type: string) => {
   switch (type) {
     case 'rss':
@@ -45,6 +35,8 @@ const typeBadgeClass = (type: string) => {
       return 'rounded bg-green-500/10 px-1.5 py-0.5 text-xs font-medium text-green-600';
     case 'html':
       return 'rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-600';
+    case 'google-news':
+      return 'rounded bg-purple-500/10 px-1.5 py-0.5 text-xs font-medium text-purple-600';
     default:
       return 'rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground';
   }
@@ -64,6 +56,8 @@ const statusIndicator = (status: SourceStatus) => {
 };
 
 export const CrawlView = () => {
+  const [sources, setSources] = useState<CrawlSourceDef[]>([]);
+  const [loadingSources, setLoadingSources] = useState(true);
   const [crawling, setCrawling] = useState(false);
   const [currentSource, setCurrentSource] = useState<string | null>(null);
   const [sourceStates, setSourceStates] = useState<SourceState[]>([]);
@@ -73,6 +67,16 @@ export const CrawlView = () => {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch('/api/crawl')
+      .then((r) => r.json())
+      .then((data) => {
+        setSources(data.sources || []);
+        setLoadingSources(false);
+      })
+      .catch(() => setLoadingSources(false));
+  }, []);
 
   const addLog = useCallback((message: string) => {
     const time = new Date().toLocaleTimeString();
@@ -142,13 +146,13 @@ export const CrawlView = () => {
     setTotalCrawled(0);
     setTotalIngested(0);
     setSourceStates(
-      SOURCES.map((s) => ({ name: s.name, type: s.type, status: 'idle', crawled: 0, ingested: 0 })),
+      sources.map((s) => ({ name: s.name, type: s.type, status: 'idle', crawled: 0, ingested: 0 })),
     );
 
     addLog('Starting crawl pipeline — one source at a time to avoid timeout...');
 
-    for (let i = 0; i < SOURCES.length; i++) {
-      const source = SOURCES[i];
+    for (let i = 0; i < sources.length; i++) {
+      const source = sources[i];
       setCurrentSource(source.name);
       setSourceStates((prev) =>
         prev.map((s, idx) => (idx === i ? { ...s, status: 'crawling' } : s)),
@@ -180,9 +184,9 @@ export const CrawlView = () => {
     setTotalCrawled(0);
     setTotalIngested(0);
 
-    const source = SOURCES[sourceIndex];
+    const source = sources[sourceIndex];
     setSourceStates(
-      SOURCES.map((s, i) => ({
+      sources.map((s, i) => ({
         name: s.name,
         type: s.type,
         status: i === sourceIndex ? 'crawling' : 'idle',
@@ -223,9 +227,16 @@ export const CrawlView = () => {
 
       {/* Sources overview */}
       <Card className="p-4">
-        <p className="mb-3 text-sm font-medium text-foreground">Configured Sources</p>
+        <p className="mb-3 text-sm font-medium text-foreground">
+          Configured Sources ({sources.length})
+        </p>
+        {loadingSources ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading sources...
+          </div>
+        ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {SOURCES.map((source, idx) => {
+          {sources.map((source, idx) => {
             const state = sourceStates[idx];
             return (
               <div
@@ -253,6 +264,7 @@ export const CrawlView = () => {
             );
           })}
         </div>
+        )}
       </Card>
 
       {/* Crawl trigger */}
