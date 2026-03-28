@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, LayoutDashboard, Palette, Upload, UserCheck, Users } from 'lucide-react';
+import { Calendar, Globe, LayoutDashboard, Palette, Upload, UserCheck, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import type { AdminCounts, AdminNavItem, AdminView } from '@/features/admin/types/admin.types';
@@ -17,6 +17,7 @@ const buildNavItems = (counts: AdminCounts): AdminNavItem[] => [
   { id: 'artworks', label: 'Artworks', icon: Palette, badge: counts.pendingArtworks || undefined },
   { id: 'creators', label: 'Applications', icon: UserCheck, badge: counts.pendingApplications || undefined },
   { id: 'publish', label: 'Publish', icon: Upload },
+  { id: 'crawl', label: 'Crawl', icon: Globe },
   { id: 'users', label: 'Users', icon: Users },
 ];
 

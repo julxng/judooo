@@ -100,13 +100,13 @@ export const EventDetailModal = ({
                     Register Now
                   </Button>
                 ) : null}
-                {event.sourceItemUrl ? (
+                {(event.sourceItemUrl || event.sourceUrl) ? (
                   <Button
                     variant="secondary"
                     className="w-full"
-                    onClick={() => window.open(event.sourceItemUrl, '_blank', 'noopener,noreferrer')}
+                    onClick={() => window.open(event.sourceItemUrl || event.sourceUrl, '_blank', 'noopener,noreferrer')}
                   >
-                    Open Source
+                    Visit source
                   </Button>
                 ) : null}
               </div>

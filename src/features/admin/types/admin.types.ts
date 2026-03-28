@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
-export type AdminView = 'overview' | 'events' | 'artworks' | 'creators' | 'publish' | 'users';
+export type AdminView = 'overview' | 'events' | 'artworks' | 'creators' | 'publish' | 'crawl' | 'users';
 
 export type ModerationTab = 'pending' | 'approved' | 'rejected';
 

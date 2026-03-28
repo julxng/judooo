@@ -19,8 +19,31 @@ export const getEventTitle = (event: ArtEvent, language: Locale = 'en'): string 
 export const getEventDescription = (event: ArtEvent, language: Locale = 'en'): string =>
   getLocalizedValue(language, event.description_vie, event.description_en, event.description);
 
-export const getEventCity = (event: ArtEvent, language: Locale = 'en'): string =>
-  getLocalizedValue(language, event.city_vie, event.city_en, event.city || event.location);
+const CITY_CANONICAL: Record<string, { en: string; vie: string }> = {
+  'ho chi minh city': { en: 'Ho Chi Minh City', vie: 'Thành phố Hồ Chí Minh' },
+  'thành phố hồ chí minh': { en: 'Ho Chi Minh City', vie: 'Thành phố Hồ Chí Minh' },
+  'tp.hcm': { en: 'Ho Chi Minh City', vie: 'Thành phố Hồ Chí Minh' },
+  'hcm': { en: 'Ho Chi Minh City', vie: 'Thành phố Hồ Chí Minh' },
+  'saigon': { en: 'Ho Chi Minh City', vie: 'Thành phố Hồ Chí Minh' },
+  'sài gòn': { en: 'Ho Chi Minh City', vie: 'Thành phố Hồ Chí Minh' },
+  'hanoi': { en: 'Hà Nội', vie: 'Hà Nội' },
+  'hà nội': { en: 'Hà Nội', vie: 'Hà Nội' },
+  'ha noi': { en: 'Hà Nội', vie: 'Hà Nội' },
+  'đà nẵng': { en: 'Đà Nẵng', vie: 'Đà Nẵng' },
+  'da nang': { en: 'Đà Nẵng', vie: 'Đà Nẵng' },
+  'huế': { en: 'Huế', vie: 'Huế' },
+  'hue': { en: 'Huế', vie: 'Huế' },
+};
+
+const normalizeCity = (raw: string, language: Locale): string => {
+  const match = CITY_CANONICAL[raw.toLowerCase().trim()];
+  return match ? match[language === 'en' ? 'en' : 'vie'] : raw;
+};
+
+export const getEventCity = (event: ArtEvent, language: Locale = 'en'): string => {
+  const raw = getLocalizedValue(language, event.city_vie, event.city_en, event.city || event.location);
+  return raw ? normalizeCity(raw, language) : raw;
+};
 
 export const getEventDistrict = (event: ArtEvent, language: Locale = 'en'): string =>
   getLocalizedValue(language, event.district_vie, event.district_en, event.district);

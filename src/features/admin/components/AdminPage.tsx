@@ -15,6 +15,7 @@ import { ArtworkModerationView } from '@/features/admin/components/ArtworkModera
 import { CreatorApplicationsView } from '@/features/admin/components/CreatorApplicationsView';
 import { ManualPublishView } from '@/features/admin/components/ManualPublishView';
 import { UserManagementView } from '@/features/admin/components/UserManagementView';
+import { CrawlView } from '@/features/admin/components/CrawlView';
 import { EventEditDrawer } from '@/features/admin/components/EventEditDrawer';
 import { ArtworkEditDrawer } from '@/features/admin/components/ArtworkEditDrawer';
 import type { AdminView } from '@/features/admin/types/admin.types';
@@ -132,6 +133,8 @@ const AdminContent = () => {
             eventOps={{ createEvent: eventOps.createEvent, uploadImage: eventOps.uploadImage }}
           />
         );
+      case 'crawl':
+        return <CrawlView />;
       case 'users':
         return (
           <UserManagementView

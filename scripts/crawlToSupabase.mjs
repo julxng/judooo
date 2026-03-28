@@ -43,6 +43,16 @@ const NGUYEN_EVENT_LIMIT = Number(process.env.CRAWL_NGUYEN_EVENT_LIMIT || 0);
 const NGUYEN_EVENT_MAX_PAGES = Number(process.env.CRAWL_NGUYEN_EVENT_MAX_PAGES || 20);
 const NGUYEN_EVENT_PER_PAGE = Math.min(100, Number(process.env.CRAWL_NGUYEN_EVENT_PER_PAGE || 100));
 
+const WP_SITES = (process.env.CRAWL_WP_SITES || '')
+  .split(',')
+  .map((v) => v.trim())
+  .filter(Boolean);
+
+const HTML_SCRAPE_URLS = (process.env.CRAWL_HTML_SCRAPE_URLS || '')
+  .split(',')
+  .map((v) => v.trim())
+  .filter(Boolean);
+
 const DEFAULT_LOCATION = process.env.CRAWL_DEFAULT_LOCATION || 'Vietnam';
 const DEFAULT_CATEGORY = process.env.CRAWL_DEFAULT_CATEGORY || 'exhibition';
 const BATCH_LIMIT = Number(process.env.CRAWL_BATCH_LIMIT || 30);
@@ -207,6 +217,41 @@ const extractImageFromXmlBlock = (block) => {
   return '';
 };
 
+const extractAllImagesFromXmlBlock = (block) => {
+  const images = [];
+  const contentHtml = tagValue(block, 'content:encoded') || tagValue(block, 'description') || tagValue(block, 'content') || tagValue(block, 'summary');
+
+  // All img src
+  const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
+  let match;
+  while ((match = imgRegex.exec(contentHtml)) !== null) {
+    const url = normalizeImageUrl(match[1]);
+    if (url && !images.includes(url)) images.push(url);
+  }
+
+  // Srcset (pick largest)
+  const srcsetRegex = /<img[^>]*srcset=["']([^"']+)["'][^>]*>/gi;
+  while ((match = srcsetRegex.exec(contentHtml)) !== null) {
+    const candidates = match[1]
+      .split(',')
+      .map((e) => e.trim().split(/\s+/))
+      .sort((a, b) => (Number((b[1] || '').replace('w', '')) || 0) - (Number((a[1] || '').replace('w', '')) || 0));
+    for (const [url] of candidates) {
+      const normalized = normalizeImageUrl(url);
+      if (normalized && !images.includes(normalized)) images.push(normalized);
+    }
+  }
+
+  // Media tags
+  const mediaRegex = /<media:content[^>]*url=["']([^"']+)["'][^>]*>/gi;
+  while ((match = mediaRegex.exec(block)) !== null) {
+    const url = normalizeImageUrl(match[1]);
+    if (url && !images.includes(url)) images.push(url);
+  }
+
+  return images;
+};
+
 const parseRssItems = (xml, sourceUrl) => {
   const items = xml.match(/<item[\s\S]*?<\/item>/gi) || [];
   return items.slice(0, BATCH_LIMIT).map((item) => {
@@ -237,6 +282,7 @@ const parseRssItems = (xml, sourceUrl) => {
         description: summary || null,
         full_text: fullText || null,
         image_url: imageUrl || null,
+        gallery_images: extractAllImagesFromXmlBlock(item),
         pubDate: pubDateRaw || null,
       },
       crawl_status: 'new',
@@ -273,6 +319,7 @@ const parseAtomItems = (xml, sourceUrl) => {
         summary,
         full_text: fullText || null,
         image_url: imageUrl || null,
+        gallery_images: extractAllImagesFromXmlBlock(entry),
         updated: updated || null,
       },
       crawl_status: 'new',
@@ -640,6 +687,345 @@ const buildNguyenSourceItems = async () => {
   return Array.from(byKey.values()).map(({ score, ...row }) => row);
 };
 
+// --- Generic WordPress site crawler ---
+const buildWpSiteSourceItems = async (siteBaseUrl) => {
+  const apiBase = siteBaseUrl.replace(/\/+$/, '');
+  const endpoint = `${apiBase}/wp-json/wp/v2/posts`;
+  const items = await fetchPaginatedWpItems(endpoint, BATCH_LIMIT);
+  const results = [];
+
+  for (const item of items) {
+    const title = cleanTitle(item?.title?.rendered || '');
+    const excerpt = stripHtmlRich(item?.excerpt?.rendered || '');
+    const content = stripHtmlRich(item?.content?.rendered || '');
+    const htmlContent = item?.content?.rendered || '';
+    const summary = (content || excerpt).slice(0, 1000);
+    const link = normalizeUrl(item?.link || '', apiBase);
+    const publishedAt = item?.date_gmt || item?.date || null;
+    const featuredImage = getEmbeddedImageUrl(item);
+
+    // Extract all images from content HTML
+    const galleryImages = [];
+    const imgRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    let imgMatch;
+    while ((imgMatch = imgRegex.exec(htmlContent)) !== null) {
+      const imgUrl = normalizeImageUrl(imgMatch[1]);
+      if (imgUrl && !galleryImages.includes(imgUrl)) galleryImages.push(imgUrl);
+    }
+    // Also extract from srcset for highest quality
+    const srcsetRegex = /<img[^>]*srcset=["']([^"']+)["'][^>]*>/gi;
+    let srcsetMatch;
+    while ((srcsetMatch = srcsetRegex.exec(htmlContent)) !== null) {
+      const candidates = srcsetMatch[1]
+        .split(',')
+        .map((e) => e.trim().split(/\s+/)[0])
+        .map(normalizeImageUrl)
+        .filter(Boolean);
+      for (const url of candidates) {
+        if (!galleryImages.includes(url)) galleryImages.push(url);
+      }
+    }
+
+    const imageUrl = featuredImage || galleryImages[0] || '';
+    const startDate = toDate(publishedAt);
+    const endDate = addDays(startDate, 30);
+    let hostName;
+    try {
+      hostName = new URL(apiBase).hostname.replace(/^www\./, '');
+    } catch {
+      hostName = apiBase;
+    }
+
+    results.push({
+      source_url: endpoint,
+      external_id: `wp-post-${item.id}`,
+      source_type: 'wordpress',
+      title: title || 'Untitled Event',
+      summary: summary.slice(0, 500) || null,
+      item_url: link || null,
+      published_at: publishedAt ? new Date(publishedAt).toISOString() : null,
+      raw_payload: {
+        source_name: hostName,
+        title,
+        summary: summary || null,
+        full_text: content || excerpt || null,
+        image_url: imageUrl || null,
+        gallery_images: galleryImages.length > 0 ? galleryImages : null,
+        organizer: hostName,
+        category: DEFAULT_CATEGORY,
+        start_date: startDate,
+        end_date: endDate,
+        location_name: detectCity({ title, summary, item_url: link }),
+      },
+      crawl_status: 'new',
+    });
+  }
+
+  return results;
+};
+
+// --- HTML scraper for non-RSS/API sites (Wix, Squarespace, custom) ---
+const extractJsonLdEvents = (html, sourceUrl) => {
+  const results = [];
+  const jsonLdRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let match;
+  while ((match = jsonLdRegex.exec(html)) !== null) {
+    try {
+      const parsed = JSON.parse(match[1]);
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of items) {
+        if (item['@type'] === 'Event' || item['@type'] === 'ExhibitionEvent') {
+          results.push({
+            title: cleanTitle(item.name || ''),
+            description: stripHtmlRich(item.description || ''),
+            startDate: item.startDate || '',
+            endDate: item.endDate || '',
+            location: item.location?.name || item.location?.address?.addressLocality || '',
+            imageUrl: normalizeImageUrl(
+              (Array.isArray(item.image) ? item.image[0] : item.image) || ''
+            ),
+            url: item.url || '',
+          });
+        }
+      }
+    } catch {
+      // invalid JSON-LD, skip
+    }
+  }
+  return results;
+};
+
+const extractOgMeta = (html) => {
+  const og = {};
+  const metaRegex = /<meta[^>]+property=["'](og:[^"']+)["'][^>]+content=["']([^"']+)["'][^>]*>/gi;
+  let match;
+  while ((match = metaRegex.exec(html)) !== null) {
+    og[match[1]] = decodeXml(match[2]);
+  }
+  // Also try reversed attribute order
+  const metaRegex2 = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["'](og:[^"']+)["'][^>]*>/gi;
+  while ((match = metaRegex2.exec(html)) !== null) {
+    og[match[2]] = decodeXml(match[1]);
+  }
+  return og;
+};
+
+const extractAllImages = (html) => {
+  const images = [];
+  // OG image
+  const ogImage = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1]
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1];
+  if (ogImage) images.push(normalizeImageUrl(ogImage));
+
+  // All img tags with reasonable src
+  const imgRegex = /<img[^>]*src=["'](https?:\/\/[^"']+)["'][^>]*>/gi;
+  let match;
+  while ((match = imgRegex.exec(html)) !== null) {
+    const url = normalizeImageUrl(match[1]);
+    if (url && !images.includes(url) && !/logo|icon|avatar|placeholder|pixel|tracking/i.test(url)) {
+      images.push(url);
+    }
+  }
+
+  // Srcset for higher res
+  const srcsetRegex = /<img[^>]*srcset=["']([^"']+)["'][^>]*>/gi;
+  while ((match = srcsetRegex.exec(html)) !== null) {
+    const candidates = match[1]
+      .split(',')
+      .map((e) => e.trim().split(/\s+/))
+      .sort((a, b) => (Number((b[1] || '').replace('w', '')) || 0) - (Number((a[1] || '').replace('w', '')) || 0));
+    for (const [url] of candidates) {
+      const normalized = normalizeImageUrl(url);
+      if (normalized && !images.includes(normalized)) images.push(normalized);
+    }
+  }
+
+  // Background images in style attributes
+  const bgRegex = /background(?:-image)?\s*:\s*url\(["']?(https?:\/\/[^"')]+)["']?\)/gi;
+  while ((match = bgRegex.exec(html)) !== null) {
+    const url = normalizeImageUrl(match[1]);
+    if (url && !images.includes(url) && !/logo|icon|avatar|placeholder/i.test(url)) {
+      images.push(url);
+    }
+  }
+
+  return images;
+};
+
+const scrapeHtmlPage = async (pageUrl) => {
+  try {
+    const response = await fetch(pageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
+      },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.text();
+  } catch (error) {
+    console.error(`Failed to fetch ${pageUrl}:`, error.message);
+    return '';
+  }
+};
+
+const findSubpageLinks = (html, baseUrl) => {
+  const links = [];
+  const linkRegex = /<a[^>]*href=["']([^"'#]+)["'][^>]*>/gi;
+  let match;
+  while ((match = linkRegex.exec(html)) !== null) {
+    const href = match[1];
+    const fullUrl = normalizeUrl(href, baseUrl);
+    if (!fullUrl) continue;
+    // Only follow links that look like exhibition/event detail pages
+    if (
+      /(exhibit|event|show|workshop|program|display|gallery|collection|trung-bay|trien-lam|su-kien)/i.test(fullUrl) &&
+      fullUrl.startsWith(baseUrl.replace(/\/+$/, '').split('/').slice(0, 3).join('/'))
+    ) {
+      if (!links.includes(fullUrl)) links.push(fullUrl);
+    }
+  }
+  return links.slice(0, BATCH_LIMIT);
+};
+
+const buildHtmlScrapedItems = async (siteUrl) => {
+  const html = await scrapeHtmlPage(siteUrl);
+  if (!html) return [];
+
+  let hostName;
+  try {
+    hostName = new URL(siteUrl).hostname.replace(/^www\./, '');
+  } catch {
+    hostName = siteUrl;
+  }
+
+  const results = [];
+
+  // 1. Try JSON-LD structured data first (best quality)
+  const jsonLdEvents = extractJsonLdEvents(html, siteUrl);
+  for (const ev of jsonLdEvents) {
+    const allImages = ev.imageUrl ? [ev.imageUrl] : [];
+    results.push({
+      source_url: siteUrl,
+      external_id: crypto.createHash('sha1').update(`${siteUrl}:${ev.title}`).digest('hex'),
+      source_type: 'html-jsonld',
+      title: ev.title || 'Untitled Event',
+      summary: ev.description?.slice(0, 500) || null,
+      item_url: ev.url || siteUrl,
+      published_at: ev.startDate ? new Date(ev.startDate).toISOString() : new Date().toISOString(),
+      raw_payload: {
+        source_name: hostName,
+        title: ev.title,
+        summary: ev.description?.slice(0, 500) || null,
+        full_text: ev.description || null,
+        image_url: ev.imageUrl || null,
+        gallery_images: allImages.length > 0 ? allImages : null,
+        organizer: hostName,
+        category: DEFAULT_CATEGORY,
+        start_date: ev.startDate ? toDate(ev.startDate) : toDate(null),
+        end_date: ev.endDate ? toDate(ev.endDate) : '',
+        location_name: ev.location || '',
+      },
+      crawl_status: 'new',
+    });
+  }
+
+  if (results.length > 0) return results;
+
+  // 2. Follow exhibition/event subpage links and scrape each
+  const subpageLinks = findSubpageLinks(html, siteUrl);
+  console.log(`  HTML scraper: found ${subpageLinks.length} potential event links on ${siteUrl}`);
+
+  for (const link of subpageLinks) {
+    try {
+      const pageHtml = await scrapeHtmlPage(link);
+      if (!pageHtml) continue;
+
+      // Try JSON-LD on subpage
+      const subJsonLd = extractJsonLdEvents(pageHtml, link);
+      if (subJsonLd.length > 0) {
+        for (const ev of subJsonLd) {
+          const allImages = extractAllImages(pageHtml);
+          results.push({
+            source_url: siteUrl,
+            external_id: crypto.createHash('sha1').update(`${siteUrl}:${ev.title}`).digest('hex'),
+            source_type: 'html-jsonld',
+            title: ev.title || 'Untitled Event',
+            summary: ev.description?.slice(0, 500) || null,
+            item_url: link,
+            published_at: ev.startDate ? new Date(ev.startDate).toISOString() : new Date().toISOString(),
+            raw_payload: {
+              source_name: hostName,
+              title: ev.title,
+              summary: ev.description?.slice(0, 500) || null,
+              full_text: ev.description || null,
+              image_url: allImages[0] || ev.imageUrl || null,
+              gallery_images: allImages.length > 0 ? allImages : null,
+              organizer: hostName,
+              category: DEFAULT_CATEGORY,
+              start_date: ev.startDate ? toDate(ev.startDate) : toDate(null),
+              end_date: ev.endDate ? toDate(ev.endDate) : '',
+              location_name: ev.location || '',
+            },
+            crawl_status: 'new',
+          });
+        }
+        continue;
+      }
+
+      // Fallback: extract from OG tags + page content
+      const og = extractOgMeta(pageHtml);
+      const title = cleanTitle(og['og:title'] || '');
+      if (!title || title === 'Untitled Event') continue;
+
+      const allImages = extractAllImages(pageHtml);
+      const fullText = stripHtmlRich(pageHtml).slice(0, 2000);
+      const pageYear = Number((pageHtml.match(/\b(20\d{2})\b/) || [])[1] || new Date().getUTCFullYear());
+
+      // Try to find dates in page text
+      let startDate = '';
+      let endDate = '';
+      const lines = fullText.split('\n').map((l) => l.trim()).filter(Boolean);
+      for (const line of lines.slice(0, 60)) {
+        if (!startDate && /(khai mạc|opening|date|thời gian|time|from|duration)/i.test(line)) {
+          const range = extractDateRange(line, pageYear);
+          startDate = range.startDate || startDate;
+          endDate = range.endDate || endDate;
+        }
+        if (startDate) break;
+      }
+
+      results.push({
+        source_url: siteUrl,
+        external_id: crypto.createHash('sha1').update(`${siteUrl}:${title}`).digest('hex'),
+        source_type: 'html-og',
+        title,
+        summary: stripHtml(og['og:description'] || '').slice(0, 500) || null,
+        item_url: link,
+        published_at: new Date().toISOString(),
+        raw_payload: {
+          source_name: hostName,
+          title,
+          summary: stripHtml(og['og:description'] || '').slice(0, 500) || null,
+          full_text: fullText || null,
+          image_url: allImages[0] || null,
+          gallery_images: allImages.length > 0 ? allImages : null,
+          organizer: hostName,
+          category: DEFAULT_CATEGORY,
+          start_date: startDate || toDate(null),
+          end_date: endDate || '',
+          location_name: detectCity({ title, summary: og['og:description'] || '', item_url: link }),
+        },
+        crawl_status: 'new',
+      });
+    } catch (error) {
+      console.error(`  HTML scraper subpage failed ${link}:`, error.message);
+    }
+  }
+
+  return results;
+};
+
 const buildEventRow = (item) => {
   const rawStart = item?.raw_payload?.start_date || item.published_at;
   const startDate = toDate(rawStart);
@@ -673,7 +1059,10 @@ const buildEventRow = (item) => {
     imageUrl,
     description: descriptionText,
     category: item?.raw_payload?.category || DEFAULT_CATEGORY,
-    media: [],
+    media: (item?.raw_payload?.gallery_images || [])
+      .filter((url) => url !== imageUrl)
+      .slice(0, 20)
+      .map((url) => ({ type: 'image', url })),
     source_url: item.source_url,
     source_item_url: item.item_url || null,
     external_id: item.external_id,
@@ -778,6 +1167,46 @@ const run = async () => {
         } catch (error) {
           console.error(`Facebook source failed ${source.kind} ${source.id}:`, error.message || error);
         }
+      }
+    }
+  }
+
+  // Generic WordPress sites
+  if (WP_SITES.length > 0) {
+    for (const siteUrl of WP_SITES) {
+      try {
+        const records = await buildWpSiteSourceItems(siteUrl);
+        crawled += records.length;
+        if (!records.length) {
+          console.log(`No WP posts found for ${siteUrl}`);
+          continue;
+        }
+        const sourceItems = await upsertSourceItems(records);
+        const count = await upsertEvents(sourceItems);
+        ingested += count;
+        console.log(`WordPress ${siteUrl}: parsed=${records.length}, upserted_events=${count}`);
+      } catch (error) {
+        console.error(`WordPress source failed ${siteUrl}:`, error.message || error);
+      }
+    }
+  }
+
+  // HTML scraper for non-RSS/API sites
+  if (HTML_SCRAPE_URLS.length > 0) {
+    for (const siteUrl of HTML_SCRAPE_URLS) {
+      try {
+        const records = await buildHtmlScrapedItems(siteUrl);
+        crawled += records.length;
+        if (!records.length) {
+          console.log(`No events scraped from ${siteUrl}`);
+          continue;
+        }
+        const sourceItems = await upsertSourceItems(records);
+        const count = await upsertEvents(sourceItems);
+        ingested += count;
+        console.log(`HTML scrape ${siteUrl}: parsed=${records.length}, upserted_events=${count}`);
+      } catch (error) {
+        console.error(`HTML scrape source failed ${siteUrl}:`, error.message || error);
       }
     }
   }
