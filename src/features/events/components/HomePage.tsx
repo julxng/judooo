@@ -167,13 +167,14 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
 
           <div className="events-masonry">
             {latestCrawlEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                isSaved={savedEventIds.includes(event.id)}
-                onOpen={() => router.push(`/events/${event.slug}`)}
-                onToggleSave={() => toggleSavedEvent(event.id)}
-              />
+              <div key={event.id} className="events-masonry__item">
+                <EventCard
+                  event={event}
+                  isSaved={savedEventIds.includes(event.id)}
+                  onOpen={() => router.push(`/events/${event.slug}`)}
+                  onToggleSave={() => toggleSavedEvent(event.id)}
+                />
+              </div>
             ))}
           </div>
         </section>
@@ -228,16 +229,19 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
               <div className="events-masonry">
                 {isLoading
                   ? Array.from({ length: 4 }).map((_, index) => (
-                    <Card key={index} className="min-h-[20rem] animate-pulse bg-secondary" />
+                    <div key={index} className="events-masonry__item">
+                      <Card className="min-h-[20rem] animate-pulse bg-secondary" />
+                    </div>
                   ))
                   : section.events.map((item) => (
-                    <EventCard
-                      key={item.id}
-                      event={item}
-                      isSaved={savedEventIds.includes(item.id)}
-                      onOpen={() => router.push(`/events/${item.slug}`)}
-                      onToggleSave={() => toggleSavedEvent(item.id)}
-                    />
+                    <div key={item.id} className="events-masonry__item">
+                      <EventCard
+                        event={item}
+                        isSaved={savedEventIds.includes(item.id)}
+                        onOpen={() => router.push(`/events/${item.slug}`)}
+                        onToggleSave={() => toggleSavedEvent(item.id)}
+                      />
+                    </div>
                   ))}
               </div>
             </section>

@@ -427,16 +427,19 @@ export const EventsDirectoryPage = ({
               <div className="events-masonry">
                 {isLoading
                   ? Array.from({ length: 6 }).map((_, index) => (
-                    <Card key={index} className="min-h-[28rem] animate-pulse bg-secondary" />
+                    <div key={index} className="events-masonry__item">
+                      <Card className="min-h-[28rem] animate-pulse bg-secondary" />
+                    </div>
                   ))
                   : filteredEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      isSaved={savedEventIds.includes(event.id)}
-                      onOpen={() => router.push(`/events/${event.slug}`)}
-                      onToggleSave={() => toggleSavedEvent(event.id)}
-                    />
+                    <div key={event.id} className="events-masonry__item">
+                      <EventCard
+                        event={event}
+                        isSaved={savedEventIds.includes(event.id)}
+                        onOpen={() => router.push(`/events/${event.slug}`)}
+                        onToggleSave={() => toggleSavedEvent(event.id)}
+                      />
+                    </div>
                   ))}
               </div>
             </div>

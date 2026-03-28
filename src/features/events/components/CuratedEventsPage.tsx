@@ -235,7 +235,9 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
           {isLoading ? (
             <div className="events-masonry">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="h-[28rem] animate-pulse bg-secondary" />
+                <div key={i} className="events-masonry__item">
+                  <Card className="h-[28rem] animate-pulse bg-secondary" />
+                </div>
               ))}
             </div>
           ) : filteredEvents.length === 0 ? (
@@ -245,7 +247,7 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
           ) : (
             <div className="events-masonry">
               {filteredEvents.map((event) => (
-                <div key={event.id} className="relative">
+                <div key={event.id} className="events-masonry__item relative">
                   {hasArtworks(event.id) ? (
                     <div className="absolute right-3 top-3 z-10" onClick={() => window.plausible?.('artworks_badge_click', { props: { event_id: event.id } })}>
                       <Badge tone="success" className="cursor-pointer shadow-sm">

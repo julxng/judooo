@@ -29,13 +29,14 @@ export const EventsGrid = ({
   return (
     <div className="events-masonry">
       {events.map((event) => (
-        <EventCard
-          key={event.id}
-          event={event}
-          isSaved={savedEventIds.includes(event.id)}
-          onOpen={() => onOpenEvent(event.slug)}
-          onToggleSave={() => onToggleSave(event.id)}
-        />
+        <div key={event.id} className="events-masonry__item">
+          <EventCard
+            event={event}
+            isSaved={savedEventIds.includes(event.id)}
+            onOpen={() => onOpenEvent(event.slug)}
+            onToggleSave={() => onToggleSave(event.id)}
+          />
+        </div>
       ))}
     </div>
   );
