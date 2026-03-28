@@ -69,12 +69,27 @@ const EventMap = ({
       if (!mounted || !containerRef.current || mapRef.current) return;
 
       leafletRef.current = L;
-      const map = L.map(containerRef.current, { zoomControl: false }).setView([21.0285, 105.8542], 12);
+      const map = L.map(containerRef.current, { zoomControl: false }).setView([14.5, 108.0], 6);
       mapRef.current = map;
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; CARTO',
       }).addTo(map);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      const sovereigntyLabel = (latlng: [number, number], name: string) =>
+        L.marker(latlng, {
+          icon: L.divIcon({
+            className: 'judooo-sovereignty-label',
+            html: `<span>${name}</span>`,
+            iconSize: [120, 20],
+            iconAnchor: [60, 10],
+          }),
+          interactive: false,
+        }).addTo(map);
+
+      sovereigntyLabel([16.5, 112.0], 'Hoàng Sa');
+      sovereigntyLabel([8.6, 111.9], 'Trường Sa');
+
       markerLayerRef.current = L.layerGroup().addTo(map);
       setIsMapReady(true);
     };
