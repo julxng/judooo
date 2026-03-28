@@ -1430,7 +1430,7 @@ const upsertSourceItems = async (
     .upsert(records, { onConflict: 'source_url,external_id' })
     .select('*');
 
-  if (error) throw error;
+  if (error) throw new Error(error.message || JSON.stringify(error));
   return (data as SourceItem[]) || [];
 };
 
@@ -1499,24 +1499,24 @@ const upsertEvents = async (
   if (!sourceItems.length) return 0;
 
   const rows = sourceItems.map(buildEventRow);
-  const rowsWithPublishing = rows.map((row) => ({
+  const rowsWithModeration = rows.map((row) => ({
     ...row,
-    status: 'pending',
-    moderation: 'pending',
+    moderation_status: 'pending',
   }));
 
   let { error } = await supabase
     .from('events')
-    .upsert(rowsWithPublishing, { onConflict: 'source_url,external_id' });
+    .upsert(rowsWithModeration, { onConflict: 'source_url,external_id' });
 
   if (error) {
+    // Fallback: try without moderation_status in case column doesn't exist
     const fallback = await supabase
       .from('events')
       .upsert(rows, { onConflict: 'source_url,external_id' });
     error = fallback.error;
   }
 
-  if (error) throw error;
+  if (error) throw new Error(error.message || JSON.stringify(error));
   return rows.length;
 };
 
