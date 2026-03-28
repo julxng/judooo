@@ -9,8 +9,8 @@ const CRAWL_STEPS = [
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get('x-admin-token');
-  const expectedToken = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!authHeader || authHeader !== expectedToken) {
+  const expectedToken = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!authHeader || !expectedToken || authHeader !== expectedToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
