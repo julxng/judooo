@@ -122,6 +122,71 @@ const ENGLISH_MONTHS: Record<string, number> = {
 };
 
 // ---------------------------------------------------------------------------
+// Event keyword filter — only keep items that look like art events
+// ---------------------------------------------------------------------------
+
+const EVENT_KEYWORDS_EN = [
+  'exhibition', 'exhibit', 'gallery', 'art show', 'art fair', 'solo show',
+  'group show', 'opening', 'vernissage', 'workshop', 'art workshop',
+  'auction', 'art auction', 'residency', 'art residency', 'biennale',
+  'biennial', 'retrospective', 'installation', 'sculpture', 'painting',
+  'photography', 'contemporary art', 'fine art', 'visual art', 'art space',
+  'museum', 'curator', 'curated', 'art event', 'cultural event',
+  'art festival', 'festival', 'performance art', 'mixed media',
+  'collection', 'artwork', 'artworks', 'artist talk', 'art talk',
+  'creative', 'ceramic', 'printmaking', 'watercolor', 'oil painting',
+  'lacquer', 'silk painting', 'woodcut', 'lithograph', 'etching',
+];
+
+const EVENT_KEYWORDS_VI = [
+  'triển lãm', 'trưng bày', 'phòng tranh', 'gallery', 'nghệ thuật',
+  'hội họa', 'điêu khắc', 'sắp đặt', 'workshop', 'hội thảo',
+  'khai mạc', 'đấu giá', 'bảo tàng', 'mỹ thuật', 'nghệ sĩ',
+  'sự kiện nghệ thuật', 'sự kiện', 'liên hoan', 'festival',
+  'sơn dầu', 'sơn mài', 'lụa', 'gốm', 'ceramic', 'tranh',
+  'tác phẩm', 'giám tuyển', 'curator', 'không gian nghệ thuật',
+  'art space', 'triển lãm cá nhân', 'triển lãm nhóm',
+  'nhiếp ảnh', 'photography', 'đương đại', 'contemporary',
+  'trình diễn', 'performance', 'video art', 'new media',
+];
+
+const ALL_EVENT_KEYWORDS = [...EVENT_KEYWORDS_EN, ...EVENT_KEYWORDS_VI].map((k) =>
+  k.toLowerCase(),
+);
+
+/**
+ * Returns true if the item's title or summary contains at least one
+ * art/event-related keyword. Sources that are inherently about art
+ * (gallery websites, art foundations) bypass this filter.
+ */
+const ART_SOURCE_DOMAINS = [
+  'galeriequynh.com',
+  'factoryartscentre.com',
+  'artvietnamgallery.com',
+  'nguyenartgallery.com',
+  'san-art.co',
+  'nguyenartfoundation.com',
+  'manziart.space',
+  'cucgallery.vn',
+  'vccavietnam.com',
+  'vnfam.vn',
+];
+
+const isArtEventItem = (item: SourceItem): boolean => {
+  // Items from dedicated art sources always pass
+  try {
+    const host = new URL(item.source_url).hostname.replace(/^www\./, '');
+    if (ART_SOURCE_DOMAINS.some((d) => host.includes(d))) return true;
+  } catch {
+    // ignore invalid URLs
+  }
+
+  // Check title + summary for event keywords
+  const text = `${item.title} ${item.summary || ''}`.toLowerCase();
+  return ALL_EVENT_KEYWORDS.some((keyword) => text.includes(keyword));
+};
+
+// ---------------------------------------------------------------------------
 // Logger helper — collects logs and also console.logs for debugging
 // ---------------------------------------------------------------------------
 
@@ -1422,12 +1487,21 @@ const fetchSource = async (url: string) => {
 const upsertSourceItems = async (
   supabase: SupabaseClient,
   records: SourceItem[],
+  logger?: ReturnType<typeof createLogger>,
 ): Promise<SourceItem[]> => {
   if (!records.length) return [];
 
+  // Filter to only art/event-related items
+  const eventRecords = records.filter(isArtEventItem);
+  const skipped = records.length - eventRecords.length;
+  if (skipped > 0 && logger) {
+    logger.log(`Filtered: kept ${eventRecords.length}/${records.length} items (skipped ${skipped} non-event articles)`);
+  }
+  if (!eventRecords.length) return [];
+
   const { data, error } = await supabase
     .from('source_items')
-    .upsert(records, { onConflict: 'source_url,external_id' })
+    .upsert(eventRecords, { onConflict: 'source_url,external_id' })
     .select('*');
 
   if (error) throw new Error(error.message || JSON.stringify(error));
@@ -1565,7 +1639,7 @@ export async function runCrawl(
         continue;
       }
 
-      const sourceItems = await upsertSourceItems(supabase, records);
+      const sourceItems = await upsertSourceItems(supabase, records, logger);
       const count = await upsertEvents(supabase, sourceItems);
       ingested += count;
       logger.log(
@@ -1583,7 +1657,7 @@ export async function runCrawl(
     try {
       const records = await buildNguyenSourceItems();
       crawled += records.length;
-      const sourceItems = await upsertSourceItems(supabase, records);
+      const sourceItems = await upsertSourceItems(supabase, records, logger);
       const count = await upsertEvents(supabase, sourceItems);
       ingested += count;
       logger.log(
@@ -1625,7 +1699,7 @@ export async function runCrawl(
             );
             continue;
           }
-          const sourceItems = await upsertSourceItems(supabase, records);
+          const sourceItems = await upsertSourceItems(supabase, records, logger);
           const count = await upsertEvents(supabase, sourceItems);
           ingested += count;
           logger.log(
@@ -1649,7 +1723,7 @@ export async function runCrawl(
         logger.log(`No WP posts found for ${siteUrl}`);
         continue;
       }
-      const sourceItems = await upsertSourceItems(supabase, records);
+      const sourceItems = await upsertSourceItems(supabase, records, logger);
       const count = await upsertEvents(supabase, sourceItems);
       ingested += count;
       logger.log(
@@ -1671,7 +1745,7 @@ export async function runCrawl(
         logger.log(`No events scraped from ${siteUrl}`);
         continue;
       }
-      const sourceItems = await upsertSourceItems(supabase, records);
+      const sourceItems = await upsertSourceItems(supabase, records, logger);
       const count = await upsertEvents(supabase, sourceItems);
       ingested += count;
       logger.log(
@@ -1752,14 +1826,14 @@ export async function runCrawlSource(
       if (!records.length) {
         logger.log(`No items parsed from ${source.url}`);
       } else {
-        const sourceItems = await upsertSourceItems(supabase, records);
+        const sourceItems = await upsertSourceItems(supabase, records, logger);
         ingested = await upsertEvents(supabase, sourceItems);
         logger.log(`RSS ${source.name}: parsed=${records.length}, upserted=${ingested}`);
       }
     } else if (source.type === 'nguyen') {
       const records = await buildNguyenSourceItems();
       crawled = records.length;
-      const sourceItems = await upsertSourceItems(supabase, records);
+      const sourceItems = await upsertSourceItems(supabase, records, logger);
       ingested = await upsertEvents(supabase, sourceItems);
       logger.log(`Nguyen Art Foundation: parsed=${records.length}, upserted=${ingested}`);
     } else if (source.type === 'wp') {
@@ -1768,7 +1842,7 @@ export async function runCrawlSource(
       if (!records.length) {
         logger.log(`No WP posts found for ${source.url}`);
       } else {
-        const sourceItems = await upsertSourceItems(supabase, records);
+        const sourceItems = await upsertSourceItems(supabase, records, logger);
         ingested = await upsertEvents(supabase, sourceItems);
         logger.log(`WordPress ${source.name}: parsed=${records.length}, upserted=${ingested}`);
       }
@@ -1778,7 +1852,7 @@ export async function runCrawlSource(
       if (!records.length) {
         logger.log(`No events scraped from ${source.url}`);
       } else {
-        const sourceItems = await upsertSourceItems(supabase, records);
+        const sourceItems = await upsertSourceItems(supabase, records, logger);
         ingested = await upsertEvents(supabase, sourceItems);
         logger.log(`HTML scrape ${source.name}: parsed=${records.length}, upserted=${ingested}`);
       }
