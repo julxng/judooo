@@ -884,7 +884,7 @@ img {
 }
 
 .event-card__image-wrap {
-  width: 100%;
+  /* No fixed aspect-ratio — images display at natural proportions (Artsy-style) */
 }
 
 .artwork-card__image-wrap {
@@ -894,7 +894,7 @@ img {
 .event-card__image {
   width: 100%;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform var(--motion-slow) var(--motion-easing);
   will-change: transform;
 }
@@ -1551,16 +1551,22 @@ img {
   }
 }
 
-/* ── Events masonry layout ── */
+/* ── Events masonry layout (CSS columns — Artsy-style) ── */
 
 .events-masonry {
-  columns: 3;
-  column-gap: var(--space-6);
+  columns: 4;
+  column-gap: var(--space-5);
 }
 
-.events-masonry__item {
+.events-masonry > * {
   break-inside: avoid;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-5);
+}
+
+@media (max-width: 1280px) {
+  .events-masonry {
+    columns: 3;
+  }
 }
 
 @media (max-width: 1024px) {

@@ -167,14 +167,13 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
 
           <div className="events-masonry">
             {latestCrawlEvents.map((event) => (
-              <div key={event.id} className="events-masonry__item">
-                <EventCard
-                  event={event}
-                  isSaved={savedEventIds.includes(event.id)}
-                  onOpen={() => router.push(`/events/${event.slug}`)}
-                  onToggleSave={() => toggleSavedEvent(event.id)}
-                />
-              </div>
+              <EventCard
+                key={event.id}
+                event={event}
+                isSaved={savedEventIds.includes(event.id)}
+                onOpen={() => router.push(`/events/${event.slug}`)}
+                onToggleSave={() => toggleSavedEvent(event.id)}
+              />
             ))}
           </div>
         </section>
@@ -226,22 +225,19 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                 </Link>
               </div>
 
-              <div className="flex gap-5 overflow-x-auto pb-2">
+              <div className="events-masonry">
                 {isLoading
-                  ? Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="min-w-[18rem] max-w-[20rem] flex-1">
-                      <Card className="h-full min-h-[28rem] animate-pulse bg-secondary" />
-                    </div>
+                  ? Array.from({ length: 4 }).map((_, index) => (
+                    <Card key={index} className="min-h-[20rem] animate-pulse bg-secondary" />
                   ))
                   : section.events.map((item) => (
-                    <div key={item.id} className="min-w-[18rem] max-w-[20rem] flex-1">
-                      <EventCard
-                        event={item}
-                        isSaved={savedEventIds.includes(item.id)}
-                        onOpen={() => router.push(`/events/${item.slug}`)}
-                        onToggleSave={() => toggleSavedEvent(item.id)}
-                      />
-                    </div>
+                    <EventCard
+                      key={item.id}
+                      event={item}
+                      isSaved={savedEventIds.includes(item.id)}
+                      onOpen={() => router.push(`/events/${item.slug}`)}
+                      onToggleSave={() => toggleSavedEvent(item.id)}
+                    />
                   ))}
               </div>
             </section>
