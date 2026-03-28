@@ -125,17 +125,20 @@ const ENGLISH_MONTHS: Record<string, number> = {
 // Logger helper — collects logs and also console.logs for debugging
 // ---------------------------------------------------------------------------
 
-function createLogger() {
+function createLogger(onLog?: (message: string) => void) {
   const logs: string[] = [];
   return {
     logs,
     log(msg: string) {
       logs.push(msg);
       console.log(msg);
+      onLog?.(msg);
     },
     error(msg: string) {
-      logs.push(`[ERROR] ${msg}`);
+      const errMsg = `[ERROR] ${msg}`;
+      logs.push(errMsg);
       console.error(msg);
+      onLog?.(errMsg);
     },
   };
 }
@@ -1498,8 +1501,8 @@ const upsertEvents = async (
   const rows = sourceItems.map(buildEventRow);
   const rowsWithPublishing = rows.map((row) => ({
     ...row,
-    status: 'published',
-    moderation: 'approved',
+    status: 'pending',
+    moderation: 'pending',
   }));
 
   let { error } = await supabase
@@ -1521,8 +1524,10 @@ const upsertEvents = async (
 // Main crawl orchestrator
 // ---------------------------------------------------------------------------
 
-export async function runCrawl(): Promise<CrawlResult> {
-  const logger = createLogger();
+export async function runCrawl(
+  onLog?: (message: string) => void,
+): Promise<CrawlResult> {
+  const logger = createLogger(onLog);
   const supabase = buildSupabaseClient();
 
   const googleSources = GOOGLE_NEWS_QUERIES.map(googleNewsFeedUrl);
@@ -1685,6 +1690,108 @@ export async function runCrawl(): Promise<CrawlResult> {
 }
 
 // ---------------------------------------------------------------------------
+// Source registry — each entry can be crawled independently
+// ---------------------------------------------------------------------------
+
+type CrawlSource = {
+  name: string;
+  type: 'rss' | 'wp' | 'html' | 'nguyen';
+  url: string;
+};
+
+const CRAWL_SOURCES: CrawlSource[] = [
+  ...SOURCE_URLS.map((url) => ({
+    name: new URL(url).hostname.replace(/^www\./, ''),
+    type: 'rss' as const,
+    url,
+  })),
+  ...(NGUYEN_EVENTS_ENABLED
+    ? [{ name: 'nguyenartfoundation.com', type: 'nguyen' as const, url: 'nguyen' }]
+    : []),
+  ...WP_SITES.map((url) => ({
+    name: new URL(url).hostname.replace(/^www\./, ''),
+    type: 'wp' as const,
+    url,
+  })),
+  ...HTML_SCRAPE_URLS.map((url) => ({
+    name: new URL(url).hostname.replace(/^www\./, ''),
+    type: 'html' as const,
+    url,
+  })),
+];
+
+export function getCrawlSources(): Array<{ name: string; type: string; url: string }> {
+  return CRAWL_SOURCES;
+}
+
+export async function runCrawlSource(
+  sourceIndex: number,
+  onLog?: (message: string) => void,
+): Promise<CrawlResult> {
+  const source = CRAWL_SOURCES[sourceIndex];
+  if (!source) {
+    throw new Error(`Invalid source index: ${sourceIndex}. Max: ${CRAWL_SOURCES.length - 1}`);
+  }
+
+  const logger = createLogger(onLog);
+  const supabase = buildSupabaseClient();
+
+  let crawled = 0;
+  let ingested = 0;
+
+  logger.log(`Crawling source [${sourceIndex}/${CRAWL_SOURCES.length - 1}]: ${source.name} (${source.type})`);
+
+  try {
+    if (source.type === 'rss') {
+      const text = await fetchSource(source.url);
+      const rssRecords = parseRssItems(text, source.url);
+      const atomRecords = rssRecords.length === 0 ? parseAtomItems(text, source.url) : [];
+      const records = rssRecords.length > 0 ? rssRecords : atomRecords;
+      crawled = records.length;
+
+      if (!records.length) {
+        logger.log(`No items parsed from ${source.url}`);
+      } else {
+        const sourceItems = await upsertSourceItems(supabase, records);
+        ingested = await upsertEvents(supabase, sourceItems);
+        logger.log(`RSS ${source.name}: parsed=${records.length}, upserted=${ingested}`);
+      }
+    } else if (source.type === 'nguyen') {
+      const records = await buildNguyenSourceItems();
+      crawled = records.length;
+      const sourceItems = await upsertSourceItems(supabase, records);
+      ingested = await upsertEvents(supabase, sourceItems);
+      logger.log(`Nguyen Art Foundation: parsed=${records.length}, upserted=${ingested}`);
+    } else if (source.type === 'wp') {
+      const records = await buildWpSiteSourceItems(source.url);
+      crawled = records.length;
+      if (!records.length) {
+        logger.log(`No WP posts found for ${source.url}`);
+      } else {
+        const sourceItems = await upsertSourceItems(supabase, records);
+        ingested = await upsertEvents(supabase, sourceItems);
+        logger.log(`WordPress ${source.name}: parsed=${records.length}, upserted=${ingested}`);
+      }
+    } else if (source.type === 'html') {
+      const records = await buildHtmlScrapedItems(source.url, logger);
+      crawled = records.length;
+      if (!records.length) {
+        logger.log(`No events scraped from ${source.url}`);
+      } else {
+        const sourceItems = await upsertSourceItems(supabase, records);
+        ingested = await upsertEvents(supabase, sourceItems);
+        logger.log(`HTML scrape ${source.name}: parsed=${records.length}, upserted=${ingested}`);
+      }
+    }
+  } catch (error) {
+    logger.error(`Source failed ${source.name}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  logger.log(`Done. Crawled=${crawled}, ingested=${ingested}`);
+  return { crawled, ingested, logs: logger.logs };
+}
+
+// ---------------------------------------------------------------------------
 // Dedupe
 // ---------------------------------------------------------------------------
 
@@ -1705,8 +1812,10 @@ const rankDate = (row: {
     row.imported_at || row.created_at || row.startDate || 0,
   ).getTime() || 0;
 
-export async function runDedupe(): Promise<DedupeResult> {
-  const logger = createLogger();
+export async function runDedupe(
+  onLog?: (message: string) => void,
+): Promise<DedupeResult> {
+  const logger = createLogger(onLog);
   const supabase = buildSupabaseClient();
 
   const { data, error } = await supabase
