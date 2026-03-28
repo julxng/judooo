@@ -107,6 +107,7 @@ const AdminContent = () => {
             onDelete={eventOps.deleteEvent}
             onBatchDelete={eventOps.batchDeleteEvents}
             onEdit={setEditingEvent}
+            onSave={handleSaveEvent}
           />
         );
       case 'artworks':
