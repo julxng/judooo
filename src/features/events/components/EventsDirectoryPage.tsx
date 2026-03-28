@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Filter, Map, Rows3, Search } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, Map, Rows3, Search, X } from 'lucide-react';
 import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Button } from '@/components/ui/Button';
@@ -61,6 +61,9 @@ const translations = {
     mapStatus: (n: number) => `${n} events — click a pin to view`,
     freeOnlyShort: 'Free only',
     virtualOnlyShort: 'Virtual only',
+    showFilters: 'Show filters',
+    hideFilters: 'Hide filters',
+    clearFilters: 'Clear filters',
   },
   vie: {
     kicker: 'Tất cả sự kiện',
@@ -95,6 +98,9 @@ const translations = {
     mapStatus: (n: number) => `${n} sự kiện — chọn ghim để xem`,
     freeOnlyShort: 'Miễn phí',
     virtualOnlyShort: 'Trực tuyến',
+    showFilters: 'Hiện bộ lọc',
+    hideFilters: 'Ẩn bộ lọc',
+    clearFilters: 'Xóa bộ lọc',
   },
 } as const;
 
@@ -250,6 +256,34 @@ export const EventsDirectoryPage = ({
     }
   }, [filteredEvents, selectedEventId]);
 
+  const activeFilterCount = [
+    search !== '',
+    timeline !== 'all',
+    sortMode !== 'recently-imported',
+    city !== 'all',
+    district !== 'all',
+    artMedium !== 'all',
+    eventType !== 'all',
+    placeType !== 'all',
+    onlyFree,
+    onlyVirtual,
+    registrationRequired,
+  ].filter(Boolean).length;
+
+  const clearAllFilters = () => {
+    setSearch('');
+    setTimeline('all');
+    setSortMode('recently-imported');
+    setCity('all');
+    setDistrict('all');
+    setArtMedium('all');
+    setEventType('all');
+    setPlaceType('all');
+    setOnlyFree(false);
+    setOnlyVirtual(false);
+    setRegistrationRequired(false);
+  };
+
   const filterSelects: FilterSelectConfig[] = [
     { label: t.city, value: city, onChange: setCity, options: cityOptions },
     { label: t.district, value: district, onChange: setDistrict, options: districtOptions },
@@ -290,8 +324,36 @@ export const EventsDirectoryPage = ({
           </div>
         </section>
 
-        <section className={`grid gap-6 ${viewMode === 'grid' ? 'xl:grid-cols-[19rem_1fr]' : ''}`}>
-          {viewMode === 'grid' ? (
+        {viewMode === 'grid' && (
+          <div className="flex items-center gap-3">
+            <Button
+              variant={filtersOpen ? 'default' : 'secondary'}
+              size="sm"
+              onClick={() => setFiltersOpen(!filtersOpen)}
+            >
+              <Filter size={16} />
+              {filtersOpen ? t.hideFilters : t.showFilters}
+              {activeFilterCount > 0 && !filtersOpen && (
+                <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                  {activeFilterCount}
+                </span>
+              )}
+              {filtersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </Button>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearAllFilters}
+                className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <X size={12} />
+                {t.clearFilters}
+              </button>
+            )}
+          </div>
+        )}
+
+        <section className={`grid gap-6 ${viewMode === 'grid' && filtersOpen ? 'xl:grid-cols-[19rem_1fr]' : ''}`}>
+          {viewMode === 'grid' && filtersOpen ? (
             <Card className="h-fit p-5 xl:sticky xl:top-28">
               <div className="mb-5 flex items-center gap-2">
                 <Filter size={16} className="text-foreground" />
