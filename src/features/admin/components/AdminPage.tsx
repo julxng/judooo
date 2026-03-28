@@ -91,6 +91,8 @@ const AdminContent = () => {
             language={language}
             onModerate={eventOps.moderateEvent}
             onBatchModerate={eventOps.batchModerateEvents}
+            onDelete={eventOps.deleteEvent}
+            onBatchDelete={eventOps.batchDeleteEvents}
             onEdit={setEditingEvent}
           />
         );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, ExternalLink, Pencil, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, ExternalLink, Pencil, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -21,6 +21,8 @@ type EventModerationViewProps = {
   language: Locale;
   onModerate: (id: string, status: ModerationTab) => Promise<void>;
   onBatchModerate: (ids: string[], status: ModerationTab) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onBatchDelete: (ids: string[]) => Promise<void>;
   onEdit: (event: ArtEvent) => void;
 };
 
@@ -59,10 +61,12 @@ export const EventModerationView = ({
   language,
   onModerate,
   onBatchModerate,
+  onDelete,
+  onBatchDelete,
   onEdit,
 }: EventModerationViewProps) => {
   const filters = useTableFilters('title');
-  const [confirmAction, setConfirmAction] = useState<{ ids: string[]; status: ModerationTab } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ ids: string[]; status: ModerationTab } | { ids: string[]; action: 'delete' } | null>(null);
 
   const cities = useMemo(() => {
     const set = new Set(events.map((e) => e.city).filter(Boolean));
@@ -179,6 +183,13 @@ export const EventModerationView = ({
           {filters.statusFilter === 'rejected' && (
             <Button size="sm" onClick={() => handleBatchAction('approved')}>Restore selected</Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setConfirmAction({ ids: Array.from(filters.selectedIds), action: 'delete' })}
+          >
+            <Trash2 size={14} className="mr-1" /> Delete selected
+          </Button>
           <Button size="sm" variant="ghost" onClick={filters.clearSelection}>Clear</Button>
         </div>
       )}
@@ -287,6 +298,14 @@ export const EventModerationView = ({
                           Restore
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setConfirmAction({ ids: [event.id], action: 'delete' })}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -300,12 +319,20 @@ export const EventModerationView = ({
 
       {confirmAction && (
         <ConfirmDialog
-          title="Reject events"
-          message={`Are you sure you want to reject ${confirmAction.ids.length} event(s)?`}
-          confirmLabel="Reject"
+          title={'action' in confirmAction ? 'Delete events' : 'Reject events'}
+          message={
+            'action' in confirmAction
+              ? `Are you sure you want to permanently delete ${confirmAction.ids.length} event(s)? This cannot be undone.`
+              : `Are you sure you want to reject ${confirmAction.ids.length} event(s)?`
+          }
+          confirmLabel={'action' in confirmAction ? 'Delete' : 'Reject'}
           destructive
           onConfirm={() => {
-            void onBatchModerate(confirmAction.ids, confirmAction.status).then(() => filters.clearSelection());
+            if ('action' in confirmAction) {
+              void onBatchDelete(confirmAction.ids).then(() => filters.clearSelection());
+            } else {
+              void onBatchModerate(confirmAction.ids, confirmAction.status).then(() => filters.clearSelection());
+            }
             setConfirmAction(null);
           }}
           onCancel={() => setConfirmAction(null)}

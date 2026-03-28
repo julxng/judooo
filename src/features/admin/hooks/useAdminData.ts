@@ -70,6 +70,18 @@ export const useAdminData = () => {
     }
   }, [updateEvent]);
 
+  const deleteEvent = useCallback(async (id: string) => {
+    const success = await api.deleteEvent(id);
+    if (success) await refresh();
+  }, [refresh]);
+
+  const batchDeleteEvents = useCallback(async (ids: string[]) => {
+    for (const id of ids) {
+      await api.deleteEvent(id);
+    }
+    await refresh();
+  }, [refresh]);
+
   const moderateArtwork = useCallback(async (id: string, status: ModerationTab) => {
     const updated = await api.updateArtwork(id, { moderation_status: status });
     if (updated) {
@@ -104,7 +116,7 @@ export const useAdminData = () => {
     creatorApplications,
     counts,
     isLoading,
-    eventOps: { createEvent, updateEvent, uploadImage, moderateEvent, batchModerateEvents },
+    eventOps: { createEvent, updateEvent, uploadImage, moderateEvent, batchModerateEvents, deleteEvent, batchDeleteEvents },
     artworkOps: { moderateArtwork, batchModerateArtworks },
     profileOps: { handleRoleApplication, updateUserRole },
     refreshAll,

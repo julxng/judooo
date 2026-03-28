@@ -165,6 +165,18 @@ export const updateEventRemote = async (
   }
 };
 
+export const deleteEventRemote = async (id: string): Promise<boolean> => {
+  try {
+    const client = withClient();
+    const { error } = await client.from('events').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Supabase deleteEvent error', error);
+    return false;
+  }
+};
+
 export const getArtworksRemote = async (eventId?: string): Promise<Artwork[] | null> => {
   try {
     const client = withClient();
@@ -310,6 +322,18 @@ export const updateArtworkRemote = async (
   } catch (error) {
     console.error('Supabase updateArtwork error', error);
     return null;
+  }
+};
+
+export const deleteArtworkRemote = async (id: string): Promise<boolean> => {
+  try {
+    const client = withClient();
+    const { error } = await client.from('artworks').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Supabase deleteArtwork error', error);
+    return false;
   }
 };
 
