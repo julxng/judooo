@@ -4,7 +4,7 @@ import { EventsGrid } from '@/features/events/components/EventsGrid';
 interface WatchlistViewProps {
   events: ArtEvent[];
   savedEventIds: string[];
-  onOpenEvent: (id: string) => void;
+  onOpenEvent: (slug: string) => void;
   onToggleSave: (id: string) => void;
 }
 

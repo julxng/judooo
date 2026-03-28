@@ -19,7 +19,7 @@ interface EventsScreenProps {
   onCategoryChange: (value: EventCategory) => void;
   onTimelineChange: (value: EventTimeline) => void;
   onViewModeChange: (value: 'grid' | 'map' | 'route') => void;
-  onOpenEvent: (id: string) => void;
+  onOpenEvent: (slug: string) => void;
   onToggleSave: (id: string) => void;
 }
 

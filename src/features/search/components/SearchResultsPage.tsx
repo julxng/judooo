@@ -282,7 +282,7 @@ export const SearchResultsPage = ({
                         <p className="text-sm text-muted-foreground">{getEventLocation(event)}</p>
                         <div className="flex flex-wrap gap-3">
                           <Link
-                            href={`/events/${event.id}`}
+                            href={`/events/${event.slug}`}
                             className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:border-foreground"
                           >
                             View event

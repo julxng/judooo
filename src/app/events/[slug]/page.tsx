@@ -1,24 +1,24 @@
 import { EventDetailPage } from '@/features/events/components/EventDetailPage';
-import { getInitialEventById, getRelatedInitialEvents } from '@/features/events/api';
+import { getInitialEventBySlug, getRelatedInitialEvents } from '@/features/events/api';
 import { getArtworksByEventId } from '@/features/marketplace/api';
 
 export default async function EventPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const initialEvent = await getInitialEventById(id);
+  const { slug } = await params;
+  const initialEvent = await getInitialEventBySlug(slug);
   const [initialRelatedEvents, initialArtworks] = await Promise.all([
     initialEvent?.city
       ? getRelatedInitialEvents({ city: initialEvent.city, excludeId: initialEvent.id, limit: 3 })
       : Promise.resolve([]),
-    getArtworksByEventId(id),
+    initialEvent ? getArtworksByEventId(initialEvent.id) : Promise.resolve([]),
   ]);
 
   return (
     <EventDetailPage
-      eventId={id}
+      eventId={initialEvent?.id ?? slug}
       initialEvent={initialEvent}
       initialRelatedEvents={initialRelatedEvents}
       initialArtworks={initialArtworks}

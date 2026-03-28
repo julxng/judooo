@@ -72,6 +72,27 @@ export const getInitialEventById = async (id: string) => {
   }
 };
 
+export const getInitialEventBySlug = async (slug: string) => {
+  const fallback = initialEvents.find((event) => event.slug === slug) ?? null;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return fallback;
+  }
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data, error } = await supabase.from('events').select('*').eq('slug', slug).maybeSingle();
+
+    if (error || !data) {
+      return fallback;
+    }
+
+    return mapEvent(data);
+  } catch {
+    return fallback;
+  }
+};
+
 export const getRelatedInitialEvents = async ({
   city,
   excludeId,

@@ -94,7 +94,7 @@ export const SavedEventsPage = ({ initialEvents = [] }: SavedEventsPageProps) =>
                   <EventsGrid
                     events={currentSaved}
                     savedEventIds={savedEventIds}
-                    onOpenEvent={(id) => router.push(`/events/${id}`)}
+                    onOpenEvent={(slug) => router.push(`/events/${slug}`)}
                     onToggleSave={(id) => void toggleSavedEvent(id)}
                     emptyMessage=""
                   />
@@ -111,7 +111,7 @@ export const SavedEventsPage = ({ initialEvents = [] }: SavedEventsPageProps) =>
                   <EventsGrid
                     events={pastSaved}
                     savedEventIds={savedEventIds}
-                    onOpenEvent={(id) => router.push(`/events/${id}`)}
+                    onOpenEvent={(slug) => router.push(`/events/${slug}`)}
                     onToggleSave={(id) => void toggleSavedEvent(id)}
                     emptyMessage=""
                   />

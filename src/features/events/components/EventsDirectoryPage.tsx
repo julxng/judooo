@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Filter, Map, Rows3, Search } from 'lucide-react';
-import { useAuth } from '@/app/providers';
+import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -26,6 +26,77 @@ import {
 import type { ArtEvent, EventTimeline } from '../types/event.types';
 
 type SortMode = 'recently-imported' | 'newest' | 'ending-soon' | 'hot';
+
+const translations = {
+  en: {
+    kicker: 'All Events',
+    heading: 'Browse the full calendar with sharper filtering and map context.',
+    subheading: 'This page holds the complete directory: search across venues and titles, narrow by medium or event type, then save stops directly into the route planner.',
+    grid: 'Grid',
+    map: 'Map',
+    filters: 'Filters',
+    search: 'Search',
+    searchPlaceholder: 'Search all event fields',
+    searchPlaceholderShort: 'Search events',
+    timeline: 'Timeline',
+    timelineAll: 'All',
+    timelineCurrent: 'Current',
+    timelinePast: 'Past',
+    sort: 'Sort',
+    recentlyImported: 'Recently imported',
+    newest: 'Newest',
+    endingSoon: 'Ending soon',
+    hot: 'Hot',
+    city: 'City',
+    district: 'District',
+    artMedium: 'Art Medium',
+    eventType: 'Event Type',
+    placeType: 'Place Type',
+    allPrefix: 'All',
+    freeOnly: 'Free events only',
+    virtualOnly: 'Virtual events only',
+    registrationRequired: 'Registration required',
+    eventsFound: (n: number) => `${n} events found`,
+    openRoutePlanner: 'Open route planner',
+    mapStatus: (n: number) => `${n} events — click a pin to view`,
+    freeOnlyShort: 'Free only',
+    virtualOnlyShort: 'Virtual only',
+  },
+  vie: {
+    kicker: 'Tất cả sự kiện',
+    heading: 'Khám phá lịch trình đầy đủ với bộ lọc chi tiết và bản đồ.',
+    subheading: 'Trang này chứa toàn bộ danh mục: tìm kiếm theo địa điểm và tên, lọc theo loại hình nghệ thuật hoặc sự kiện, rồi lưu điểm dừng vào lộ trình.',
+    grid: 'Lưới',
+    map: 'Bản đồ',
+    filters: 'Bộ lọc',
+    search: 'Tìm kiếm',
+    searchPlaceholder: 'Tìm kiếm tất cả sự kiện',
+    searchPlaceholderShort: 'Tìm sự kiện',
+    timeline: 'Thời gian',
+    timelineAll: 'Tất cả',
+    timelineCurrent: 'Đang diễn ra',
+    timelinePast: 'Đã qua',
+    sort: 'Sắp xếp',
+    recentlyImported: 'Mới cập nhật',
+    newest: 'Mới nhất',
+    endingSoon: 'Sắp kết thúc',
+    hot: 'Nổi bật',
+    city: 'Thành phố',
+    district: 'Quận/Huyện',
+    artMedium: 'Loại hình',
+    eventType: 'Loại sự kiện',
+    placeType: 'Loại địa điểm',
+    allPrefix: 'Tất cả',
+    freeOnly: 'Chỉ sự kiện miễn phí',
+    virtualOnly: 'Chỉ sự kiện trực tuyến',
+    registrationRequired: 'Cần đăng ký',
+    eventsFound: (n: number) => `${n} sự kiện`,
+    openRoutePlanner: 'Mở lộ trình',
+    mapStatus: (n: number) => `${n} sự kiện — chọn ghim để xem`,
+    freeOnlyShort: 'Miễn phí',
+    virtualOnlyShort: 'Trực tuyến',
+  },
+} as const;
 
 type FilterSelectConfig = {
   label: string;
@@ -51,6 +122,8 @@ export const EventsDirectoryPage = ({
   initialEvents = [],
 }: EventsDirectoryPageProps) => {
   const router = useRouter();
+  const { language } = useLanguage();
+  const t = translations[language === 'en' ? 'en' : 'vie'];
   const { currentUser, openAuthDialog } = useAuth();
   const { events, isLoading, savedEventIds, routeEventIds, toggleSavedEvent, toggleRouteEvent } =
     useEventsCatalog(initialEvents, { currentUser, onAuthRequired: openAuthDialog });
@@ -169,11 +242,11 @@ export const EventsDirectoryPage = ({
   }, [filteredEvents, selectedEventId]);
 
   const filterSelects: FilterSelectConfig[] = [
-    { label: 'City', value: city, onChange: setCity, options: cityOptions },
-    { label: 'District', value: district, onChange: setDistrict, options: districtOptions },
-    { label: 'Art Medium', value: artMedium, onChange: setArtMedium, options: artMediumOptions },
-    { label: 'Event Type', value: eventType, onChange: setEventType, options: eventTypeOptions },
-    { label: 'Place Type', value: placeType, onChange: setPlaceType, options: placeTypeOptions },
+    { label: t.city, value: city, onChange: setCity, options: cityOptions },
+    { label: t.district, value: district, onChange: setDistrict, options: districtOptions },
+    { label: t.artMedium, value: artMedium, onChange: setArtMedium, options: artMediumOptions },
+    { label: t.eventType, value: eventType, onChange: setEventType, options: eventTypeOptions },
+    { label: t.placeType, value: placeType, onChange: setPlaceType, options: placeTypeOptions },
   ];
 
   return (
@@ -181,12 +254,12 @@ export const EventsDirectoryPage = ({
       <Container size="xl" className="space-y-10 py-8 md:py-10">
         <section className="grid gap-6 border-b border-border pb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-3">
-            <p className="section-kicker">All Events</p>
+            <p className="section-kicker">{t.kicker}</p>
             <h1 className="section-heading max-w-4xl">
-              Browse the full calendar with sharper filtering and map context.
+              {t.heading}
             </h1>
             <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-              This page holds the complete directory: search across venues and titles, narrow by medium or event type, then save stops directly into the route planner.
+              {t.subheading}
             </p>
           </div>
 
@@ -196,14 +269,14 @@ export const EventsDirectoryPage = ({
               onClick={() => setViewMode('grid')}
             >
               <Rows3 size={16} />
-              Grid
+              {t.grid}
             </Button>
             <Button
               variant={viewMode === 'map' ? 'default' : 'secondary'}
               onClick={() => setViewMode('map')}
             >
               <Map size={16} />
-              Map
+              {t.map}
             </Button>
           </div>
         </section>
@@ -214,35 +287,35 @@ export const EventsDirectoryPage = ({
               <div className="mb-5 flex items-center gap-2">
                 <Filter size={16} className="text-foreground" />
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Filters
+                  {t.filters}
                 </p>
               </div>
 
               <div className="space-y-4">
                 <label className="block space-y-2">
-                  <span className="text-sm font-medium">Search</span>
+                  <span className="text-sm font-medium">{t.search}</span>
                   <div className="relative">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" placeholder="Search all event fields" />
+                    <Input value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" placeholder={t.searchPlaceholder} />
                   </div>
                 </label>
 
                 <label className="block space-y-2">
-                  <span className="text-sm font-medium">Timeline</span>
+                  <span className="text-sm font-medium">{t.timeline}</span>
                     <Select value={timeline} onChange={(event) => setTimeline(event.target.value as EventTimeline)}>
-                    <option value="all">All</option>
-                    <option value="active">Current</option>
-                    <option value="past">Past</option>
+                    <option value="all">{t.timelineAll}</option>
+                    <option value="active">{t.timelineCurrent}</option>
+                    <option value="past">{t.timelinePast}</option>
                   </Select>
                 </label>
 
                 <label className="block space-y-2">
-                  <span className="text-sm font-medium">Sort</span>
+                  <span className="text-sm font-medium">{t.sort}</span>
                   <Select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
-                    <option value="recently-imported">Recently imported</option>
-                    <option value="newest">Newest</option>
-                    <option value="ending-soon">Ending soon</option>
-                    <option value="hot">Hot</option>
+                    <option value="recently-imported">{t.recentlyImported}</option>
+                    <option value="newest">{t.newest}</option>
+                    <option value="ending-soon">{t.endingSoon}</option>
+                    <option value="hot">{t.hot}</option>
                   </Select>
                 </label>
 
@@ -252,7 +325,7 @@ export const EventsDirectoryPage = ({
                     <Select value={value} onChange={(event) => onChange(event.target.value)}>
                       {options.map((option) => (
                         <option key={option} value={option}>
-                          {option === 'all' ? `All ${label}` : option}
+                          {option === 'all' ? `${t.allPrefix} ${label.toLowerCase()}` : option}
                         </option>
                       ))}
                     </Select>
@@ -260,10 +333,10 @@ export const EventsDirectoryPage = ({
                 ))}
 
                 <div className="space-y-3 border-t border-border pt-4">
-                  <Checkbox label="Free events only" checked={onlyFree} onChange={(event) => setOnlyFree(event.target.checked)} />
-                  <Checkbox label="Virtual events only" checked={onlyVirtual} onChange={(event) => setOnlyVirtual(event.target.checked)} />
+                  <Checkbox label={t.freeOnly} checked={onlyFree} onChange={(event) => setOnlyFree(event.target.checked)} />
+                  <Checkbox label={t.virtualOnly} checked={onlyVirtual} onChange={(event) => setOnlyVirtual(event.target.checked)} />
                   <Checkbox
-                    label="Registration required"
+                    label={t.registrationRequired}
                     checked={registrationRequired}
                     onChange={(event) => setRegistrationRequired(event.target.checked)}
                   />
@@ -275,9 +348,9 @@ export const EventsDirectoryPage = ({
           {viewMode === 'grid' ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">{filteredEvents.length} events found</p>
+                <p className="text-sm text-muted-foreground">{t.eventsFound(filteredEvents.length)}</p>
                 <Link href="/route-planner" className="text-sm font-medium text-foreground hover:text-muted-foreground">
-                  Open route planner
+                  {t.openRoutePlanner}
                 </Link>
               </div>
               <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
@@ -290,7 +363,7 @@ export const EventsDirectoryPage = ({
                       key={event.id}
                       event={event}
                       isSaved={savedEventIds.includes(event.id)}
-                      onOpen={() => router.push(`/events/${event.id}`)}
+                      onOpen={() => router.push(`/events/${event.slug}`)}
                       onToggleSave={() => toggleSavedEvent(event.id)}
                     />
                   ))}
@@ -303,7 +376,7 @@ export const EventsDirectoryPage = ({
                 className="absolute left-3 top-3 z-[1000] flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium shadow-md transition-colors hover:bg-secondary"
               >
                 <Filter size={14} />
-                Filters
+                {t.filters}
                 {filtersOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
               </button>
 
@@ -311,19 +384,19 @@ export const EventsDirectoryPage = ({
                 <Card className="absolute left-3 top-14 z-[1000] max-h-[calc(100%-4rem)] w-72 overflow-y-auto p-4 shadow-lg">
                   <div className="space-y-3">
                     <label className="block space-y-1">
-                      <span className="text-xs font-medium">Search</span>
+                      <span className="text-xs font-medium">{t.search}</span>
                       <div className="relative">
                         <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                        <Input value={search} onChange={(event) => setSearch(event.target.value)} className="h-8 pl-8 text-xs" placeholder="Search events" />
+                        <Input value={search} onChange={(event) => setSearch(event.target.value)} className="h-8 pl-8 text-xs" placeholder={t.searchPlaceholderShort} />
                       </div>
                     </label>
 
                     <label className="block space-y-1">
-                      <span className="text-xs font-medium">Timeline</span>
+                      <span className="text-xs font-medium">{t.timeline}</span>
                       <Select className="h-8 text-xs" value={timeline} onChange={(event) => setTimeline(event.target.value as EventTimeline)}>
-                        <option value="all">All</option>
-                        <option value="active">Current</option>
-                        <option value="past">Past</option>
+                        <option value="all">{t.timelineAll}</option>
+                        <option value="active">{t.timelineCurrent}</option>
+                        <option value="past">{t.timelinePast}</option>
                       </Select>
                     </label>
 
@@ -333,7 +406,7 @@ export const EventsDirectoryPage = ({
                         <Select className="h-8 text-xs" value={value} onChange={(event) => onChange(event.target.value)}>
                           {options.map((option) => (
                             <option key={option} value={option}>
-                              {option === 'all' ? `All ${label}` : option}
+                              {option === 'all' ? `${t.allPrefix} ${label.toLowerCase()}` : option}
                             </option>
                           ))}
                         </Select>
@@ -341,15 +414,15 @@ export const EventsDirectoryPage = ({
                     ))}
 
                     <div className="space-y-2 border-t border-border pt-3">
-                      <Checkbox label="Free only" checked={onlyFree} onChange={(event) => setOnlyFree(event.target.checked)} />
-                      <Checkbox label="Virtual only" checked={onlyVirtual} onChange={(event) => setOnlyVirtual(event.target.checked)} />
+                      <Checkbox label={t.freeOnlyShort} checked={onlyFree} onChange={(event) => setOnlyFree(event.target.checked)} />
+                      <Checkbox label={t.virtualOnlyShort} checked={onlyVirtual} onChange={(event) => setOnlyVirtual(event.target.checked)} />
                     </div>
                   </div>
                 </Card>
               )}
 
               <div className="absolute bottom-3 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-background/90 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-md backdrop-blur-sm">
-                {filteredEvents.length} events — click a pin to view
+                {t.mapStatus(filteredEvents.length)}
               </div>
 
               <EventMap
@@ -357,7 +430,7 @@ export const EventsDirectoryPage = ({
                 routeIds={routeEventIds}
                 selectedEventId={selectedEventId}
                 onSelectEvent={setSelectedEventId}
-                onEventNavigate={(id) => router.push(`/events/${id}`)}
+                onEventNavigate={(slug) => router.push(`/events/${slug}`)}
               />
             </div>
           )}

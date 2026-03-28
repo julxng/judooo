@@ -522,6 +522,7 @@ function transformEvent(raw: any, index: number): ArtEvent {
   
   return {
     id: `event-${Date.now()}-${index}`,
+    slug: title.toLowerCase().trim().replace(/đ/g, 'd').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-'),
     title,
     organizer,
     startDate: formatDate(raw.start_date),

@@ -4,6 +4,7 @@ import { toIsoDate, toSlug } from './shared';
 
 export const mapEvent = (row: Record<string, any>): ArtEvent => ({
   id: String(row.id),
+  slug: row.slug || toSlug(row.title || row.name_en || row.name_vie || 'untitled-event'),
   title: row.title || row.name_en || row.name_vie || 'Untitled Event',
   name_vie: row.name_vie,
   name_en: row.name_en,

@@ -8,6 +8,7 @@ export type EventCategory = 'exhibition' | 'auction' | 'workshop' | 'performance
 
 export interface ArtEvent {
   id: string;
+  slug: string;
   title: string;
   name_vie?: string;
   name_en?: string;

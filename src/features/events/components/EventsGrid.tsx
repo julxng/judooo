@@ -6,7 +6,7 @@ import { EventCard } from './EventCard';
 interface EventsGridProps {
   events: ArtEvent[];
   savedEventIds: string[];
-  onOpenEvent: (id: string) => void;
+  onOpenEvent: (slug: string) => void;
   onToggleSave: (id: string) => void;
   emptyMessage: string;
 }
@@ -34,7 +34,7 @@ export const EventsGrid = ({
           key={event.id}
           event={event}
           isSaved={savedEventIds.includes(event.id)}
-          onOpen={() => onOpenEvent(event.id)}
+          onOpen={() => onOpenEvent(event.slug)}
           onToggleSave={() => onToggleSave(event.id)}
         />
       ))}

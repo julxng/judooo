@@ -3,7 +3,7 @@ import type { ArtEvent } from '@/features/events/types/event.types';
 import { initialEvents } from '@/features/events/services/eventFixtures';
 import type { Artwork } from '@/features/marketplace/types/artwork.types';
 import { initialArtworks } from '@/features/marketplace/services/artworkFixtures';
-import { DATA_MODE, HAS_REMOTE_ENV, hasBrowserStorage, LOCAL_DB_KEY, mergeById, toId, toIsoDate } from './shared';
+import { DATA_MODE, HAS_REMOTE_ENV, hasBrowserStorage, LOCAL_DB_KEY, mergeById, toId, toIsoDate, toSlug } from './shared';
 import type { LocalDbState, PendingWrite } from './types';
 
 const shouldSeedFixtures = DATA_MODE === 'local' || !HAS_REMOTE_ENV;
@@ -110,6 +110,7 @@ export const hydrateLocalCatalogSnapshot = ({
 
 export const ensureEventDefaults = (event: Partial<ArtEvent>): ArtEvent => ({
   id: String(event.id || toId('local-e')),
+  slug: event.slug || toSlug(String(event.title || event.name_en || event.name_vie || 'untitled-event')),
   title: String(event.title || 'Untitled Event'),
   name_vie: event.name_vie,
   name_en: event.name_en,

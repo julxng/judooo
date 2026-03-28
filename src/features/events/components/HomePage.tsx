@@ -94,7 +94,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Link
-                      href={`/events/${featuredEvents[0].id}`}
+                      href={`/events/${featuredEvents[0].slug}`}
                       className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand"
                     >
                       View Featured Event
@@ -118,7 +118,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
 
           <div className="grid gap-4">
             {featuredEvents.slice(1).map((event) => (
-              <Link key={event.id} href={`/events/${event.id}`} className="group">
+              <Link key={event.id} href={`/events/${event.slug}`} className="group">
                 <Card className="surface-card overflow-hidden">
                   <div className="grid min-h-[16rem] grid-cols-[0.8fr_1fr]">
                     <div className="relative">
@@ -171,7 +171,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                 key={event.id}
                 event={event}
                 isSaved={savedEventIds.includes(event.id)}
-                onOpen={() => router.push(`/events/${event.id}`)}
+                onOpen={() => router.push(`/events/${event.slug}`)}
                 onToggleSave={() => toggleSavedEvent(event.id)}
               />
             ))}
@@ -237,7 +237,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                       <EventCard
                         event={item}
                         isSaved={savedEventIds.includes(item.id)}
-                        onOpen={() => router.push(`/events/${item.id}`)}
+                        onOpen={() => router.push(`/events/${item.slug}`)}
                         onToggleSave={() => toggleSavedEvent(item.id)}
                       />
                     </div>

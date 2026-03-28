@@ -422,7 +422,7 @@ export const MarketplaceHomePage = ({
                   key={event.id}
                   event={event}
                   onOpen={() => {
-                    router.push(`/events/${event.id}`);
+                    router.push(`/events/${event.slug}`);
                   }}
                 />
               ))}

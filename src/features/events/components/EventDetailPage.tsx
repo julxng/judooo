@@ -333,7 +333,7 @@ export const EventDetailPage = ({
                   key={relatedEvent.id}
                   event={relatedEvent}
                   isSaved={savedEventIds.includes(relatedEvent.id)}
-                  onOpen={() => router.push(`/events/${relatedEvent.id}`)}
+                  onOpen={() => router.push(`/events/${relatedEvent.slug}`)}
                   onToggleSave={() => toggleSavedEvent(relatedEvent.id)}
                 />
               ))}

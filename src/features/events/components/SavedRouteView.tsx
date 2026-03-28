@@ -12,7 +12,7 @@ import { EventsGrid } from './EventsGrid';
 interface SavedRouteViewProps {
   events: ArtEvent[];
   savedEventIds: string[];
-  onOpenEvent: (id: string) => void;
+  onOpenEvent: (slug: string) => void;
   onToggleSave: (id: string) => void;
 }
 
@@ -111,7 +111,7 @@ export const SavedRouteView = ({
               <button
                 type="button"
                 className="route-stop"
-                onClick={() => onOpenEvent(stop.event.id)}
+                onClick={() => onOpenEvent(stop.event.slug)}
               >
                 <span className="route-stop__index">{stop.order}</span>
                 <span className="route-stop__body">

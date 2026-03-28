@@ -12,7 +12,7 @@ interface EventMapProps {
   routeDescription?: string;
   selectedEventId?: string | null;
   onSelectEvent?: (eventId: string) => void;
-  onEventNavigate?: (eventId: string) => void;
+  onEventNavigate?: (slug: string) => void;
 }
 
 const buildPopupNode = (event: ArtEvent, language: 'en' | 'vi', onNavigate?: () => void) => {
@@ -126,7 +126,7 @@ const EventMap = ({
 
       const point = L.marker([event.lat, event.lng], { icon: marker })
         .addTo(markerLayer)
-        .bindPopup(buildPopupNode(event, language, onEventNavigate ? () => onEventNavigate(event.id) : undefined), { closeButton: false, className: 'map-popup-wrapper' });
+        .bindPopup(buildPopupNode(event, language, onEventNavigate ? () => onEventNavigate(event.slug) : undefined), { closeButton: false, className: 'map-popup-wrapper' });
 
       point.on('click', () => {
         onSelectEvent?.(event.id);

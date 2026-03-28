@@ -147,7 +147,7 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
           <section className="space-y-5">
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {featuredEvents.slice(0, 3).map((event) => (
-                <Link key={event.id} href={`/events/${event.id}`} className="group">
+                <Link key={event.id} href={`/events/${event.slug}`} className="group">
                   <Card className="overflow-hidden transition-shadow hover:shadow-md">
                     <div className="relative min-h-[14rem]">
                       <img
@@ -257,7 +257,7 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
                   <EventCard
                     event={event}
                     isSaved={savedEventIds.includes(event.id)}
-                    onOpen={() => router.push(`/events/${event.id}`)}
+                    onOpen={() => router.push(`/events/${event.slug}`)}
                     onToggleSave={() => toggleSavedEvent(event.id)}
                   />
                 </div>

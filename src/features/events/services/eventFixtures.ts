@@ -1,7 +1,8 @@
 import type { ArtEvent } from '../types/event.types';
 import { shiftIsoDate, todayIso } from '@/lib/date';
+import { slugify } from '@/lib/utils';
 
-export const initialEvents: ArtEvent[] = [
+export const initialEvents: ArtEvent[] = ([
   {
     id: 'e1',
     title: 'The Modernist Spirit',
@@ -292,4 +293,4 @@ export const initialEvents: ArtEvent[] = [
     saved_count: 47,
     moderation_status: 'approved',
   },
-];
+] as Omit<ArtEvent, 'slug'>[]).map((e) => ({ ...e, slug: slugify(e.title) }));
