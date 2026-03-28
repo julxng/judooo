@@ -82,11 +82,22 @@ const DEFAULT_LOCATION = 'Vietnam';
 const DEFAULT_CATEGORY = 'exhibition';
 const BATCH_LIMIT = 30;
 
-// Google News (currently empty queries — kept for parity)
-const GOOGLE_NEWS_QUERIES: string[] = [];
-const GOOGLE_NEWS_HL = 'en-US';
-const GOOGLE_NEWS_GL = 'US';
-const GOOGLE_NEWS_CEID = 'US:en';
+// Google News RSS queries — free, no API key needed
+const GOOGLE_NEWS_QUERIES: string[] = [
+  'triển lãm nghệ thuật Việt Nam',
+  'triển lãm tranh Hồ Chí Minh',
+  'triển lãm tranh Hà Nội',
+  'art exhibition Vietnam',
+  'art exhibition Ho Chi Minh City',
+  'art exhibition Hanoi',
+  'gallery opening Vietnam',
+  'sự kiện nghệ thuật Việt Nam',
+  'workshop nghệ thuật Sài Gòn',
+  'đấu giá tranh Việt Nam',
+];
+const GOOGLE_NEWS_HL = 'vi';
+const GOOGLE_NEWS_GL = 'VN';
+const GOOGLE_NEWS_CEID = 'VN:vi';
 
 // Facebook (no token configured by default)
 const FACEBOOK_GROUP_IDS: string[] = [];
@@ -1082,6 +1093,51 @@ const buildWpSiteSourceItems = async (
 // HTML scraper
 // ---------------------------------------------------------------------------
 
+const JSON_LD_EVENT_TYPES = new Set([
+  'Event',
+  'ExhibitionEvent',
+  'VisualArtsEvent',
+  'Festival',
+  'TheaterEvent',
+  'MusicEvent',
+  'SocialEvent',
+  'BusinessEvent',
+  'EducationEvent',
+  'SaleEvent',
+]);
+
+const extractJsonLdItem = (item: Record<string, unknown>) => {
+  const typeRaw = item['@type'];
+  const types = Array.isArray(typeRaw) ? typeRaw : [typeRaw];
+  if (!types.some((t) => typeof t === 'string' && JSON_LD_EVENT_TYPES.has(t))) return null;
+
+  const loc = item.location as Record<string, unknown> | undefined;
+  const address = loc?.address as Record<string, string> | undefined;
+  const locationName =
+    (loc?.name as string) ||
+    address?.addressLocality ||
+    address?.streetAddress ||
+    '';
+
+  const imageRaw = item.image;
+  const imageUrl =
+    typeof imageRaw === 'string'
+      ? imageRaw
+      : Array.isArray(imageRaw)
+        ? (imageRaw[0] as string) || ''
+        : (imageRaw as Record<string, string>)?.url || '';
+
+  return {
+    title: cleanTitle((item.name as string) || ''),
+    description: stripHtmlRich((item.description as string) || ''),
+    startDate: (item.startDate as string) || '',
+    endDate: (item.endDate as string) || '',
+    location: locationName,
+    imageUrl: normalizeImageUrl(imageUrl),
+    url: (item.url as string) || '',
+  };
+};
+
 const extractJsonLdEvents = (html: string, _sourceUrl: string) => {
   const results: Array<{
     title: string;
@@ -1099,25 +1155,19 @@ const extractJsonLdEvents = (html: string, _sourceUrl: string) => {
     try {
       const parsed = JSON.parse(match[1]);
       const items = Array.isArray(parsed) ? parsed : [parsed];
+
       for (const item of items) {
-        if (
-          item['@type'] === 'Event' ||
-          item['@type'] === 'ExhibitionEvent'
-        ) {
-          results.push({
-            title: cleanTitle(item.name || ''),
-            description: stripHtmlRich(item.description || ''),
-            startDate: item.startDate || '',
-            endDate: item.endDate || '',
-            location:
-              item.location?.name ||
-              item.location?.address?.addressLocality ||
-              '',
-            imageUrl: normalizeImageUrl(
-              (Array.isArray(item.image) ? item.image[0] : item.image) || '',
-            ),
-            url: item.url || '',
-          });
+        // Handle direct event objects
+        const ev = extractJsonLdItem(item as Record<string, unknown>);
+        if (ev) { results.push(ev); continue; }
+
+        // Handle @graph arrays (common in WordPress sites)
+        const graph = (item as Record<string, unknown>)['@graph'];
+        if (Array.isArray(graph)) {
+          for (const node of graph) {
+            const gev = extractJsonLdItem(node as Record<string, unknown>);
+            if (gev) results.push(gev);
+          }
         }
       }
     } catch {
@@ -1769,7 +1819,7 @@ export async function runCrawl(
 
 type CrawlSource = {
   name: string;
-  type: 'rss' | 'wp' | 'html' | 'nguyen';
+  type: 'rss' | 'wp' | 'html' | 'nguyen' | 'google-news';
   url: string;
 };
 
@@ -1791,6 +1841,11 @@ const CRAWL_SOURCES: CrawlSource[] = [
     name: new URL(url).hostname.replace(/^www\./, ''),
     type: 'html' as const,
     url,
+  })),
+  ...GOOGLE_NEWS_QUERIES.map((query) => ({
+    name: `google-news: ${query.slice(0, 40)}`,
+    type: 'google-news' as const,
+    url: googleNewsFeedUrl(query),
   })),
 ];
 
@@ -1855,6 +1910,25 @@ export async function runCrawlSource(
         const sourceItems = await upsertSourceItems(supabase, records, logger);
         ingested = await upsertEvents(supabase, sourceItems);
         logger.log(`HTML scrape ${source.name}: parsed=${records.length}, upserted=${ingested}`);
+      }
+    } else if (source.type === 'google-news') {
+      const text = await fetchSource(source.url);
+      const rssRecords = parseRssItems(text, source.url);
+      const atomRecords = rssRecords.length === 0 ? parseAtomItems(text, source.url) : [];
+      const records = rssRecords.length > 0 ? rssRecords : atomRecords;
+      crawled = records.length;
+
+      if (!records.length) {
+        logger.log(`No Google News items for "${source.name}"`);
+      } else {
+        // Google News results are general — always apply keyword filter
+        const filtered = records.filter(isArtEventItem);
+        logger.log(`Google News ${source.name}: fetched=${records.length}, after keyword filter=${filtered.length}`);
+        if (filtered.length > 0) {
+          const sourceItems = await upsertSourceItems(supabase, filtered, logger);
+          ingested = await upsertEvents(supabase, sourceItems);
+          logger.log(`Google News ${source.name}: upserted=${ingested}`);
+        }
       }
     }
   } catch (error) {
