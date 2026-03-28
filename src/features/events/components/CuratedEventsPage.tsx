@@ -8,6 +8,7 @@ import { useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Badge, Button, Card } from '@/components/ui';
 import { Container } from '@/components/ui/Container';
+import { Masonry } from '@/components/ui/Masonry';
 import { NewsletterSignup } from '@/components/shared/NewsletterSignup';
 import { formatDateRange } from '@/lib/date';
 import { EventCard } from './EventCard';
@@ -233,11 +234,9 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
           </div>
 
           {isLoading ? (
-            <div className="events-masonry">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="events-masonry__item">
-                  <Card className="h-[28rem] animate-pulse bg-secondary" />
-                </div>
+                <Card key={i} className="h-[28rem] animate-pulse bg-secondary" />
               ))}
             </div>
           ) : filteredEvents.length === 0 ? (
@@ -245,9 +244,9 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
               <p className="text-sm text-muted-foreground">{t.noEvents}</p>
             </Card>
           ) : (
-            <div className="events-masonry">
+            <Masonry>
               {filteredEvents.map((event) => (
-                <div key={event.id} className="events-masonry__item relative">
+                <div key={event.id} className="relative">
                   {hasArtworks(event.id) ? (
                     <div className="absolute right-3 top-3 z-10" onClick={() => window.plausible?.('artworks_badge_click', { props: { event_id: event.id } })}>
                       <Badge tone="success" className="cursor-pointer shadow-sm">
@@ -264,7 +263,7 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
                   />
                 </div>
               ))}
-            </div>
+            </Masonry>
           )}
         </section>
 

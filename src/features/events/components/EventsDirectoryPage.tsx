@@ -9,6 +9,7 @@ import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Masonry } from '@/components/ui/Masonry';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Container } from '@/components/ui/Container';
 import { Input } from '@/components/ui/Input';
@@ -424,24 +425,25 @@ export const EventsDirectoryPage = ({
                   {t.openRoutePlanner}
                 </Link>
               </div>
-              <div className="events-masonry">
-                {isLoading
-                  ? Array.from({ length: 6 }).map((_, index) => (
-                    <div key={index} className="events-masonry__item">
-                      <Card className="min-h-[28rem] animate-pulse bg-secondary" />
-                    </div>
-                  ))
-                  : filteredEvents.map((event) => (
-                    <div key={event.id} className="events-masonry__item">
-                      <EventCard
-                        event={event}
-                        isSaved={savedEventIds.includes(event.id)}
-                        onOpen={() => router.push(`/events/${event.slug}`)}
-                        onToggleSave={() => toggleSavedEvent(event.id)}
-                      />
-                    </div>
+              {isLoading ? (
+                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <Card key={index} className="min-h-[28rem] animate-pulse bg-secondary" />
                   ))}
-              </div>
+                </div>
+              ) : (
+                <Masonry>
+                  {filteredEvents.map((event) => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      isSaved={savedEventIds.includes(event.id)}
+                      onOpen={() => router.push(`/events/${event.slug}`)}
+                      onToggleSave={() => toggleSavedEvent(event.id)}
+                    />
+                  ))}
+                </Masonry>
+              )}
             </div>
           ) : (
             <div className="relative" style={{ height: 'calc(100vh - 10rem)' }}>

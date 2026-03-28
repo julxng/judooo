@@ -1553,22 +1553,12 @@ img {
 /* ── Events masonry layout (CSS columns — Artsy-style) ── */
 
 .events-masonry {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-6);
-  align-items: start;
+  position: relative;
 }
 
-@media (max-width: 1024px) {
-  .events-masonry {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .events-masonry {
-    grid-template-columns: 1fr;
-  }
+.events-masonry > * {
+  position: absolute;
+  transition: transform 0.3s ease;
 }
 
 /* ── Enhanced card hover ── */

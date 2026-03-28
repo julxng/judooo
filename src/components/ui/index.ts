@@ -10,6 +10,7 @@ export * from './EmptyState';
 export * from './Footer';
 export * from './Input';
 export * from './Lightbox';
+export * from './Masonry';
 export * from './Modal';
 export * from './Navbar';
 export * from './Radio';
