@@ -2,12 +2,16 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +23,7 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const { error: dbError } = await supabase
+    const { error: dbError } = await getSupabase()
       .from('newsletter_signups')
       .upsert({ email: normalizedEmail, source }, { onConflict: 'email' });
 
@@ -28,7 +32,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to save subscription' }, { status: 500 });
     }
 
-    const { error: emailError } = await resend.emails.send({
+    const { error: emailError } = await getResend().emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'Judooo <noreply@judooo.art>',
       to: normalizedEmail,
       subject: 'Chào mừng bạn đến với Judooo! Welcome to Judooo!',
