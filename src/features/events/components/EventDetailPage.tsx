@@ -144,7 +144,7 @@ export const EventDetailPage = ({
   return (
     <SiteShell>
       <Container size="xl" className="space-y-8 py-8 sm:py-12">
-        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <section className="grid items-start gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <Card className="-mx-5 overflow-hidden rounded-none sm:mx-0 sm:rounded-xl">
             <div className="bg-secondary">
               {activeMedia?.type === 'video' ? (
