@@ -184,6 +184,9 @@ npm run lint           # ESLint
 - Do not refactor code outside the scope of the current task
 - Do not skip the plan step for multi-file changes
 
+### Git workflow
+- Always commit and push after completing each user request — do not wait to be asked
+
 ### Verification checklist
 Before marking work complete:
 - [ ] `npm run type-check` passes

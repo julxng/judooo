@@ -50,7 +50,7 @@ const copy: Record<Locale, {
     filterBy: 'Filter',
   },
   vi: {
-    hero: 'Tuần này trong nghệ thuật Việt Nam',
+    hero: 'Tuần này đi đâu?',
     heroSub: 'Triển lãm, workshop và sự kiện nghệ thuật được chọn lọc. Cập nhật hàng tuần.',
     allCities: 'Tất cả thành phố',
     allTypes: 'Tất cả loại',
@@ -273,7 +273,7 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
           </Card>
           <Card className="p-8">
             <h3 className="text-lg font-semibold text-foreground">
-              {language === 'en' ? 'Are you a gallery?' : 'Bạn là gallery?'}
+              {language === 'en' ? 'Are you a gallery?' : 'Bạn là người đại diện Gallery?'}
             </h3>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
               {language === 'en'

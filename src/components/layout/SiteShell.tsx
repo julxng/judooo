@@ -106,7 +106,7 @@ const shellCopy: Record<
     browse: 'Khám phá',
     company: 'Judooo',
     contact: 'Liên hệ',
-    footerTitle: 'Khám phá tác phẩm và theo dõi lịch nghệ thuật trên khắp Việt Nam.',
+    footerTitle: 'Nơi kết nối bạn với nghệ thuật đương đại Việt Nam.',
     footerBody:
       'Judooo giúp mọi người tìm thấy triển lãm, tác phẩm và lộ trình tham quan nghệ thuật để lên kế hoạch dễ dàng hơn.',
     openMenu: 'Mở menu',

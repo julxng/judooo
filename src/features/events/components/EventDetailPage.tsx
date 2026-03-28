@@ -232,6 +232,17 @@ export const EventDetailPage = ({
                   <ExternalLink size={14} />
                 </a>
               ) : null}
+              {(event.sourceItemUrl || event.sourceUrl) ? (
+                <a
+                  href={event.sourceItemUrl || event.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border bg-card px-3.5 text-xs font-medium text-foreground transition-colors hover:border-foreground"
+                >
+                  <ExternalLink size={14} />
+                  {language === 'en' ? 'Visit source' : 'Xem nguồn'}
+                </a>
+              ) : null}
             </div>
 
             <div className="mt-6 space-y-4 border-t border-border pt-6">

@@ -104,21 +104,21 @@ export const AboutPage = ({ language: languageProp }: AboutPageProps) => {
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="p-6">
           <p className="section-kicker">{copy.whatWeDo.kicker}</p>
-          <h2 className="mt-4 font-display text-[1.5rem] leading-[0.98] tracking-[-0.04em]">{copy.whatWeDo.title}</h2>
+          <h2 className="mt-4 font-display text-[1.5rem] leading-[1.1] tracking-[-0.04em]">{copy.whatWeDo.title}</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {copy.whatWeDo.body}
           </p>
         </Card>
         <Card className="p-6">
           <p className="section-kicker">{copy.whyItMatters.kicker}</p>
-          <h2 className="mt-4 font-display text-[1.5rem] leading-[0.98] tracking-[-0.04em]">{copy.whyItMatters.title}</h2>
+          <h2 className="mt-4 font-display text-[1.5rem] leading-[1.1] tracking-[-0.04em]">{copy.whyItMatters.title}</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {copy.whyItMatters.body}
           </p>
         </Card>
         <Card className="p-6">
           <p className="section-kicker">{copy.contact.kicker}</p>
-          <h2 className="mt-4 font-display text-[1.5rem] leading-[0.98] tracking-[-0.04em]">{copy.contact.title}</h2>
+          <h2 className="mt-4 font-display text-[1.5rem] leading-[1.1] tracking-[-0.04em]">{copy.contact.title}</h2>
           <div className="mt-3 space-y-2 text-sm text-muted-foreground">
             <p>judooovietnam@gmail.com</p>
             <p>Facebook: judooo.art</p>
