@@ -152,7 +152,7 @@ const AdminContent = () => {
     <>
       <div className="grid min-h-[calc(100vh-5rem)] grid-cols-1 lg:grid-cols-[240px_1fr]">
         <AdminSidebar activeView={activeView} counts={counts} onNavigate={navigate} />
-        <main className="p-4 sm:p-6 lg:p-8">{renderView()}</main>
+        <main className="min-w-0 overflow-hidden p-4 sm:p-6 lg:p-8">{renderView()}</main>
       </div>
 
       <EventEditDrawer
