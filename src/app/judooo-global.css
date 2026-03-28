@@ -1560,7 +1560,7 @@ img {
 .events-masonry > * {
   break-inside: avoid;
   margin-bottom: var(--space-5);
-  display: inline-block;
+  display: inline-block !important;
   width: 100%;
 }
 
