@@ -30,6 +30,7 @@ const AdminContent = () => {
   const data = useAdminData();
   const {
     currentUser,
+    isAuthLoading,
     language,
     events,
     artworks,
@@ -48,13 +49,24 @@ const AdminContent = () => {
     router.push(view === 'overview' ? '/admin' : `/admin?view=${view}`);
   };
 
+  if (isAuthLoading) {
+    return (
+      <Container size="lg" className="py-12">
+        <Card className="p-8">
+          <p className="section-kicker">Admin</p>
+          <h1 className="section-heading mt-4">Loading...</h1>
+        </Card>
+      </Container>
+    );
+  }
+
   if (!currentUser) {
     return (
       <Container size="lg" className="py-12">
         <Card className="p-8">
           <p className="section-kicker">Admin</p>
           <h1 className="section-heading mt-4">Sign in to manage approvals.</h1>
-          <Button className="mt-6" onClick={data.refreshAll}>Sign in</Button>
+          <Button className="mt-6" onClick={data.openAuthDialog}>Sign in</Button>
         </Card>
       </Container>
     );

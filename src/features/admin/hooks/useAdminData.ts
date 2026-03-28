@@ -11,7 +11,7 @@ import type { AdminCounts, ModerationTab } from '@/features/admin/types/admin.ty
 import { api } from '@/services/api';
 
 export const useAdminData = () => {
-  const { currentUser, openAuthDialog } = useAuth();
+  const { currentUser, isAuthLoading, openAuthDialog } = useAuth();
   const { language } = useLanguage();
   const { events, refresh, createEvent, updateEvent, uploadImage } = useEventsCatalog([], {
     currentUser,
@@ -109,6 +109,7 @@ export const useAdminData = () => {
 
   return {
     currentUser,
+    isAuthLoading,
     language,
     events,
     artworks,
@@ -119,6 +120,7 @@ export const useAdminData = () => {
     eventOps: { createEvent, updateEvent, uploadImage, moderateEvent, batchModerateEvents, deleteEvent, batchDeleteEvents },
     artworkOps: { moderateArtwork, batchModerateArtworks },
     profileOps: { handleRoleApplication, updateUserRole },
+    openAuthDialog,
     refreshAll,
   };
 };
