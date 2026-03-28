@@ -1559,12 +1559,10 @@ img {
 
 .events-masonry > * {
   break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
   margin-bottom: var(--space-6);
-}
-
-.events-masonry > .events-masonry__item {
-  display: inline-block;
-  width: 100%;
+  overflow: hidden;
 }
 
 @media (max-width: 1024px) {
