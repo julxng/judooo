@@ -1,6 +1,8 @@
 import { EventsDirectoryPage } from '@/features/events/components/EventsDirectoryPage';
 import { getInitialEvents } from '@/features/events/api';
 
+export const dynamic = 'force-dynamic';
+
 export default async function EventsPage({
   searchParams,
 }: {
