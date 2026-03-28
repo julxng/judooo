@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from 'react';
 import { useLanguage } from '@/app/providers';
 import { Button, Input } from '@/components/ui';
-import { createClient } from '@/lib/supabase/client';
 import type { Locale } from '@/lib/i18n/translations';
 
 const copy: Record<Locale, { heading: string; body: string; placeholder: string; cta: string; success: string; error: string }> = {
@@ -43,12 +42,13 @@ export const NewsletterSignup = ({ source = 'homepage', className }: NewsletterS
     setStatus('loading');
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('newsletter_signups')
-        .upsert({ email: email.trim().toLowerCase(), source }, { onConflict: 'email' });
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), source }),
+      });
 
-      if (error) {
+      if (!res.ok) {
         setStatus('error');
         return;
       }
