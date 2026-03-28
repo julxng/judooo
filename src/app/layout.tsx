@@ -34,7 +34,7 @@ export default function RootLayout({
       <head>
         <Script
           defer
-          data-domain="judooo.com"
+          data-domain="judooo.art"
           src="https://plausible.io/js/script.js"
           strategy="afterInteractive"
         />

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     const { error: emailError } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'Judooo <noreply@judooo.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'Judooo <noreply@judooo.art>',
       to: normalizedEmail,
       subject: 'Chào mừng bạn đến với Judooo! Welcome to Judooo!',
       html: `
