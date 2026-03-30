@@ -1289,26 +1289,131 @@ const findSubpageLinks = (html: string, baseUrl: string) => {
   const links: string[] = [];
   const linkRegex = /<a[^>]*href=["']([^"'#]+)["'][^>]*>/gi;
   let match;
+  const origin = baseUrl.replace(/\/+$/, '').split('/').slice(0, 3).join('/');
   while ((match = linkRegex.exec(html)) !== null) {
     const href = match[1];
     const fullUrl = normalizeUrl(href, baseUrl);
-    if (!fullUrl) continue;
+    if (!fullUrl || !fullUrl.startsWith(origin)) continue;
     if (
-      /(exhibit|event|show|workshop|program|display|gallery|collection|trung-bay|trien-lam|su-kien)/i.test(
+      /(exhibit|event|show|workshop|program|display|gallery|collection|trung-bay|trien-lam|su-kien|news-2\/\d{4})/i.test(
         fullUrl,
-      ) &&
-      fullUrl.startsWith(
-        baseUrl
-          .replace(/\/+$/, '')
-          .split('/')
-          .slice(0, 3)
-          .join('/'),
       )
     ) {
       if (!links.includes(fullUrl)) links.push(fullUrl);
     }
   }
   return links.slice(0, BATCH_LIMIT);
+};
+
+// ---------------------------------------------------------------------------
+// Site-specific entry pages — for sites that need scraping multiple listing pages
+// ---------------------------------------------------------------------------
+
+type SiteConfig = {
+  /** Extra listing pages to scrape for exhibition links */
+  listingPages: string[];
+  /** Additional link patterns beyond the default */
+  linkPatterns?: RegExp[];
+};
+
+const SITE_CONFIGS: Record<string, SiteConfig> = {
+  'cucgallery.vn': {
+    listingPages: ['/current', '/past', '/upcoming'],
+    linkPatterns: [/\/news-2\/\d{4}\/\d{1,2}\/\d{1,2}\//],
+  },
+  'vccavietnam.com': {
+    listingPages: ['/exhibition', '/event'],
+    linkPatterns: [/\/trien-lam-/, /\/su-kien-/, /\/exhibition-/],
+  },
+};
+
+const getSiteConfig = (siteUrl: string): SiteConfig | null => {
+  try {
+    const host = new URL(siteUrl).hostname.replace(/^www\./, '');
+    return SITE_CONFIGS[host] || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Parse Vietnamese date formats commonly used by VCCA and other VN sites.
+ * Handles: "07.03.2026", "07/03/2026", "07-03-2026" (DD.MM.YYYY)
+ * Also handles: "từ DD.MM.YYYY đến DD.MM.YYYY" ranges
+ */
+const parseVietnameseDateRange = (text: string): { startDate: string; endDate: string } => {
+  // Range: "từ DD.MM.YYYY đến hết DD.MM.YYYY" or "DD.MM.YYYY - DD.MM.YYYY"
+  const rangeMatch = text.match(
+    /(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})\s*(?:-|\u2013|\u2014|đến(?:\s+hết)?|to)\s*(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})/,
+  );
+  if (rangeMatch) {
+    const [, d1, m1, y1, d2, m2, y2] = rangeMatch;
+    return {
+      startDate: `${y1}-${m1.padStart(2, '0')}-${d1.padStart(2, '0')}`,
+      endDate: `${y2}-${m2.padStart(2, '0')}-${d2.padStart(2, '0')}`,
+    };
+  }
+  // Single: DD.MM.YYYY
+  const singleMatch = text.match(/(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})/);
+  if (singleMatch) {
+    const [, d, m, y] = singleMatch;
+    return {
+      startDate: `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`,
+      endDate: '',
+    };
+  }
+  return { startDate: '', endDate: '' };
+};
+
+/**
+ * Extract event details from a VCCA-style page using OG tags + body text parsing.
+ */
+const extractVccaEventDetails = (html: string, pageUrl: string) => {
+  const og = extractOgMeta(html);
+  const title = cleanTitle(og['og:title'] || '');
+  if (!title) return null;
+
+  const fullText = stripHtmlRich(html).slice(0, 4000);
+
+  // Extract dates from Vietnamese patterns in body text
+  let startDate = '';
+  let endDate = '';
+
+  // Look for date patterns in text
+  const lines = fullText.split('\n').map((l) => l.trim()).filter(Boolean);
+  for (const line of lines.slice(0, 80)) {
+    if (startDate) break;
+    // "từ DD.MM.YYYY đến DD.MM.YYYY"
+    if (/từ\s+\d{1,2}[./]|đến\s+\d{1,2}[./]|\d{1,2}[./]\d{1,2}[./]\d{4}\s*[-–—]\s*\d{1,2}/i.test(line)) {
+      const dates = parseVietnameseDateRange(line);
+      if (dates.startDate) { startDate = dates.startDate; endDate = dates.endDate; }
+    }
+    // Also try standard date extraction
+    if (!startDate && /(thời gian|time|date|khai mạc|opening|duration)/i.test(line)) {
+      const dates = parseVietnameseDateRange(line);
+      if (dates.startDate) { startDate = dates.startDate; endDate = dates.endDate; }
+    }
+  }
+
+  // Also scan full text for any DD.MM.YYYY range
+  if (!startDate) {
+    const dates = parseVietnameseDateRange(fullText);
+    startDate = dates.startDate;
+    endDate = dates.endDate;
+  }
+
+  const allImages = extractAllImages(html);
+
+  return {
+    title,
+    description: stripHtml(og['og:description'] || '').slice(0, 500),
+    fullText,
+    startDate,
+    endDate,
+    imageUrl: og['og:image'] || allImages[0] || '',
+    allImages,
+    url: pageUrl,
+  };
 };
 
 const buildHtmlScrapedItems = async (
@@ -1326,8 +1431,9 @@ const buildHtmlScrapedItems = async (
   }
 
   const results: SourceItem[] = [];
+  const siteConfig = getSiteConfig(siteUrl);
 
-  // 1. Try JSON-LD structured data first
+  // 1. Try JSON-LD structured data on homepage first
   const jsonLdEvents = extractJsonLdEvents(html, siteUrl);
   for (const ev of jsonLdEvents) {
     const allImages = ev.imageUrl ? [ev.imageUrl] : [];
@@ -1361,10 +1467,44 @@ const buildHtmlScrapedItems = async (
     });
   }
 
-  if (results.length > 0) return results;
+  if (results.length > 0 && !siteConfig) return results;
 
-  // 2. Follow exhibition/event subpage links
-  const subpageLinks = findSubpageLinks(html, siteUrl);
+  // 2. Collect subpage links from homepage + site-specific listing pages
+  const allSubpageLinks = new Set(findSubpageLinks(html, siteUrl));
+
+  if (siteConfig) {
+    const origin = siteUrl.replace(/\/+$/, '');
+    for (const listingPath of siteConfig.listingPages) {
+      const listingUrl = `${origin}${listingPath}`;
+      try {
+        const listingHtml = await scrapeHtmlPage(listingUrl);
+        if (!listingHtml) continue;
+
+        // Get links from listing page
+        const links = findSubpageLinks(listingHtml, siteUrl);
+        links.forEach((l) => allSubpageLinks.add(l));
+
+        // Also check for site-specific link patterns
+        if (siteConfig.linkPatterns) {
+          const linkRegex = /<a[^>]*href=["']([^"'#]+)["'][^>]*>/gi;
+          let match;
+          while ((match = linkRegex.exec(listingHtml)) !== null) {
+            const fullUrl = normalizeUrl(match[1], siteUrl);
+            if (!fullUrl) continue;
+            if (siteConfig.linkPatterns.some((p) => p.test(fullUrl))) {
+              allSubpageLinks.add(fullUrl);
+            }
+          }
+        }
+
+        logger.log(`  HTML scraper: listing page ${listingPath} → ${allSubpageLinks.size} total links`);
+      } catch {
+        logger.error(`  HTML scraper: failed to fetch listing page ${listingUrl}`);
+      }
+    }
+  }
+
+  const subpageLinks = Array.from(allSubpageLinks).slice(0, BATCH_LIMIT);
   logger.log(
     `  HTML scraper: found ${subpageLinks.length} potential event links on ${siteUrl}`,
   );
@@ -1410,7 +1550,37 @@ const buildHtmlScrapedItems = async (
         continue;
       }
 
-      // Fallback: OG tags + page content
+      // Fallback: Try VCCA-style OG + Vietnamese date extraction
+      const vccaDetails = extractVccaEventDetails(pageHtml, link);
+      if (vccaDetails && vccaDetails.title) {
+        const { title, description, fullText: vccaFullText, startDate: vStartDate, endDate: vEndDate, imageUrl: vImg, allImages: vImages } = vccaDetails;
+        results.push({
+          source_url: siteUrl,
+          external_id: crypto.createHash('sha1').update(`${siteUrl}:${title}`).digest('hex'),
+          source_type: 'html-og',
+          title,
+          summary: description || null,
+          item_url: link,
+          published_at: vStartDate ? new Date(vStartDate).toISOString() : new Date().toISOString(),
+          raw_payload: {
+            source_name: hostName,
+            title,
+            summary: description || null,
+            full_text: vccaFullText || null,
+            image_url: vImg || vImages[0] || null,
+            gallery_images: vImages.length > 0 ? vImages : null,
+            organizer: hostName,
+            category: DEFAULT_CATEGORY,
+            start_date: vStartDate || toDate(null),
+            end_date: vEndDate || '',
+            location_name: detectCity({ title, summary: description, item_url: link }),
+          },
+          crawl_status: 'new',
+        });
+        continue;
+      }
+
+      // Final fallback: OG tags + English date extraction
       const og = extractOgMeta(pageHtml);
       const title = cleanTitle(og['og:title'] || '');
       if (!title || title === 'Untitled Event') continue;
@@ -1424,22 +1594,28 @@ const buildHtmlScrapedItems = async (
 
       let startDate = '';
       let endDate = '';
-      const lines = fullText
-        .split('\n')
-        .map((l) => l.trim())
-        .filter(Boolean);
-      for (const line of lines.slice(0, 60)) {
-        if (
-          !startDate &&
-          /(khai m\u1ea1c|opening|date|th\u1eddi gian|time|from|duration)/i.test(
-            line,
-          )
-        ) {
-          const range = extractDateRange(line, pageYear);
-          startDate = range.startDate || startDate;
-          endDate = range.endDate || endDate;
+
+      // Try Vietnamese DD.MM.YYYY format first
+      const vnDates = parseVietnameseDateRange(fullText);
+      if (vnDates.startDate) {
+        startDate = vnDates.startDate;
+        endDate = vnDates.endDate;
+      }
+
+      // Fallback to English date extraction
+      if (!startDate) {
+        const lines = fullText.split('\n').map((l) => l.trim()).filter(Boolean);
+        for (const line of lines.slice(0, 60)) {
+          if (
+            !startDate &&
+            /(khai m\u1ea1c|opening|date|th\u1eddi gian|time|from|duration)/i.test(line)
+          ) {
+            const range = extractDateRange(line, pageYear);
+            startDate = range.startDate || startDate;
+            endDate = range.endDate || endDate;
+          }
+          if (startDate) break;
         }
-        if (startDate) break;
       }
 
       results.push({
