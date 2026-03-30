@@ -82,18 +82,14 @@ const DEFAULT_LOCATION = 'Vietnam';
 const DEFAULT_CATEGORY = 'exhibition';
 const BATCH_LIMIT = 30;
 
-// Google News RSS queries — free, no API key needed
+// Google News RSS queries — free, no API key needed.
+// Keep queries specific to EVENT announcements, not general art news.
 const GOOGLE_NEWS_QUERIES: string[] = [
-  'triển lãm nghệ thuật Việt Nam',
-  'triển lãm tranh Hồ Chí Minh',
-  'triển lãm tranh Hà Nội',
-  'art exhibition Vietnam',
-  'art exhibition Ho Chi Minh City',
-  'art exhibition Hanoi',
-  'gallery opening Vietnam',
-  'sự kiện nghệ thuật Việt Nam',
-  'workshop nghệ thuật Sài Gòn',
-  'đấu giá tranh Việt Nam',
+  '"triển lãm" "khai mạc" Việt Nam',
+  '"exhibition" "opening" Vietnam',
+  '"art exhibition" Ho Chi Minh OR Hanoi 2026',
+  '"triển lãm tranh" Hồ Chí Minh OR "Hà Nội" 2026',
+  '"gallery opening" Vietnam 2026',
 ];
 const GOOGLE_NEWS_HL = 'vi';
 const GOOGLE_NEWS_GL = 'VN';
@@ -248,6 +244,17 @@ const extractLocationFromText = (text: string): string => {
   return '';
 };
 
+// Negative keywords — articles containing these are likely news, not event listings
+const NEGATIVE_KEYWORDS = [
+  'bức tranh đắt nhất', 'bức tranh đắt giá', 'top 10 bức tranh',
+  'kỷ lục đấu giá', 'triệu usd', 'triệu hkd', 'tỷ đồng',
+  'tranh giả', 'tranh nhái', 'scandal', 'bê bối',
+  'market report', 'art market', 'thị trường tranh',
+  'price record', 'sold for', 'million dollar',
+  'ủng hộ đồng bào', 'ủng hộ vùng lũ', 'thiện nguyện',
+  'phía sau', 'điều chưa biết', 'bí mật',
+].map((k) => k.toLowerCase());
+
 const isArtEventItem = (item: SourceItem): boolean => {
   // Items from dedicated art sources always pass
   try {
@@ -257,8 +264,23 @@ const isArtEventItem = (item: SourceItem): boolean => {
     // ignore invalid URLs
   }
 
-  // Check title + summary for event keywords
   const text = `${item.title} ${item.summary || ''}`.toLowerCase();
+
+  // Reject if negative keywords present (news articles, not events)
+  if (NEGATIVE_KEYWORDS.some((neg) => text.includes(neg))) return false;
+
+  // Reject Google News items that still have newspaper suffixes (likely news, not event pages)
+  const isGoogleNews = item.source_url.includes('news.google.com');
+  if (isGoogleNews && /\s-\s[A-ZÀ-Ỹa-zà-ỹ\s.]+$/.test(item.title)) {
+    // Title ends with " - Newspaper Name" — stricter keyword check
+    const hasStrongEventKeyword = [
+      'triển lãm', 'exhibition', 'khai mạc', 'opening', 'vernissage',
+      'workshop', 'gallery opening', 'art show', 'art fair',
+    ].some((k) => text.includes(k));
+    if (!hasStrongEventKeyword) return false;
+  }
+
+  // Check title + summary for event keywords
   return ALL_EVENT_KEYWORDS.some((keyword) => text.includes(keyword));
 };
 
