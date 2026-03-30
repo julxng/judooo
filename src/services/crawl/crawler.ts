@@ -381,6 +381,16 @@ const tagValue = (block: string, tag: string) => {
   return match ? decodeXml(match[1].trim()) : '';
 };
 
+// Site name prefixes to strip from OG titles (e.g. "VCCA | TRIỂN LÃM ...")
+const SITE_NAME_PREFIXES = [
+  /^Trung tâm Nghệ thuật đương đại Vincom\s*[|–—-]\s*/i,
+  /^VCCA\s*[|–—-]\s*/i,
+  /^CUC Gallery\s*[|–—-]\s*/i,
+  /^Manzi Art Space\s*[|–—-]\s*/i,
+  /^Vietnam Fine Arts Museum\s*[|–—-]\s*/i,
+  /^Bảo tàng Mỹ thuật Việt Nam\s*[|–—-]\s*/i,
+];
+
 const cleanTitle = (raw = '') => {
   let title = stripHtml(raw)
     .replace(/\s+/g, ' ')
@@ -394,7 +404,14 @@ const cleanTitle = (raw = '') => {
     )
     .replace(/\s*\[[^\]]+\]\s*$/g, '')
     .replace(/\s*\((video|photos|gallery|update)\)\s*$/i, '')
+    // Strip newspaper suffixes from Google News titles: " - VnExpress", " - Báo Tiền Phong", etc.
+    .replace(/\s*-\s+[A-ZÀ-Ỹ][A-Za-zÀ-ỹ\s.]+(?:\.vn|\.com|\.net|\.org)(?:\.\w+)?$/i, '')
     .trim();
+  // Strip site name prefixes
+  for (const prefix of SITE_NAME_PREFIXES) {
+    title = title.replace(prefix, '');
+  }
+  title = title.trim();
   if (title.length > 160) title = `${title.slice(0, 157).trim()}...`;
   return title || 'Untitled Event';
 };
@@ -1913,31 +1930,54 @@ const upsertEvents = async (
 ) => {
   if (!sourceItems.length) return 0;
 
-  // Check which events already exist with pending or approved status — skip those
-  const keys = sourceItems.map((item) => ({
-    source_url: item.source_url,
-    external_id: item.external_id,
-  }));
-  const externalIds = keys.map((k) => k.external_id);
+  // Check which events already exist with pending or approved status — skip those.
+  // Two checks: (1) source_url+external_id match, (2) title similarity match.
+  const externalIds = sourceItems.map((item) => item.external_id);
 
-  const { data: existing } = await supabase
+  const { data: existingByKey } = await supabase
     .from('events')
     .select('source_url, external_id, moderation_status')
     .in('external_id', externalIds);
 
-  const existingSet = new Set(
-    (existing || [])
+  const existingKeySet = new Set(
+    (existingByKey || [])
       .filter((e) => e.moderation_status === 'pending' || e.moderation_status === 'approved')
       .map((e) => `${e.source_url}::${e.external_id}`),
   );
 
-  const newItems = sourceItems.filter(
-    (item) => !existingSet.has(`${item.source_url}::${item.external_id}`),
+  // Also fetch existing titles + source URLs (pending+approved) for broader dedup
+  const { data: existingEvents } = await supabase
+    .from('events')
+    .select('title, source_url, source_item_url')
+    .in('moderation_status', ['pending', 'approved']);
+
+  const normalizeTitle = (t: string) =>
+    t.toLowerCase().replace(/[^a-z0-9\u00C0-\u024F\u1E00-\u1EFF]/g, '').trim();
+
+  const existingTitleSet = new Set(
+    (existingEvents || []).map((e) => normalizeTitle(e.title || '')).filter(Boolean),
   );
+
+  // Collect all existing source URLs and source_item_urls for URL-based dedup
+  const existingUrlSet = new Set(
+    (existingEvents || []).flatMap((e) =>
+      [e.source_url, e.source_item_url].filter(Boolean).map((u: string) => u.replace(/\/+$/, '').toLowerCase()),
+    ),
+  );
+
+  const newItems = sourceItems.filter((item) => {
+    // Skip if source_url+external_id already exists
+    if (existingKeySet.has(`${item.source_url}::${item.external_id}`)) return false;
+    // Skip if item_url already exists as any event's source_url or source_item_url
+    if (item.item_url && existingUrlSet.has(item.item_url.replace(/\/+$/, '').toLowerCase())) return false;
+    // Skip if normalized title already exists
+    if (existingTitleSet.has(normalizeTitle(item.title))) return false;
+    return true;
+  });
 
   const skipped = sourceItems.length - newItems.length;
   if (skipped > 0 && logger) {
-    logger.log(`Skipped ${skipped} events already pending/approved`);
+    logger.log(`Skipped ${skipped} events already pending/approved (by key or title)`);
   }
 
   if (!newItems.length) return 0;
