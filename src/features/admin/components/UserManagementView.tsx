@@ -27,6 +27,7 @@ export const UserManagementView = ({ profiles, onUpdateRole }: UserManagementVie
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [roleChange, setRoleChange] = useState<{ profile: User; newRole: UserRole } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     let result = profiles;
@@ -68,6 +69,12 @@ export const UserManagementView = ({ profiles, onUpdateRole }: UserManagementVie
           {ALL_ROLES.map((r) => <option key={r} value={r}>{getRoleLabel(r)}</option>)}
         </Select>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-md border border-border">
         <table className="w-full text-sm">
@@ -130,8 +137,13 @@ export const UserManagementView = ({ profiles, onUpdateRole }: UserManagementVie
           title="Change user role"
           message={`Change ${roleChange.profile.name}'s role from "${getRoleLabel(roleChange.profile.role)}" to "${getRoleLabel(roleChange.newRole)}"?`}
           confirmLabel="Change role"
-          onConfirm={() => {
-            void onUpdateRole(roleChange.profile, roleChange.newRole);
+          onConfirm={async () => {
+            setError(null);
+            try {
+              await onUpdateRole(roleChange.profile, roleChange.newRole);
+            } catch {
+              setError(`Failed to change ${roleChange.profile.name}'s role. Please try again.`);
+            }
             setRoleChange(null);
           }}
           onCancel={() => setRoleChange(null)}

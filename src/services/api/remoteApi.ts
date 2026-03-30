@@ -366,13 +366,12 @@ export const syncUserRemote = async (user: User): Promise<boolean> => {
   try {
     const client = withClient();
     const payload = {
-      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role || 'art_lover',
       avatar: user.avatar,
     };
-    const { error } = await client.from('profiles').upsert(payload);
+    const { error } = await client.from('profiles').update(payload).eq('id', user.id);
     if (error) throw error;
     return true;
   } catch (error) {

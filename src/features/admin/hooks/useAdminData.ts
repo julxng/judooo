@@ -103,7 +103,8 @@ export const useAdminData = () => {
   }, [refreshProfiles]);
 
   const updateUserRole = useCallback(async (profile: User, newRole: User['role']) => {
-    await api.syncUser({ ...profile, role: newRole });
+    const ok = await api.syncUser({ ...profile, role: newRole });
+    if (!ok) throw new Error('Failed to update user role');
     await refreshProfiles();
   }, [refreshProfiles]);
 

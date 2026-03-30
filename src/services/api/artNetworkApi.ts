@@ -72,8 +72,8 @@ export const api = {
     return placeBidRemote(artworkId, userId, amount);
   },
 
-  syncUser: async (user: User): Promise<void> => {
-    await syncUserRemote(user);
+  syncUser: async (user: User): Promise<boolean> => {
+    return syncUserRemote(user);
   },
 
   getProfile: async (id: string): Promise<User | null> => {
