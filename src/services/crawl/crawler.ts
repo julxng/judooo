@@ -1711,10 +1711,40 @@ const buildEventRow = (item: SourceItem) => {
 const upsertEvents = async (
   supabase: SupabaseClient,
   sourceItems: SourceItem[],
+  logger?: ReturnType<typeof createLogger>,
 ) => {
   if (!sourceItems.length) return 0;
 
-  const rows = sourceItems.map(buildEventRow);
+  // Check which events already exist with pending or approved status — skip those
+  const keys = sourceItems.map((item) => ({
+    source_url: item.source_url,
+    external_id: item.external_id,
+  }));
+  const externalIds = keys.map((k) => k.external_id);
+
+  const { data: existing } = await supabase
+    .from('events')
+    .select('source_url, external_id, moderation_status')
+    .in('external_id', externalIds);
+
+  const existingSet = new Set(
+    (existing || [])
+      .filter((e) => e.moderation_status === 'pending' || e.moderation_status === 'approved')
+      .map((e) => `${e.source_url}::${e.external_id}`),
+  );
+
+  const newItems = sourceItems.filter(
+    (item) => !existingSet.has(`${item.source_url}::${item.external_id}`),
+  );
+
+  const skipped = sourceItems.length - newItems.length;
+  if (skipped > 0 && logger) {
+    logger.log(`Skipped ${skipped} events already pending/approved`);
+  }
+
+  if (!newItems.length) return 0;
+
+  const rows = newItems.map(buildEventRow);
   const rowsWithModeration = rows.map((row) => ({
     ...row,
     moderation_status: 'pending',
@@ -1725,7 +1755,6 @@ const upsertEvents = async (
     .upsert(rowsWithModeration, { onConflict: 'source_url,external_id' });
 
   if (error) {
-    // Fallback: try without moderation_status in case column doesn't exist
     const fallback = await supabase
       .from('events')
       .upsert(rows, { onConflict: 'source_url,external_id' });
@@ -1782,7 +1811,7 @@ export async function runCrawl(
       }
 
       const sourceItems = await upsertSourceItems(supabase, records, logger);
-      const count = await upsertEvents(supabase, sourceItems);
+      const count = await upsertEvents(supabase, sourceItems, logger);
       ingested += count;
       logger.log(
         `Source ${sourceUrl}: parsed=${records.length}, upserted_events=${count}`,
@@ -1800,7 +1829,7 @@ export async function runCrawl(
       const records = await buildNguyenSourceItems();
       crawled += records.length;
       const sourceItems = await upsertSourceItems(supabase, records, logger);
-      const count = await upsertEvents(supabase, sourceItems);
+      const count = await upsertEvents(supabase, sourceItems, logger);
       ingested += count;
       logger.log(
         `Nguyen Art Foundation: parsed=${records.length}, upserted_events=${count}`,
@@ -1842,7 +1871,7 @@ export async function runCrawl(
             continue;
           }
           const sourceItems = await upsertSourceItems(supabase, records, logger);
-          const count = await upsertEvents(supabase, sourceItems);
+          const count = await upsertEvents(supabase, sourceItems, logger);
           ingested += count;
           logger.log(
             `Facebook ${source.kind} ${source.id}: parsed=${records.length}, upserted_events=${count}`,
@@ -1866,7 +1895,7 @@ export async function runCrawl(
         continue;
       }
       const sourceItems = await upsertSourceItems(supabase, records, logger);
-      const count = await upsertEvents(supabase, sourceItems);
+      const count = await upsertEvents(supabase, sourceItems, logger);
       ingested += count;
       logger.log(
         `WordPress ${siteUrl}: parsed=${records.length}, upserted_events=${count}`,
@@ -1888,7 +1917,7 @@ export async function runCrawl(
         continue;
       }
       const sourceItems = await upsertSourceItems(supabase, records, logger);
-      const count = await upsertEvents(supabase, sourceItems);
+      const count = await upsertEvents(supabase, sourceItems, logger);
       ingested += count;
       logger.log(
         `HTML scrape ${siteUrl}: parsed=${records.length}, upserted_events=${count}`,
@@ -1974,14 +2003,14 @@ export async function runCrawlSource(
         logger.log(`No items parsed from ${source.url}`);
       } else {
         const sourceItems = await upsertSourceItems(supabase, records, logger);
-        ingested = await upsertEvents(supabase, sourceItems);
+        ingested = await upsertEvents(supabase, sourceItems, logger);
         logger.log(`RSS ${source.name}: parsed=${records.length}, upserted=${ingested}`);
       }
     } else if (source.type === 'nguyen') {
       const records = await buildNguyenSourceItems();
       crawled = records.length;
       const sourceItems = await upsertSourceItems(supabase, records, logger);
-      ingested = await upsertEvents(supabase, sourceItems);
+      ingested = await upsertEvents(supabase, sourceItems, logger);
       logger.log(`Nguyen Art Foundation: parsed=${records.length}, upserted=${ingested}`);
     } else if (source.type === 'wp') {
       const records = await buildWpSiteSourceItems(source.url);
@@ -1990,7 +2019,7 @@ export async function runCrawlSource(
         logger.log(`No WP posts found for ${source.url}`);
       } else {
         const sourceItems = await upsertSourceItems(supabase, records, logger);
-        ingested = await upsertEvents(supabase, sourceItems);
+        ingested = await upsertEvents(supabase, sourceItems, logger);
         logger.log(`WordPress ${source.name}: parsed=${records.length}, upserted=${ingested}`);
       }
     } else if (source.type === 'html') {
@@ -2000,7 +2029,7 @@ export async function runCrawlSource(
         logger.log(`No events scraped from ${source.url}`);
       } else {
         const sourceItems = await upsertSourceItems(supabase, records, logger);
-        ingested = await upsertEvents(supabase, sourceItems);
+        ingested = await upsertEvents(supabase, sourceItems, logger);
         logger.log(`HTML scrape ${source.name}: parsed=${records.length}, upserted=${ingested}`);
       }
     } else if (source.type === 'google-news') {
@@ -2018,7 +2047,7 @@ export async function runCrawlSource(
         logger.log(`Google News ${source.name}: fetched=${records.length}, after keyword filter=${filtered.length}`);
         if (filtered.length > 0) {
           const sourceItems = await upsertSourceItems(supabase, filtered, logger);
-          ingested = await upsertEvents(supabase, sourceItems);
+          ingested = await upsertEvents(supabase, sourceItems, logger);
           logger.log(`Google News ${source.name}: upserted=${ingested}`);
         }
       }
