@@ -476,7 +476,7 @@ const Cell = ({
     }
   };
 
-  const cellClass = 'w-full border-0 bg-transparent px-2 py-1.5 text-xs outline-none focus:bg-blue-50 focus:ring-2 focus:ring-inset focus:ring-primary/40 dark:focus:bg-blue-950/20';
+  const cellClass = 'block w-full border-0 bg-transparent px-2 py-1.5 text-xs outline-none overflow-hidden text-ellipsis focus:bg-blue-50 focus:ring-2 focus:ring-inset focus:ring-primary/40 focus:overflow-visible dark:focus:bg-blue-950/20';
 
   if (col.type === 'boolean') {
     return (
@@ -896,7 +896,17 @@ export const EventModerationView = ({
         className="overflow-auto rounded-md border border-border"
         style={{ maxHeight: isFullscreen ? 'calc(100vh - 140px)' : 'calc(100vh - 220px)' }}
       >
-        <table className="w-max min-w-full border-collapse text-xs">
+        <table className="border-collapse text-xs" style={{ tableLayout: 'fixed', width: `${32 + 40 + 70 + 220 + visibleColumns.reduce((s, c) => s + parseInt(c.width), 0) + 90}px` }}>
+          <colgroup>
+            <col style={{ width: '32px' }} />
+            <col style={{ width: '40px' }} />
+            <col style={{ width: '70px' }} />
+            <col style={{ width: '220px' }} />
+            {visibleColumns.map((c) => (
+              <col key={c.key} style={{ width: c.width }} />
+            ))}
+            <col style={{ width: '90px' }} />
+          </colgroup>
           <thead className="sticky top-0 z-10 bg-secondary/80 backdrop-blur">
             <tr>
               <th className="sticky left-0 z-20 w-8 border-b border-r border-border bg-secondary/80 px-1.5 py-2 backdrop-blur">
@@ -912,8 +922,7 @@ export const EventModerationView = ({
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Status</span>
               </th>
               <th
-                className="sticky left-[142px] z-20 border-b border-r border-border bg-secondary/80 px-1.5 py-2 text-left backdrop-blur"
-                style={{ minWidth: '220px', width: '220px' }}
+                className="sticky left-[142px] z-20 border-b border-r border-border bg-secondary/80 px-1.5 py-2 text-left backdrop-blur overflow-hidden"
               >
                 <button
                   type="button"
@@ -931,8 +940,7 @@ export const EventModerationView = ({
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
-                  className="border-b border-r border-border px-1.5 py-2 text-left"
-                  style={{ minWidth: col.width, width: col.width }}
+                  className="border-b border-r border-border px-1.5 py-2 text-left overflow-hidden"
                 >
                   <button
                     type="button"
@@ -1000,8 +1008,7 @@ export const EventModerationView = ({
                     </td>
                     {/* Title — frozen */}
                     <td
-                      className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0"
-                      style={{ minWidth: '220px', width: '220px', maxWidth: '220px' }}
+                      className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0 overflow-hidden"
                     >
                       {renderCell(event, titleCol)}
                     </td>
@@ -1009,8 +1016,7 @@ export const EventModerationView = ({
                     {visibleColumns.map((col) => (
                       <td
                         key={col.key}
-                        className="border-r border-border/30 p-0"
-                        style={{ minWidth: col.width, width: col.width, maxWidth: col.width }}
+                        className="border-r border-border/30 p-0 overflow-hidden"
                       >
                         {renderCell(event, col)}
                       </td>
