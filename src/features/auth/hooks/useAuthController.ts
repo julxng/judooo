@@ -117,11 +117,10 @@ export const useAuthController = () => {
       return;
     }
 
-    const setSessionUser = (sessionUser: SessionUser) => {
+    const setSessionUser = async (sessionUser: SessionUser) => {
       sessionFoundRef.current = true;
+      localStorage.removeItem(DEV_USER_STORAGE_KEY);
 
-      // Set basic user immediately so the UI shows logged-in state without
-      // waiting for the profile network request
       const basicUser: User = {
         id: sessionUser.id,
         name: sessionUser.user_metadata?.full_name || sessionUser.email || 'User',
@@ -131,22 +130,22 @@ export const useAuthController = () => {
           sessionUser.user_metadata?.avatar_url ||
           buildAvatar(sessionUser.user_metadata?.full_name || sessionUser.email || 'User'),
       };
-      setCurrentUser(basicUser);
+
+      // Fetch full profile before updating UI to avoid stale-data flicker
+      try {
+        const fullUser = await mapSessionUser(sessionUser);
+        setCurrentUser(fullUser);
+        api.syncUser(fullUser);
+      } catch (err) {
+        console.error('[auth] Profile sync failed, using basic user:', err);
+        setCurrentUser(basicUser);
+      }
+
       setIsAuthLoading(false);
-      localStorage.removeItem(DEV_USER_STORAGE_KEY);
       if (!recoveryRef.current) {
         setIsAuthDialogOpen(false);
       }
-
-      // Then async-upgrade with full profile data (role, name overrides, etc.)
-      mapSessionUser(sessionUser)
-        .then((fullUser) => {
-          setCurrentUser(fullUser);
-          api.syncUser(fullUser);
-        })
-        .catch((err) => {
-          console.error('[auth] Profile sync failed, using basic user:', err);
-        });
+      router.refresh();
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
@@ -158,24 +157,28 @@ export const useAuthController = () => {
 
       if (session?.user) {
         setSessionUser(session.user);
-      } else if (event !== 'INITIAL_SESSION') {
+      } else {
         setCurrentUser(null);
         setIsAuthLoading(false);
       }
     });
 
-    // Belt-and-suspenders: if onAuthStateChange INITIAL_SESSION missed the
-    // session (e.g. cookie read race), proactively check the server.
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user && !sessionFoundRef.current) {
-        setSessionUser(data.user);
-      } else if (!data.user && !sessionFoundRef.current) {
-        setIsAuthLoading(false);
-      }
-    });
+    // Fallback: if onAuthStateChange hasn't fired after 2s, check the server directly
+    const fallbackTimer = setTimeout(() => {
+      if (sessionFoundRef.current || !supabase) return;
+      supabase.auth.getUser().then(({ data }) => {
+        if (sessionFoundRef.current) return;
+        if (data.user) {
+          setSessionUser(data.user);
+        } else {
+          setIsAuthLoading(false);
+        }
+      });
+    }, 2000);
 
     return () => {
       sub.subscription.unsubscribe();
+      clearTimeout(fallbackTimer);
     };
   }, []);
 
@@ -274,8 +277,7 @@ export const useAuthController = () => {
       notify(`Sign in failed: ${error.message}`, 'error');
       return;
     }
-
-    setIsAuthDialogOpen(false);
+    // Dialog close + user state update handled by onAuthStateChange → setSessionUser
   };
 
   const signUpWithPassword = async (
@@ -402,6 +404,7 @@ export const useAuthController = () => {
     localStorage.removeItem(LOCAL_DB_KEY);
     setCurrentUser(null);
     notify('Signed out.', 'info');
+    router.refresh();
   };
 
   return {
