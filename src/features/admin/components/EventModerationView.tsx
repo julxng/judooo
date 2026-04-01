@@ -404,6 +404,28 @@ const StatusCell = ({
 // Generic cell (text, date, number, select, textarea, boolean, readonly)
 // ---------------------------------------------------------------------------
 
+// Navigate to adjacent cell helper
+const navigateCell = (from: HTMLElement, direction: 'up' | 'down' | 'left' | 'right') => {
+  const td = from.closest('td');
+  if (!td) return;
+  const tr = td.closest('tr');
+  if (!tr) return;
+  const idx = Array.from(tr.children).indexOf(td);
+
+  let targetTd: Element | null = null;
+  if (direction === 'left') targetTd = td.previousElementSibling;
+  else if (direction === 'right') targetTd = td.nextElementSibling;
+  else {
+    const targetRow = direction === 'up' ? tr.previousElementSibling : tr.nextElementSibling;
+    if (targetRow) targetTd = targetRow.children[idx] ?? null;
+  }
+
+  if (targetTd) {
+    const input = targetTd.querySelector<HTMLElement>('input, textarea, select');
+    input?.focus();
+  }
+};
+
 const Cell = ({
   value,
   col,
@@ -415,21 +437,17 @@ const Cell = ({
   eventId: string;
   onChange: (id: string, field: string, value: string | boolean) => void;
 }) => {
-  const [editing, setEditing] = useState(false);
   const [local, setLocal] = useState(String(value ?? ''));
-  const ref = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(null);
+  const synced = useRef(true);
 
-  const startEdit = () => {
-    if (col.type === 'readonly') return;
-    if (col.type === 'boolean') return;
-    setLocal(String(value ?? ''));
-    setEditing(true);
-    setTimeout(() => ref.current?.focus(), 0);
-  };
+  // Sync external value changes (e.g. after save) into local state
+  useEffect(() => {
+    if (synced.current) setLocal(String(value ?? ''));
+  }, [value]);
 
-  const commit = () => {
-    setEditing(false);
+  const commit = (el: HTMLElement) => {
     const strValue = local.trim();
+    synced.current = true;
     if (strValue !== String(value ?? '')) {
       onChange(eventId, col.key, strValue);
     }
@@ -437,29 +455,28 @@ const Cell = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && col.type !== 'textarea') {
-      commit();
-      // Move to next row's same cell (sheets-like Enter behavior)
-      const td = (e.target as HTMLElement).closest('td');
-      const tr = td?.closest('tr');
-      const nextRow = (e.shiftKey ? tr?.previousElementSibling : tr?.nextElementSibling) as HTMLElement | null;
-      if (nextRow) {
-        const idx = td ? Array.from(td.parentElement!.children).indexOf(td) : -1;
-        const nextCell = nextRow.children[idx] as HTMLElement | undefined;
-        nextCell?.querySelector<HTMLElement>('[class*="cursor-text"], [class*="cursor-pointer"]')?.click();
-      }
+      e.preventDefault();
+      commit(e.target as HTMLElement);
+      navigateCell(e.target as HTMLElement, e.shiftKey ? 'up' : 'down');
     }
-    if (e.key === 'Escape') { setEditing(false); setLocal(String(value ?? '')); }
     if (e.key === 'Tab') {
       e.preventDefault();
-      commit();
-      // Move to next/prev cell in same row (sheets-like Tab behavior)
-      const td = (e.target as HTMLElement).closest('td');
-      const sibling = (e.shiftKey ? td?.previousElementSibling : td?.nextElementSibling) as HTMLElement | null;
-      if (sibling) {
-        sibling.querySelector<HTMLElement>('[class*="cursor-text"], [class*="cursor-pointer"]')?.click();
-      }
+      commit(e.target as HTMLElement);
+      navigateCell(e.target as HTMLElement, e.shiftKey ? 'left' : 'right');
+    }
+    if (e.key === 'Escape') {
+      setLocal(String(value ?? ''));
+      synced.current = true;
+      (e.target as HTMLElement).blur();
+    }
+    // Arrow key navigation when not mid-edit for non-text inputs
+    if (col.type === 'date' || col.type === 'number') {
+      if (e.key === 'ArrowUp') { e.preventDefault(); commit(e.target as HTMLElement); navigateCell(e.target as HTMLElement, 'up'); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); commit(e.target as HTMLElement); navigateCell(e.target as HTMLElement, 'down'); }
     }
   };
+
+  const cellClass = 'w-full border-0 bg-transparent px-2 py-1.5 text-xs outline-none focus:bg-blue-50 focus:ring-2 focus:ring-inset focus:ring-primary/40 dark:focus:bg-blue-950/20';
 
   if (col.type === 'boolean') {
     return (
@@ -485,23 +502,8 @@ const Cell = ({
             <span className="truncate">{strVal.replace(/^https?:\/\//, '').slice(0, 30)}</span>
           </a>
         ) : (
-          strVal || '—'
+          strVal || ''
         )}
-      </div>
-    );
-  }
-
-  if (!editing) {
-    return (
-      <div
-        onClick={startEdit}
-        className={cn(
-          'cursor-text truncate px-2 py-1.5 text-xs transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/20',
-          !value && value !== 0 && 'italic text-muted-foreground/40',
-        )}
-        title={String(value ?? '')}
-      >
-        {col.type === 'date' ? (String(value ?? '')).slice(0, 10) || '—' : (String(value ?? '') || '—')}
       </div>
     );
   }
@@ -509,11 +511,10 @@ const Cell = ({
   if (col.type === 'select' && col.options) {
     return (
       <select
-        ref={ref as React.RefObject<HTMLSelectElement>}
-        value={local}
-        onChange={(e) => { onChange(eventId, col.key, e.target.value); setEditing(false); }}
-        onBlur={() => setEditing(false)}
-        className="h-full w-full border-0 bg-blue-50 px-2 py-1.5 text-xs outline-none dark:bg-blue-950/20"
+        value={String(value ?? '')}
+        onChange={(e) => onChange(eventId, col.key, e.target.value)}
+        onKeyDown={handleKeyDown}
+        className={cn(cellClass, 'cursor-pointer')}
       >
         <option value="">—</option>
         {col.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -524,27 +525,31 @@ const Cell = ({
   if (col.type === 'textarea') {
     return (
       <textarea
-        ref={ref as React.RefObject<HTMLTextAreaElement>}
         value={local}
-        onChange={(e) => setLocal(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => { if (e.key === 'Escape') { setEditing(false); setLocal(String(value ?? '')); } }}
-        rows={3}
-        className="h-full w-full resize-none border-0 bg-blue-50 px-2 py-1.5 text-xs outline-none dark:bg-blue-950/20"
+        onChange={(e) => { setLocal(e.target.value); synced.current = false; }}
+        onBlur={(e) => commit(e.target)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') { setLocal(String(value ?? '')); synced.current = true; e.currentTarget.blur(); }
+          if (e.key === 'Tab') { e.preventDefault(); commit(e.target as HTMLElement); navigateCell(e.target as HTMLElement, e.shiftKey ? 'left' : 'right'); }
+        }}
+        rows={1}
+        onFocus={(e) => { e.currentTarget.rows = 3; }}
+        className={cn(cellClass, 'resize-none')}
+        placeholder="..."
       />
     );
   }
 
   return (
     <input
-      ref={ref as React.RefObject<HTMLInputElement>}
       type={col.type === 'number' ? 'number' : col.type === 'date' ? 'date' : 'text'}
       value={local}
-      onChange={(e) => setLocal(e.target.value)}
-      onBlur={commit}
+      onChange={(e) => { setLocal(e.target.value); synced.current = false; }}
+      onBlur={(e) => commit(e.target)}
       onKeyDown={handleKeyDown}
       step={col.type === 'number' ? 'any' : undefined}
-      className="h-full w-full border-0 bg-blue-50 px-2 py-1.5 text-xs outline-none dark:bg-blue-950/20"
+      className={cellClass}
+      placeholder="..."
     />
   );
 };
@@ -1004,7 +1009,7 @@ export const EventModerationView = ({
                     {visibleColumns.map((col) => (
                       <td
                         key={col.key}
-                        className="border-r border-border/40 p-0"
+                        className="border-r border-border/30 p-0"
                         style={{ minWidth: col.width, width: col.width, maxWidth: col.width }}
                       >
                         {renderCell(event, col)}
