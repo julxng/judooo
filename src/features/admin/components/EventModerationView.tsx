@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, ExternalLink, ImagePlus, Save, Trash2, X, ChevronDown, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowDown, ArrowUp, Check, ExternalLink, ImagePlus, Maximize2, Minimize2, Save, Trash2, X, ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -436,9 +436,29 @@ const Cell = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && col.type !== 'textarea') commit();
+    if (e.key === 'Enter' && col.type !== 'textarea') {
+      commit();
+      // Move to next row's same cell (sheets-like Enter behavior)
+      const td = (e.target as HTMLElement).closest('td');
+      const tr = td?.closest('tr');
+      const nextRow = (e.shiftKey ? tr?.previousElementSibling : tr?.nextElementSibling) as HTMLElement | null;
+      if (nextRow) {
+        const idx = td ? Array.from(td.parentElement!.children).indexOf(td) : -1;
+        const nextCell = nextRow.children[idx] as HTMLElement | undefined;
+        nextCell?.querySelector<HTMLElement>('[class*="cursor-text"], [class*="cursor-pointer"]')?.click();
+      }
+    }
     if (e.key === 'Escape') { setEditing(false); setLocal(String(value ?? '')); }
-    if (e.key === 'Tab') commit();
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      commit();
+      // Move to next/prev cell in same row (sheets-like Tab behavior)
+      const td = (e.target as HTMLElement).closest('td');
+      const sibling = (e.shiftKey ? td?.previousElementSibling : td?.nextElementSibling) as HTMLElement | null;
+      if (sibling) {
+        sibling.querySelector<HTMLElement>('[class*="cursor-text"], [class*="cursor-pointer"]')?.click();
+      }
+    }
   };
 
   if (col.type === 'boolean') {
@@ -570,6 +590,18 @@ export const EventModerationView = ({
   const [visibleGroups, setVisibleGroups] = useState<Set<string>>(
     new Set(['Basic', 'Dates', 'Location', 'Classification', 'Price', 'Media', 'Source', 'Contact', 'Flags']),
   );
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Escape exits fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isFullscreen]);
 
   const today = todayIso();
 
@@ -727,7 +759,13 @@ export const EventModerationView = ({
   };
 
   return (
-    <div className="min-w-0 space-y-3">
+    <div
+      ref={containerRef}
+      className={cn(
+        'min-w-0 space-y-3',
+        isFullscreen && 'fixed inset-0 z-50 overflow-auto bg-background p-4',
+      )}
+    >
       {/* ---- Toolbar ---- */}
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="mr-2 text-lg font-semibold">Events</h1>
@@ -803,6 +841,15 @@ export const EventModerationView = ({
           </details>
         </div>
 
+        <button
+          onClick={() => setIsFullscreen((v) => !v)}
+          className="flex items-center gap-1 rounded border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+          title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}
+        >
+          {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+          {isFullscreen ? 'Exit' : 'Fullscreen'}
+        </button>
+
         <span className="text-xs text-muted-foreground">{filtered.length} events</span>
 
         {pendingCount > 0 && (
@@ -839,7 +886,10 @@ export const EventModerationView = ({
       )}
 
       {/* ---- Spreadsheet ---- */}
-      <div className="overflow-auto rounded-md border border-border" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+      <div
+        className="overflow-auto rounded-md border border-border"
+        style={{ maxHeight: isFullscreen ? 'calc(100vh - 140px)' : 'calc(100vh - 220px)' }}
+      >
         <table className="w-max min-w-full border-collapse text-xs">
           <thead className="sticky top-0 z-10 bg-secondary/80 backdrop-blur">
             <tr>
@@ -888,7 +938,7 @@ export const EventModerationView = ({
                 </td>
               </tr>
             ) : (
-              filtered.map((event) => {
+              filtered.map((event, rowIdx) => {
                 const changed = hasPending(event.id);
                 const saving = savingIds.has(event.id);
                 return (
@@ -898,7 +948,8 @@ export const EventModerationView = ({
                       'border-b border-border/40 transition-colors',
                       changed && 'bg-amber-50/60 dark:bg-amber-950/10',
                       filters.selectedIds.has(event.id) && 'bg-blue-50/60 dark:bg-blue-950/10',
-                      !changed && !filters.selectedIds.has(event.id) && 'hover:bg-secondary/30',
+                      !changed && !filters.selectedIds.has(event.id) && rowIdx % 2 === 1 && 'bg-secondary/15',
+                      !changed && !filters.selectedIds.has(event.id) && 'hover:bg-blue-50/40 dark:hover:bg-blue-950/15',
                     )}
                   >
                     <td className="sticky left-0 z-[5] border-r border-border/40 bg-inherit px-1.5 py-0">
