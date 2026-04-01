@@ -20,7 +20,8 @@ const PUBLIC_ROUTES = [
 ];
 
 const ROLE_ROUTES: Record<string, string[]> = {
-  '/admin': ['admin'],
+  // /admin role guard is handled by AdminPage component using the profiles table
+  // (user_metadata.role can be stale when an admin changes another user's role)
   '/dashboard/artist': ['artist', 'admin'],
   '/dashboard/buyer': ['buyer', 'admin'],
 };
