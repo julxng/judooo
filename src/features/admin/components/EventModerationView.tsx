@@ -476,7 +476,7 @@ const Cell = ({
     }
   };
 
-  const cellClass = 'block w-full border-0 bg-transparent px-2 py-1.5 text-xs outline-none overflow-hidden text-ellipsis focus:bg-blue-50 focus:ring-2 focus:ring-inset focus:ring-primary/40 focus:overflow-visible dark:focus:bg-blue-950/20';
+  const cellClass = 'box-border w-full max-w-full border-0 bg-transparent px-2 py-1.5 text-xs outline-none focus:bg-blue-50 focus:ring-2 focus:ring-inset focus:ring-primary/40 dark:focus:bg-blue-950/20';
 
   if (col.type === 'boolean') {
     return (
@@ -1008,17 +1008,21 @@ export const EventModerationView = ({
                     </td>
                     {/* Title — frozen */}
                     <td
-                      className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0 overflow-hidden"
+                      className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0"
                     >
-                      {renderCell(event, titleCol)}
+                      <div className="overflow-hidden">
+                        {renderCell(event, titleCol)}
+                      </div>
                     </td>
                     {/* Dynamic cells */}
                     {visibleColumns.map((col) => (
                       <td
                         key={col.key}
-                        className="border-r border-border/30 p-0 overflow-hidden"
+                        className="border-r border-border/30 p-0"
                       >
-                        {renderCell(event, col)}
+                        <div className="overflow-hidden">
+                          {renderCell(event, col)}
+                        </div>
                       </td>
                     ))}
                     {/* Actions */}
