@@ -615,8 +615,9 @@ export const EventModerationView = ({
     return Array.from(set);
   }, []);
 
+  const titleCol = COLUMNS.find((c) => c.key === 'title')!;
   const visibleColumns = useMemo(
-    () => COLUMNS.filter((c) => visibleGroups.has(c.group)),
+    () => COLUMNS.filter((c) => c.key !== 'title' && visibleGroups.has(c.group)),
     [visibleGroups],
   );
 
@@ -905,6 +906,23 @@ export const EventModerationView = ({
               <th className="sticky left-[72px] z-20 w-[70px] border-b border-r border-border bg-secondary/80 px-1.5 py-2 text-left backdrop-blur">
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Status</span>
               </th>
+              <th
+                className="sticky left-[142px] z-20 border-b border-r border-border bg-secondary/80 px-1.5 py-2 text-left backdrop-blur"
+                style={{ minWidth: '220px', width: '220px' }}
+              >
+                <button
+                  type="button"
+                  onClick={() => filters.toggleSort('title')}
+                  className="inline-flex items-center gap-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                >
+                  Title
+                  {filters.sort.key === 'title' && (
+                    filters.sort.direction === 'asc'
+                      ? <ArrowUp size={10} />
+                      : <ArrowDown size={10} />
+                  )}
+                </button>
+              </th>
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
@@ -974,6 +992,13 @@ export const EventModerationView = ({
                         eventId={event.id}
                         onModerate={onModerate}
                       />
+                    </td>
+                    {/* Title — frozen */}
+                    <td
+                      className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0"
+                      style={{ minWidth: '220px', width: '220px', maxWidth: '220px' }}
+                    >
+                      {renderCell(event, titleCol)}
                     </td>
                     {/* Dynamic cells */}
                     {visibleColumns.map((col) => (
