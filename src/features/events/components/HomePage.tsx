@@ -9,6 +9,7 @@ import { SiteShell } from '@/components/layout/SiteShell';
 import { Card } from '@/components/ui/Card';
 import { Container } from '@/components/ui/Container';
 import { Badge } from '@/components/ui/Badge';
+import { Masonry } from '@/components/ui/Masonry';
 import { EventCard } from './EventCard';
 import { useEventsCatalog } from '../hooks/useEventsCatalog';
 import {
@@ -165,7 +166,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
             </Link>
           </div>
 
-          <div className="events-masonry">
+          <Masonry>
             {latestCrawlEvents.map((event) => (
               <div key={event.id} className="events-masonry__item">
                 <EventCard
@@ -176,7 +177,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                 />
               </div>
             ))}
-          </div>
+          </Masonry>
         </section>
 
         {[
@@ -226,7 +227,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                 </Link>
               </div>
 
-              <div className="events-masonry">
+              <Masonry>
                 {isLoading
                   ? Array.from({ length: 4 }).map((_, index) => (
                     <div key={index} className="events-masonry__item">
@@ -243,7 +244,7 @@ export const HomePage = ({ initialEvents = [] }: HomePageProps) => {
                       />
                     </div>
                   ))}
-              </div>
+              </Masonry>
             </section>
           );
         })}

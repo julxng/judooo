@@ -1,4 +1,5 @@
 import { EmptyState } from '@/components/shared/EmptyState';
+import { Masonry } from '@/components/ui/Masonry';
 import type { ArtEvent } from '../types/event.types';
 import { EventCard } from './EventCard';
 
@@ -27,7 +28,7 @@ export const EventsGrid = ({
   }
 
   return (
-    <div className="events-masonry">
+    <Masonry>
       {events.map((event) => (
         <div key={event.id} className="events-masonry__item">
           <EventCard
@@ -38,6 +39,6 @@ export const EventsGrid = ({
           />
         </div>
       ))}
-    </div>
+    </Masonry>
   );
 };
