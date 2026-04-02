@@ -900,7 +900,7 @@ export const EventModerationView = ({
         className="overflow-auto rounded-md border border-border"
         style={{ maxHeight: isFullscreen ? 'calc(100vh - 140px)' : 'calc(100vh - 220px)' }}
       >
-        <table className="border-collapse text-xs" style={{ tableLayout: 'fixed', width: `${tableWidth}px` }}>
+        <table className="text-xs" style={{ tableLayout: 'fixed', width: `${tableWidth}px`, borderCollapse: 'separate', borderSpacing: 0 }}>
           <thead className="sticky top-0 z-10 bg-secondary/80 backdrop-blur">
             <tr>
               <th className="sticky left-0 z-20 w-8 border-b border-r border-border bg-secondary/80 px-1.5 py-2 backdrop-blur">
@@ -1003,20 +1003,17 @@ export const EventModerationView = ({
                       />
                     </td>
                     {/* Title — frozen */}
-                    <td className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0">
-                      <div className="w-full overflow-hidden">
-                        {renderCell(event, titleCol)}
-                      </div>
+                    <td className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0" style={{ overflow: 'hidden' }}>
+                      {renderCell(event, titleCol)}
                     </td>
                     {/* Dynamic cells */}
                     {visibleColumns.map((col) => (
                       <td
                         key={col.key}
                         className="border-r border-border/30 p-0"
+                        style={{ overflow: 'hidden' }}
                       >
-                        <div className="w-full overflow-hidden">
-                          {renderCell(event, col)}
-                        </div>
+                        {renderCell(event, col)}
                       </td>
                     ))}
                     {/* Actions */}
