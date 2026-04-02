@@ -626,6 +626,10 @@ export const EventModerationView = ({
     [visibleGroups],
   );
 
+  // Fixed columns: checkbox(32) + thumb(40) + status(70) + title(220) + actions(90) = 452
+  const FIXED_WIDTH = 32 + 40 + 70 + 220 + 90;
+  const tableWidth = FIXED_WIDTH + visibleColumns.reduce((sum, c) => sum + parseInt(c.width), 0);
+
   const toggleGroup = (g: string) =>
     setVisibleGroups((prev) => {
       const next = new Set(prev);
@@ -896,7 +900,7 @@ export const EventModerationView = ({
         className="overflow-auto rounded-md border border-border"
         style={{ maxHeight: isFullscreen ? 'calc(100vh - 140px)' : 'calc(100vh - 220px)' }}
       >
-        <table className="w-max min-w-full border-collapse text-xs">
+        <table className="border-collapse text-xs" style={{ tableLayout: 'fixed', width: `${tableWidth}px` }}>
           <thead className="sticky top-0 z-10 bg-secondary/80 backdrop-blur">
             <tr>
               <th className="sticky left-0 z-20 w-8 border-b border-r border-border bg-secondary/80 px-1.5 py-2 backdrop-blur">
@@ -999,10 +1003,7 @@ export const EventModerationView = ({
                       />
                     </td>
                     {/* Title — frozen */}
-                    <td
-                      className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0"
-                      style={{ width: '220px', minWidth: '220px', maxWidth: '220px' }}
-                    >
+                    <td className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0">
                       <div className="w-full overflow-hidden">
                         {renderCell(event, titleCol)}
                       </div>
@@ -1012,7 +1013,6 @@ export const EventModerationView = ({
                       <td
                         key={col.key}
                         className="border-r border-border/30 p-0"
-                        style={{ width: col.width, minWidth: col.width, maxWidth: col.width }}
                       >
                         <div className="w-full overflow-hidden">
                           {renderCell(event, col)}
