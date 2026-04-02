@@ -1003,17 +1003,13 @@ export const EventModerationView = ({
                       />
                     </td>
                     {/* Title — frozen */}
-                    <td className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0" style={{ overflow: 'hidden' }}>
-                      {renderCell(event, titleCol)}
+                    <td className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0">
+                      <div className="overflow-hidden">{renderCell(event, titleCol)}</div>
                     </td>
                     {/* Dynamic cells */}
                     {visibleColumns.map((col) => (
-                      <td
-                        key={col.key}
-                        className="border-r border-border/30 p-0"
-                        style={{ overflow: 'hidden' }}
-                      >
-                        {renderCell(event, col)}
+                      <td key={col.key} className="border-r border-border/30 p-0">
+                        <div className="overflow-hidden">{renderCell(event, col)}</div>
                       </td>
                     ))}
                     {/* Actions */}
