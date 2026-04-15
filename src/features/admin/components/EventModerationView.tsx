@@ -377,7 +377,7 @@ const StatusCell = ({
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} className="w-full px-1 py-0.5">
-        <Badge tone={tone} className="cursor-pointer text-[9px] px-1.5 py-0 hover:ring-1 hover:ring-primary/30">
+        <Badge tone={tone} className="cursor-pointer text-[9px] px-1.5 py-0 whitespace-nowrap hover:ring-1 hover:ring-primary/30">
           {value || 'approved'}
         </Badge>
       </button>
@@ -928,7 +928,7 @@ export const EventModerationView = ({
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Status</span>
               </th>
               <th
-                className="sticky left-[142px] z-20 border-b border-r border-border bg-gray-100 px-1.5 py-2 text-left"
+                className="sticky left-[142px] z-20 border-b border-r border-border bg-gray-100 px-1.5 py-2 text-left shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]"
                 style={{ width: '220px', minWidth: '220px', maxWidth: '220px' }}
               >
                 <button
@@ -1013,7 +1013,7 @@ export const EventModerationView = ({
                       )}
                     </td>
                     {/* Status — editable dropdown */}
-                    <td className={cn('sticky left-[72px] z-[5] border-r border-border/40', stickyBg)}>
+                    <td className={cn('sticky left-[72px] z-[5] border-r border-border/40 overflow-hidden', stickyBg)}>
                       <StatusCell
                         value={event.moderation_status || 'approved'}
                         eventId={event.id}
@@ -1021,7 +1021,7 @@ export const EventModerationView = ({
                       />
                     </td>
                     {/* Title — frozen */}
-                    <td className={cn('sticky left-[142px] z-[5] border-r border-border/40 p-0', stickyBg)}>
+                    <td className={cn('sticky left-[142px] z-[5] border-r border-border/40 p-0 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.08)]', stickyBg)}>
                       <div className="overflow-hidden">{renderCell(event, titleCol)}</div>
                     </td>
                     {/* Dynamic cells */}
