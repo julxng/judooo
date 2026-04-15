@@ -35,8 +35,8 @@ type SortMode = 'recently-imported' | 'newest' | 'ending-soon' | 'hot';
 const translations = {
   en: {
     kicker: 'All Events',
-    heading: 'Browse the full calendar with sharper filtering and map context.',
-    subheading: 'This page holds the complete directory: search across venues and titles, narrow by medium or event type, then save stops directly into the route planner.',
+    heading: 'All events. Filter by district, medium, or any keyword you like.',
+    subheading: 'Find it fast. Add it to your route.',
     grid: 'Grid',
     map: 'Map',
     filters: 'Filters',
@@ -73,8 +73,8 @@ const translations = {
   },
   vie: {
     kicker: 'Tất cả sự kiện',
-    heading: 'Khám phá lịch trình đầy đủ với bộ lọc chi tiết và bản đồ.',
-    subheading: 'Trang này chứa toàn bộ danh mục: tìm kiếm theo địa điểm và tên, lọc theo loại hình nghệ thuật hoặc sự kiện, rồi lưu điểm dừng vào lộ trình.',
+    heading: 'Tất cả sự kiện. Lọc theo quận, loại hình, hay từ khóa bạn muốn tìm.',
+    subheading: 'Tìm nhanh. Thêm vào lộ trình.',
     grid: 'Lưới',
     map: 'Bản đồ',
     filters: 'Bộ lọc',

@@ -120,8 +120,8 @@ export const translations: Record<Locale, TranslationSchema> = {
     },
     routePlanner: {
       kicker: 'Lộ trình tham quan',
-      heading: 'Biến sự kiện đã lưu thành lộ trình nghệ thuật trong ngày.',
-      description: 'Sự kiện đã lưu nằm bên trái. Mục lộ trình là những điểm bạn thực sự muốn ghé thăm theo thứ tự. Khi có từ hai điểm dừng trở lên, hệ thống sẽ mở Google Maps với lộ trình đó.',
+      heading: 'Lên lịch đi coi nghệ thuật cuối tuần này.',
+      description: 'Chọn điểm muốn đi, sắp xếp thứ tự, chúng mình lo vụ lộ trình cho.',
       signInPrompt: 'Đăng nhập để lưu sự kiện và đồng bộ lộ trình của bạn.',
       signInButton: 'Đăng nhập để lưu',
       savedEventsKicker: 'Sự kiện đã lưu',
@@ -243,8 +243,8 @@ export const translations: Record<Locale, TranslationSchema> = {
     },
     routePlanner: {
       kicker: 'Route Planner',
-      heading: 'Turn saved events into a workable art-day route.',
-      description: 'Saved events stay on the left. Route items are the subset you actually want to visit in order. When two or more stops are ready, the planner opens Google Maps with that sequence.',
+      heading: 'Plan your weekend art trip.',
+      description: 'Pick the stops, set the order. We\'ll handle the route.',
       signInPrompt: 'Sign in to save events and keep your route planner synced.',
       signInButton: 'Sign in to save',
       savedEventsKicker: 'Current Saved Events',

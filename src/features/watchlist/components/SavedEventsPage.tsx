@@ -55,12 +55,14 @@ export const SavedEventsPage = ({ initialEvents = [] }: SavedEventsPageProps) =>
       <Container size="xl" className="space-y-8 py-8 sm:py-12">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="section-kicker">Your collection</p>
-            <h1 className="section-heading mt-2">Saved events</h1>
+            <p className="section-kicker">{language === 'vi' ? 'Đã lưu' : 'Your collection'}</p>
+            <h1 className="section-heading mt-2">{language === 'vi' ? 'Sự kiện đã lưu' : 'Saved events'}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {savedEvents.length === 0
-                ? 'No events saved yet.'
-                : `${savedEvents.length} event${savedEvents.length === 1 ? '' : 's'} saved`}
+                ? (language === 'vi' ? 'Chưa có sự kiện nào được lưu.' : 'No events saved yet.')
+                : language === 'vi'
+                  ? `Đã lưu ${savedEvents.length} sự kiện`
+                  : `${savedEvents.length} event${savedEvents.length === 1 ? '' : 's'} saved`}
             </p>
           </div>
           {savedEvents.length > 0 ? (

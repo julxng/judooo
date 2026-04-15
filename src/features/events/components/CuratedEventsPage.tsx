@@ -38,8 +38,8 @@ const copy: Record<Locale, {
   filterBy: string;
 }> = {
   en: {
-    hero: 'This week in Vietnam art',
-    heroSub: 'Curated exhibitions, workshops, and events across Vietnam. Updated weekly.',
+    hero: 'Where to this week?',
+    heroSub: 'Curated exhibitions, workshops, and events in Saigon, Hanoi & beyond. Fresh picks weekly.',
     allCities: 'All cities',
     allTypes: 'All types',
     englishFriendly: 'English-friendly',
@@ -52,7 +52,7 @@ const copy: Record<Locale, {
   },
   vi: {
     hero: 'Tuần này đi đâu?',
-    heroSub: 'Triển lãm, workshop và sự kiện nghệ thuật được chọn lọc. Cập nhật hàng tuần.',
+    heroSub: 'Triển lãm, workshop và sự kiện nghệ thuật hay ho ở Sài Gòn, Hà Nội và nhiều nơi khác. Cập nhật mỗi tuần.',
     allCities: 'Tất cả thành phố',
     allTypes: 'Tất cả loại',
     englishFriendly: 'Có tiếng Anh',
@@ -274,12 +274,12 @@ export const CuratedEventsPage = ({ initialEvents = [], initialArtworks = [] }: 
           </Card>
           <Card className="p-8">
             <h3 className="text-lg font-semibold text-foreground">
-              {language === 'en' ? 'Are you a gallery?' : 'Bạn là người đại diện Gallery?'}
+              {language === 'en' ? 'Are you a gallery?' : 'Bạn đang quản lý gallery?'}
             </h3>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
               {language === 'en'
-                ? 'List your exhibitions and artworks on Judooo for free. Reach a bilingual audience of art lovers across Vietnam.'
-                : 'Đăng triển lãm và tác phẩm trên Judooo miễn phí. Tiếp cận cộng đồng yêu nghệ thuật song ngữ trên khắp Việt Nam.'}
+                ? 'List exhibitions and artworks on judooo for free. Reach thousands of art lovers across Vietnam through a bilingual platform.'
+                : 'Đăng triển lãm và tác phẩm trên judooo miễn phí. Tiếp cận hàng nghìn người yêu nghệ thuật khắp Việt Nam qua nền tảng song ngữ.'}
             </p>
             <Button variant="outline" size="sm" className="mt-4" onClick={() => router.push('/submit-event')}>
               {language === 'en' ? 'Submit your event' : 'Đăng sự kiện'}

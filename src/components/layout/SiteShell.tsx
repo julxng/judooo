@@ -75,9 +75,9 @@ const shellCopy: Record<
     browse: 'Browse',
     company: 'Company',
     contact: 'Contact',
-    footerTitle: 'Discover works and follow the art calendar across Vietnam.',
+    footerTitle: 'Your local companion to Vietnam\'s artworld.',
     footerBody:
-      'Judooo helps people find exhibitions, artworks, and route-ready cultural plans across Vietnam.',
+      'Find shows, build a route, and just show up. No more endless scrolling.',
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
     languageLabel: 'Language',
@@ -106,9 +106,9 @@ const shellCopy: Record<
     browse: 'Khám phá',
     company: 'Judooo',
     contact: 'Liên hệ',
-    footerTitle: 'Nơi kết nối bạn với nghệ thuật đương đại Việt Nam.',
+    footerTitle: 'Người bạn đồng hành cùng bạn khám phá thế giới nghệ thuật Việt Nam.',
     footerBody:
-      'Judooo giúp mọi người tìm thấy triển lãm, tác phẩm và lộ trình tham quan nghệ thuật để lên kế hoạch dễ dàng hơn.',
+      'Tìm triển lãm, tìm địa chỉ, và lên lịch đi coi trong một nốt nhạc. Không cần loay hoay tìm kiếm.',
     openMenu: 'Mở menu',
     closeMenu: 'Đóng menu',
     languageLabel: 'Ngôn ngữ',

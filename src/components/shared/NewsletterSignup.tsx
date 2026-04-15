@@ -8,15 +8,15 @@ import type { Locale } from '@/lib/i18n/translations';
 const copy: Record<Locale, { heading: string; body: string; placeholder: string; cta: string; success: string; error: string }> = {
   en: {
     heading: 'Stay in the loop',
-    body: 'Get a weekly digest of art events across Vietnam — bilingual, curated, free.',
+    body: 'A few worthwhile exhibitions and workshops in Saigon, Hanoi, and beyond – delivered weekly. Bilingual, handpicked, totally free.',
     placeholder: 'your@email.com',
     cta: 'Subscribe',
     success: 'You\'re in! We\'ll be in touch.',
     error: 'Something went wrong. Please try again.',
   },
   vi: {
-    heading: 'Cập nhật mỗi tuần',
-    body: 'Nhận bản tin sự kiện nghệ thuật Việt Nam hàng tuần — song ngữ, chọn lọc, miễn phí.',
+    heading: 'Đừng bỏ lỡ',
+    body: 'Mỗi tuần một vài gợi ý triển lãm và workshop đáng đi ở Sài Gòn, Hà Nội, và nhiều nơi khác. Song ngữ, tuyển chọn và hoàn toàn miễn phí.',
     placeholder: 'email@cuaban.com',
     cta: 'Đăng ký',
     success: 'Đã đăng ký! Chúng mình sẽ liên hệ sớm.',
