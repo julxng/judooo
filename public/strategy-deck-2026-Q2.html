@@ -8,6 +8,35 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* PASSWORD GATE */
+#gate {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #f5f4f0;
+  display: flex; align-items: center; justify-content: center;
+}
+.gate-box {
+  background: #fff; border: 1px solid #e5e5e0; border-radius: 16px;
+  padding: 40px 44px; width: 380px; text-align: center;
+  box-shadow: 0 4px 32px rgba(0,0,0,.08);
+}
+.gate-logo { margin-bottom: 24px; }
+.gate-logo svg { height: 28px; width: auto; }
+.gate-title { font-size: 17px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+.gate-sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+.gate-input {
+  width: 100%; padding: 11px 14px; border: 1.5px solid #e5e5e0; border-radius: 8px;
+  font-size: 15px; font-family: inherit; outline: none; margin-bottom: 12px;
+  transition: border-color .15s;
+}
+.gate-input:focus { border-color: #eb4422; }
+.gate-btn {
+  width: 100%; padding: 11px; background: #1a1a1a; color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: background .15s;
+}
+.gate-btn:hover { background: #eb4422; }
+.gate-err { font-size: 12px; color: #c62828; margin-top: 8px; min-height: 18px; }
+
 :root {
   --orange: #eb4422;
   --black: #1a1a1a;
@@ -188,6 +217,49 @@ td strong { font-weight: 600; color: var(--black); }
 </style>
 </head>
 <body>
+
+<!-- PASSWORD GATE -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">
+      <svg viewBox="0 0 5776 1600" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#eb4422" d="M1689.103,600v400c0,106.648-86.455,193.103-193.103,193.103-106.648,0-193.103-86.455-193.103-193.103v-400s-206.897,0-206.897,0v406.897c0,217.105,175.998,393.103,393.103,393.103h13.793c217.105,0,393.103-175.998,393.103-393.103v-406.897s-206.897,0-206.897,0Z"/>
+        <path fill="#eb4422" d="M3316,560c-231.96,0-420,188.04-420,420s188.04,420,420,420,420-188.04,420-420-188.04-420-420-420ZM3316,1181.6c-111.341,0-201.6-90.26-201.6-201.6s90.259-201.6,201.6-201.6,201.6,90.259,201.6,201.6-90.259,201.6-201.6,201.6Z"/>
+        <path fill="#eb4422" d="M2597.6,200v411.498c-59.846-32.81-128.535-51.498-201.6-51.498-231.96,0-420,188.04-420,420s188.04,420,420,420,420-188.04,420-420V200h-218.4ZM2396,1181.6c-111.341,0-201.6-90.26-201.6-201.6s90.259-201.6,201.6-201.6,201.6,90.259,201.6,201.6-90.259,201.6-201.6,201.6Z"/>
+        <path fill="#eb4422" d="M4236,560c-231.96,0-420,188.04-420,420s188.04,420,420,420,420-188.04,420-420-188.04-420-420-420ZM4236,1181.6c-111.341,0-201.6-90.26-201.6-201.6s90.259-201.6,201.6-201.6,201.6,90.259,201.6,201.6-90.259,201.6-201.6,201.6Z"/>
+        <path fill="#eb4422" d="M5156,560c-231.96,0-420,188.04-420,420s188.04,420,420,420,420-188.04,420-420-188.04-420-420-420ZM5156,1181.6c-111.341,0-201.6-90.26-201.6-201.6s90.259-201.6,201.6-201.6,201.6,90.259,201.6,201.6-90.259,201.6-201.6,201.6Z"/>
+        <path fill="#eb4422" d="M793.104,600v400c0,106.648-86.455,193.104-193.104,193.104s-193.104-86.456-193.104-193.104h-206.896v6.896c0,217.105,175.999,393.104,393.104,393.104h13.793c217.105,0,393.104-175.999,393.104-393.104v-406.896h-206.896Z"/>
+      </svg>
+    </div>
+    <div class="gate-title">Judooo — Strategy Q2 2026</div>
+    <div class="gate-sub">Internal document. Enter password to continue.</div>
+    <input class="gate-input" id="gateInput" type="password" placeholder="Password" autocomplete="off">
+    <button class="gate-btn" onclick="checkPass()">Continue →</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+<script>
+(function(){
+  const PW = btoa('#1Fortons');
+  if(sessionStorage.getItem('jdeck')==PW){
+    document.getElementById('gate').style.display='none';
+  }
+  window.checkPass = function(){
+    const v = document.getElementById('gateInput').value;
+    if(btoa(v)===PW){
+      sessionStorage.setItem('jdeck',PW);
+      document.getElementById('gate').style.display='none';
+    } else {
+      document.getElementById('gateErr').textContent='Incorrect password.';
+      document.getElementById('gateInput').value='';
+      document.getElementById('gateInput').focus();
+    }
+  };
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Enter' && document.getElementById('gate').style.display!=='none') checkPass();
+  });
+})();
+</script>
 
 <!-- NAV -->
 <nav class="nav">
