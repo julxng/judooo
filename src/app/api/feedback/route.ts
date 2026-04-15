@@ -14,9 +14,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'type and title are required' }, { status: 400 });
     }
 
-    const baseUrl = process.env.JIRA_BASE_URL;
-    const email = process.env.JIRA_EMAIL;
-    const token = process.env.JIRA_API_TOKEN;
+    const baseUrl = process.env.JIRA_BASE_URL?.trim();
+    const email = process.env.JIRA_EMAIL?.trim();
+    const token = process.env.JIRA_API_TOKEN?.trim();
     const projectKey = (process.env.JIRA_PROJECT_KEY ?? 'TONS').trim();
     const issueTypeId = (process.env.JIRA_ISSUE_TYPE_ID ?? '10081').trim();
 
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     if (!res.ok) {
       const err = await res.text();
       console.error('Jira create issue error:', err);
-      return NextResponse.json({ error: 'Failed to create Jira issue', _j: err, _p: projectKey, _it: issueTypeId, _url: `${baseUrl}/rest/api/3/issue` }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create Jira issue' }, { status: 500 });
     }
 
     const data = await res.json() as { key: string };
