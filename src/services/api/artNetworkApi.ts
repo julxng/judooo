@@ -32,7 +32,13 @@ const fileToDataUrl = async (file: File): Promise<string | null> =>
 export const api = {
   getEvents: async (): Promise<ArtEvent[]> => {
     const events = await getEventsRemote();
-    return events || [];
+    if (!events) return [];
+    const seen = new Set<string>();
+    return events.filter((e) => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
   },
 
   createEvent: async (event: Partial<ArtEvent>): Promise<ArtEvent | null> => {

@@ -596,6 +596,7 @@ export const EventModerationView = ({
     new Set(['Basic', 'Dates', 'Location', 'Classification', 'Price', 'Media', 'Source', 'Contact', 'Flags']),
   );
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [page, setPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Escape exits fullscreen
@@ -608,7 +609,7 @@ export const EventModerationView = ({
     return () => window.removeEventListener('keydown', handler);
   }, [isFullscreen]);
 
-  const today = todayIso();
+  const today = useMemo(() => todayIso(), []);
 
   const cities = useMemo(() => {
     const set = new Set(events.map((e) => e.city).filter(Boolean));
@@ -675,6 +676,17 @@ export const EventModerationView = ({
   }, [events, filters, language, timeFilter, today]);
 
   const filteredIds = useMemo(() => filtered.map((e) => e.id), [filtered]);
+
+  const PAGE_SIZE = 100;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pagedEvents = useMemo(
+    () => filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [filtered, page],
+  );
+
+  useEffect(() => {
+    setPage(0);
+  }, [filtered]);
 
   const onCellChange = useCallback((id: string, field: string, value: string | boolean | EventMedia[]) => {
     setPendingChanges((prev) => ({
@@ -965,7 +977,7 @@ export const EventModerationView = ({
                 </td>
               </tr>
             ) : (
-              filtered.map((event, rowIdx) => {
+              pagedEvents.map((event, rowIdx) => {
                 const changed = hasPending(event.id);
                 const saving = savingIds.has(event.id);
                 return (
@@ -1068,6 +1080,33 @@ export const EventModerationView = ({
           </tbody>
         </table>
       </div>
+
+      {filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between border-t border-border px-4 py-2">
+          <span className="text-xs text-muted-foreground">
+            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length} events
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="rounded px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary disabled:opacity-40"
+            >
+              Prev
+            </button>
+            <span className="text-xs text-muted-foreground">{page + 1} / {totalPages}</span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              className="rounded px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {confirmAction && (
         <ConfirmDialog
