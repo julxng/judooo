@@ -2020,6 +2020,90 @@ img {
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
+.map-hover-card {
+  position: absolute;
+  z-index: 1000;
+  transform: translate(-50%, calc(-100% - 14px));
+  width: 220px;
+  border-radius: var(--radius-md);
+  background: var(--background);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.map-hover-card__img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.map-hover-card__body {
+  padding: 10px 12px;
+}
+
+.map-hover-card__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0 0 2px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.map-hover-card__sub {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-hover-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.map-hover-card__link {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.map-hover-card__link:hover {
+  text-decoration: underline;
+}
+
+.map-hover-card__heart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.map-hover-card__heart:hover {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.map-hover-card__heart--saved {
+  color: #f43f5e;
+}
+
+.map-hover-card__heart--saved:hover {
+  color: #e11d48;
+}
+
 .judooo-user-location {
   background: #3b82f6;
   border: 3px solid #fff;

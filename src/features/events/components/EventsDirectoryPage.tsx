@@ -2,9 +2,9 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronUp, Filter, Map, Rows3, Search, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Filter, Heart, Map, Rows3, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
@@ -18,6 +18,8 @@ import { Select } from '@/components/ui/Select';
 import { EventCard } from './EventCard';
 import { useEventsCatalog } from '../hooks/useEventsCatalog';
 import {
+  getEventLocation,
+  getEventTitle,
   isApprovedEvent,
   matchesEventTimeline,
   sortEventsByEndDate,
@@ -66,6 +68,7 @@ const translations = {
     showFilters: 'Show filters',
     hideFilters: 'Hide filters',
     clearFilters: 'Clear filters',
+    viewDetails: 'View →',
   },
   vie: {
     kicker: 'Tất cả sự kiện',
@@ -103,6 +106,7 @@ const translations = {
     showFilters: 'Hiện bộ lọc',
     hideFilters: 'Ẩn bộ lọc',
     clearFilters: 'Xóa bộ lọc',
+    viewDetails: 'Xem →',
   },
 } as const;
 
@@ -115,8 +119,72 @@ type FilterSelectConfig = {
 
 const EventMap = dynamic(() => import('./EventMap'), {
   ssr: false,
-  loading: () => <Card className="min-h-[32rem] animate-pulse bg-secondary" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-secondary" />,
 });
+
+const MapSidebarCard = ({
+  event,
+  isSelected,
+  isSaved,
+  language,
+  onSelect,
+  onSave,
+  onNavigate,
+  cardRef,
+}: {
+  event: ArtEvent;
+  isSelected: boolean;
+  isSaved: boolean;
+  language: string;
+  onSelect: () => void;
+  onSave: () => void;
+  onNavigate: () => void;
+  cardRef: (el: HTMLElement | null) => void;
+
+}) => {
+  const lang = language === 'en' ? 'en' : ('vie' as any);
+  const title = getEventTitle(event, lang);
+  const location = getEventLocation(event, lang);
+  return (
+    <div
+      ref={cardRef as any}
+      className={cn(
+        'flex cursor-pointer gap-3 border-b border-border p-3 transition-colors',
+        isSelected ? 'bg-secondary' : 'hover:bg-secondary/50',
+      )}
+      onClick={onSelect}
+    >
+      <div className="h-16 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
+        {event.imageUrl && (
+          <img src={event.imageUrl} alt={title} className="h-full w-full object-cover" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm font-medium leading-snug">{title}</p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{event.organizer}</p>
+        <p className="truncate text-xs text-muted-foreground">{location}</p>
+        {isSelected && (
+          <button
+            className="mt-1.5 text-xs font-medium underline-offset-2 hover:underline"
+            onClick={(e) => { e.stopPropagation(); onNavigate(); }}
+          >
+            View details →
+          </button>
+        )}
+      </div>
+      <button
+        className={cn(
+          'shrink-0 self-start p-1 text-muted-foreground transition-colors hover:text-foreground',
+          isSaved && 'text-rose-500 hover:text-rose-600',
+        )}
+        onClick={(e) => { e.stopPropagation(); onSave(); }}
+        aria-label={isSaved ? 'Unsave event' : 'Save event'}
+      >
+        <Heart size={15} className={isSaved ? 'fill-current' : ''} />
+      </button>
+    </div>
+  );
+};
 
 interface EventsDirectoryPageProps {
   initialSection?: string | null;
@@ -150,6 +218,9 @@ export const EventsDirectoryPage = ({
   const [registrationRequired, setRegistrationRequired] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [hoveredEvent, setHoveredEvent] = useState<{ id: string; x: number; y: number } | null>(null);
+  const hideHoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
     setOnlyFree(initialSection === 'free');
@@ -258,6 +329,13 @@ export const EventsDirectoryPage = ({
     }
   }, [filteredEvents, selectedEventId]);
 
+  // Scroll the sidebar card into view whenever the selection changes
+  useEffect(() => {
+    if (selectedEventId) {
+      cardRefs.current[selectedEventId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [selectedEventId]);
+
   const activeFilterCount = [
     search !== '',
     timeline !== 'all',
@@ -288,6 +366,21 @@ export const EventsDirectoryPage = ({
 
   const handleEventNavigate = useCallback((slug: string) => router.push(`/events/${slug}`), [router]);
 
+  const handleHoverEvent = useCallback((id: string | null, x: number, y: number) => {
+    if (hideHoverTimeout.current) clearTimeout(hideHoverTimeout.current);
+    if (id) {
+      setHoveredEvent({ id, x, y });
+    } else {
+      hideHoverTimeout.current = setTimeout(() => setHoveredEvent(null), 120);
+    }
+  }, []);
+
+  const cancelHover = useCallback(() => {
+    if (hideHoverTimeout.current) clearTimeout(hideHoverTimeout.current);
+  }, []);
+
+  const clearHover = useCallback(() => setHoveredEvent(null), []);
+
   const filterSelects: FilterSelectConfig[] = [
     { label: t.city, value: city, onChange: setCity, options: cityOptions },
     { label: t.district, value: district, onChange: setDistrict, options: districtOptions },
@@ -296,6 +389,148 @@ export const EventsDirectoryPage = ({
     { label: t.placeType, value: placeType, onChange: setPlaceType, options: placeTypeOptions },
   ];
 
+  // ── Full-screen map mode ────────────────────────────────────────────────────
+  if (viewMode === 'map') {
+    const lang = language === 'en' ? 'en' : ('vie' as any);
+    const hoveredEventData = hoveredEvent ? filteredEvents.find((e) => e.id === hoveredEvent.id) : null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex bg-background">
+        {/* ── Left sidebar ── */}
+        <aside className="flex w-80 shrink-0 flex-col overflow-hidden border-r border-border">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <Link href="/" className="text-sm font-bold tracking-tight text-foreground">judooo</Link>
+            <button
+              onClick={() => setViewMode('grid')}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <ArrowLeft size={13} />
+              {t.grid}
+            </button>
+          </div>
+
+          {/* Search */}
+          <div className="border-b border-border px-3 py-2.5">
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-8 pl-8 text-xs"
+                placeholder={t.searchPlaceholderShort}
+              />
+            </div>
+          </div>
+
+          {/* Filter chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto border-b border-border px-3 py-2">
+            <div className="flex shrink-0 overflow-hidden rounded-lg border border-border">
+              {([['all', t.timelineAll], ['active', t.timelineCurrent], ['past', t.timelinePast]] as const).map(([v, label]) => (
+                <button
+                  key={v}
+                  onClick={() => setTimeline(v)}
+                  className={cn(
+                    'h-7 px-2.5 text-xs font-medium transition-colors',
+                    timeline === v ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {cityOptions.length > 2 && (
+              <Select className="h-7 w-auto shrink-0 text-xs" value={city} onChange={(e) => setCity(e.target.value)}>
+                {cityOptions.map((o) => <option key={o} value={o}>{o === 'all' ? t.city : o}</option>)}
+              </Select>
+            )}
+            <button
+              onClick={() => setOnlyFree(!onlyFree)}
+              className={cn(
+                'h-7 shrink-0 rounded-lg border px-2.5 text-xs font-medium transition-colors',
+                onlyFree ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {t.freeOnlyShort}
+            </button>
+            {activeFilterCount > 0 && (
+              <button onClick={clearAllFilters} className="ml-auto shrink-0 text-muted-foreground transition-colors hover:text-foreground">
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Count */}
+          <div className="border-b border-border px-4 py-2 text-xs text-muted-foreground">
+            {t.eventsFound(filteredEvents.length)}
+          </div>
+
+          {/* Scrollable event list */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredEvents.map((event) => (
+              <MapSidebarCard
+                key={event.id}
+                event={event}
+                isSelected={selectedEventId === event.id}
+                isSaved={savedEventIds.includes(event.id)}
+                language={language}
+                onSelect={() => setSelectedEventId(event.id)}
+                onSave={() => toggleSavedEvent(event.id)}
+                onNavigate={() => handleEventNavigate(event.slug)}
+                cardRef={(el) => { cardRefs.current[event.id] = el as HTMLElement | null; }}
+              />
+            ))}
+          </div>
+        </aside>
+
+        {/* ── Map area ── */}
+        <div className="relative flex-1">
+          <EventMap
+            bare
+            events={filteredEvents}
+            selectedEventId={selectedEventId}
+            onSelectEvent={setSelectedEventId}
+            onHoverEvent={handleHoverEvent}
+          />
+
+          {/* Hover card */}
+          {hoveredEvent && hoveredEventData && (
+            <div
+              className="map-hover-card"
+              style={{ left: hoveredEvent.x, top: hoveredEvent.y }}
+              onMouseEnter={cancelHover}
+              onMouseLeave={clearHover}
+            >
+              {hoveredEventData.imageUrl && (
+                <img src={hoveredEventData.imageUrl} className="map-hover-card__img" alt="" />
+              )}
+              <div className="map-hover-card__body">
+                <p className="map-hover-card__title">{getEventTitle(hoveredEventData, lang)}</p>
+                <p className="map-hover-card__sub">{hoveredEventData.organizer}</p>
+                <div className="map-hover-card__footer">
+                  <button
+                    className="map-hover-card__link"
+                    onClick={() => handleEventNavigate(hoveredEventData.slug)}
+                  >
+                    {t.viewDetails}
+                  </button>
+                  <button
+                    className={cn('map-hover-card__heart', savedEventIds.includes(hoveredEvent.id) && 'map-hover-card__heart--saved')}
+                    onClick={() => toggleSavedEvent(hoveredEvent.id)}
+                    aria-label="Save event"
+                  >
+                    <Heart size={14} className={savedEventIds.includes(hoveredEvent.id) ? 'fill-current' : ''} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Grid / list mode (inside SiteShell) ────────────────────────────────────
   return (
     <SiteShell>
       <Container size="xl" className="space-y-10 py-8 md:py-10">
@@ -319,7 +554,7 @@ export const EventsDirectoryPage = ({
               {t.grid}
             </Button>
             <Button
-              variant={viewMode === 'map' ? 'default' : 'secondary'}
+              variant="secondary"
               onClick={() => setViewMode('map')}
             >
               <Map size={16} />
@@ -422,6 +657,7 @@ export const EventsDirectoryPage = ({
 
           {viewMode === 'grid' ? (
             <div className="space-y-4">
+
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">{t.eventsFound(filteredEvents.length)}</p>
                 <Link href="/route-planner" className="text-sm font-medium text-foreground hover:text-muted-foreground">
@@ -448,94 +684,7 @@ export const EventsDirectoryPage = ({
                 </Masonry>
               )}
             </div>
-          ) : (
-            <div className="flex flex-col gap-2" style={{ height: 'calc(100vh - 10rem)' }}>
-              {/* Smart filter bar — always visible above the map */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-                <div className="relative shrink-0">
-                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    className="h-8 w-36 pl-8 text-xs"
-                    placeholder={t.searchPlaceholderShort}
-                  />
-                </div>
-
-                <div className="flex shrink-0 overflow-hidden rounded-lg border border-border">
-                  {([['all', t.timelineAll], ['active', t.timelineCurrent], ['past', t.timelinePast]] as const).map(([value, label]) => (
-                    <button
-                      key={value}
-                      onClick={() => setTimeline(value)}
-                      className={cn(
-                        'h-8 px-3 text-xs font-medium transition-colors',
-                        timeline === value
-                          ? 'bg-foreground text-background'
-                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                {cityOptions.length > 2 && (
-                  <Select className="h-8 w-auto shrink-0 text-xs" value={city} onChange={(event) => setCity(event.target.value)}>
-                    {cityOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option === 'all' ? t.city : option}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-
-                {artMediumOptions.length > 2 && (
-                  <Select className="h-8 w-auto shrink-0 text-xs" value={artMedium} onChange={(event) => setArtMedium(event.target.value)}>
-                    {artMediumOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option === 'all' ? t.artMedium : option}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-
-                <button
-                  onClick={() => setOnlyFree(!onlyFree)}
-                  className={cn(
-                    'h-8 shrink-0 rounded-lg border px-3 text-xs font-medium transition-colors',
-                    onlyFree
-                      ? 'border-foreground bg-foreground text-background'
-                      : 'border-border bg-background text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {t.freeOnlyShort}
-                </button>
-
-                <div className="ml-auto flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{t.eventsFound(filteredEvents.length)}</span>
-                  {activeFilterCount > 0 && (
-                    <button
-                      onClick={clearAllFilters}
-                      className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      <X size={12} />
-                      {t.clearFilters}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Map fills remaining height */}
-              <div className="relative min-h-0 flex-1">
-                <EventMap
-                  events={filteredEvents}
-                  selectedEventId={selectedEventId}
-                  onSelectEvent={setSelectedEventId}
-                  onEventNavigate={handleEventNavigate}
-                />
-              </div>
-            </div>
-          )}
+          ) : null}
         </section>
       </Container>
     </SiteShell>

@@ -13,34 +13,39 @@ interface EventMapProps {
   selectedEventId?: string | null;
   onSelectEvent?: (eventId: string) => void;
   onEventNavigate?: (slug: string) => void;
+  /** When provided, switches to hover-card mode: no popup, emits hover coords instead */
+  onHoverEvent?: (eventId: string | null, x: number, y: number) => void;
+  /** Renders map without the Card shell — use when embedding in a full-screen layout */
+  bare?: boolean;
 }
 
-const buildPopupNode = (event: ArtEvent, language: 'en' | 'vi', onNavigateRef: { current?: ((slug: string) => void) | undefined }, slug: string) => {
+// Used in route-planner mode (no sidebar, no hover card)
+const buildPopupNode = (
+  event: ArtEvent,
+  language: 'en' | 'vi',
+  onNavigateRef: { current?: ((slug: string) => void) | undefined },
+  slug: string,
+) => {
   const root = document.createElement('div');
   root.className = 'map-popup';
   if (onNavigateRef.current) {
     root.style.cursor = 'pointer';
     root.addEventListener('click', () => onNavigateRef.current?.(slug));
   }
-
   const image = document.createElement('img');
   image.src = event.imageUrl;
   image.alt = getEventTitle(event, language);
   root.appendChild(image);
-
   const body = document.createElement('div');
   const title = document.createElement('h4');
   title.textContent = getEventTitle(event, language);
   const subtitle = document.createElement('p');
   subtitle.textContent = `${event.organizer} • ${getEventLocation(event, language)}`;
-
   const cta = document.createElement('p');
   cta.className = 'map-popup__cta';
   cta.textContent = 'View details →';
-
   body.append(title, subtitle, cta);
   root.appendChild(body);
-
   return root;
 };
 
@@ -52,6 +57,8 @@ const EventMap = ({
   selectedEventId,
   onSelectEvent,
   onEventNavigate,
+  onHoverEvent,
+  bare = false,
 }: EventMapProps) => {
   const { language } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -61,21 +68,18 @@ const EventMap = ({
   const routeLayerRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
   const onEventNavigateRef = useRef(onEventNavigate);
+  const onHoverEventRef = useRef(onHoverEvent);
   const [isMapReady, setIsMapReady] = useState(false);
 
-  // Keep the navigate ref current without triggering marker rebuilds
-  useEffect(() => {
-    onEventNavigateRef.current = onEventNavigate;
-  }, [onEventNavigate]);
+  useEffect(() => { onEventNavigateRef.current = onEventNavigate; }, [onEventNavigate]);
+  useEffect(() => { onHoverEventRef.current = onHoverEvent; }, [onHoverEvent]);
 
-  // Effect 1: Initialize the map once
+  // Effect 1: Initialize Leaflet map once
   useEffect(() => {
     let mounted = true;
-
     const loadMap = async () => {
       const L = await import('leaflet');
       if (!mounted || !containerRef.current || mapRef.current) return;
-
       leafletRef.current = L;
       const map = L.map(containerRef.current, { zoomControl: false }).setView([14.5, 108.0], 6);
       mapRef.current = map;
@@ -115,14 +119,12 @@ const EventMap = ({
             leafletRef.current.marker([latitude, longitude], { icon: userIcon, interactive: false }).addTo(map);
             map.setView([latitude, longitude], 12, { animate: true });
           },
-          () => { /* permission denied or unavailable — stay at default view */ },
+          () => { /* denied — stay at default view */ },
           { timeout: 8000 },
         );
       }
     };
-
     void loadMap();
-
     return () => {
       mounted = false;
       if (mapRef.current) {
@@ -137,86 +139,83 @@ const EventMap = ({
     };
   }, []);
 
-  // Effect 2: Rebuild markers when events/language/select handler changes (NOT selectedEventId)
+  // Effect 2: Rebuild markers when events/language change (NOT selectedEventId)
   useEffect(() => {
     const L = leafletRef.current;
     const map = mapRef.current;
     const markerLayer = markerLayerRef.current;
-
-    if (!isMapReady || !L || !map || !markerLayer) {
-      return;
-    }
+    if (!isMapReady || !L || !map || !markerLayer) return;
 
     markerLayer.clearLayers();
     markersRef.current.clear();
-
-    if (routeLayerRef.current) {
-      routeLayerRef.current.remove();
-      routeLayerRef.current = null;
-    }
+    if (routeLayerRef.current) { routeLayerRef.current.remove(); routeLayerRef.current = null; }
 
     const routeColor =
       getComputedStyle(document.documentElement).getPropertyValue('--brand-strong').trim() ||
       getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
 
-    const geoEvents = events.filter((event) => typeof event.lat === 'number' && typeof event.lng === 'number');
+    const geoEvents = events.filter((e) => typeof e.lat === 'number' && typeof e.lng === 'number');
+    const hoverMode = typeof onHoverEventRef.current === 'function';
 
     geoEvents.forEach((event) => {
-      const marker = L.divIcon({
-        className: 'judooo-map-pin',
-        iconSize: [14, 14],
-      });
+      const icon = L.divIcon({ className: 'judooo-map-pin', iconSize: [14, 14] });
+      const point = L.marker([event.lat, event.lng], { icon }).addTo(markerLayer);
 
-      const point = L.marker([event.lat, event.lng], { icon: marker })
-        .addTo(markerLayer)
-        .bindPopup(
+      if (hoverMode) {
+        // Directory mode: hover card in parent, click selects in sidebar
+        point.on('mouseover', () => {
+          const cp = map.latLngToContainerPoint([event.lat as number, event.lng as number]);
+          onHoverEventRef.current?.(event.id, cp.x, cp.y);
+        });
+        point.on('mouseout', () => onHoverEventRef.current?.(null, 0, 0));
+      } else {
+        // Route-planner mode: show popup on click
+        point.bindPopup(
           buildPopupNode(event, language, onEventNavigateRef, event.slug),
           { closeButton: false, className: 'map-popup-wrapper' },
         );
+      }
 
-      point.on('click', () => {
-        onSelectEvent?.(event.id);
-      });
-
+      point.on('click', () => onSelectEvent?.(event.id));
       markersRef.current.set(event.id, point);
     });
 
     if (routeIds && routeIds.length > 1) {
       const routePoints = routeIds
-        .map((id) => events.find((event) => event.id === id))
-        .filter((event): event is ArtEvent => Boolean(event))
-        .map((event) => [event.lat, event.lng] as [number, number]);
-
+        .map((id) => events.find((e) => e.id === id))
+        .filter((e): e is ArtEvent => Boolean(e))
+        .map((e) => [e.lat, e.lng] as [number, number]);
       if (routePoints.length > 1) {
-        routeLayerRef.current = L.polyline(routePoints, {
-          color: routeColor,
-          weight: 4,
-          opacity: 0.6,
-          dashArray: '10, 10',
-        }).addTo(map);
+        routeLayerRef.current = L.polyline(routePoints, { color: routeColor, weight: 4, opacity: 0.6, dashArray: '10, 10' }).addTo(map);
         map.fitBounds(routeLayerRef.current.getBounds(), { padding: [32, 32] });
         return;
       }
     }
 
     if (geoEvents.length > 0) {
-      const bounds = L.latLngBounds(geoEvents.map((event) => [event.lat, event.lng]));
-      map.fitBounds(bounds, { padding: [32, 32] });
+      map.fitBounds(L.latLngBounds(geoEvents.map((e) => [e.lat, e.lng])), { padding: [32, 32] });
     }
   }, [events, isMapReady, language, onSelectEvent, routeIds]);
 
-  // Effect 3: Open popup and pan to selected marker without full rebuild
+  // Effect 3: Pan to selected marker; open popup only in route-planner mode
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
-
     const marker = selectedEventId ? markersRef.current.get(selectedEventId) : null;
-    if (marker) {
-      marker.openPopup();
-      mapRef.current.panTo(marker.getLatLng(), { animate: true });
-    }
+    if (!marker) return;
+    const hoverMode = typeof onHoverEventRef.current === 'function';
+    if (!hoverMode) marker.openPopup();
+    mapRef.current.panTo(marker.getLatLng(), { animate: true });
   }, [selectedEventId, isMapReady]);
 
-  const showHeader = !onEventNavigate;
+  const showHeader = !onEventNavigate && !bare;
+  const canvas = (
+    <div
+      ref={containerRef}
+      className={bare ? 'h-full w-full' : `event-map__canvas ${!showHeader ? 'event-map__canvas--full' : ''}`}
+    />
+  );
+
+  if (bare) return canvas;
 
   return (
     <Card className="event-map">
@@ -230,7 +229,7 @@ const EventMap = ({
           </p>
         </div>
       )}
-      <div ref={containerRef} className={`event-map__canvas ${!showHeader ? 'event-map__canvas--full' : ''}`} />
+      {canvas}
     </Card>
   );
 };
