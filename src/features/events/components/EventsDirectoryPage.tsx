@@ -6,6 +6,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronDown, ChevronUp, Filter, Heart, Map, Rows3, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { branding } from '@/assets/branding';
 import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Button } from '@/components/ui/Button';
@@ -400,7 +401,10 @@ export const EventsDirectoryPage = ({
         <aside className="flex w-80 shrink-0 flex-col overflow-hidden border-r border-border">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <Link href="/" className="text-sm font-bold tracking-tight text-foreground">judooo</Link>
+            <Link href="/" className="flex items-center gap-2">
+              <img src={branding.icon} alt="Judooo" className="h-7 w-7 rounded-full" />
+              <img src={branding.logo} alt="Judooo" className="h-4 w-auto object-contain" />
+            </Link>
             <button
               onClick={() => setViewMode('grid')}
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
