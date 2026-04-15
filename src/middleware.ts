@@ -17,6 +17,8 @@ const PUBLIC_ROUTES = [
   '/submit-event',
   '/terms',
   '/auth/callback',
+  '/api/feedback',
+  '/api/translate',
 ];
 
 const ROLE_ROUTES: Record<string, string[]> = {
