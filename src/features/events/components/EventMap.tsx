@@ -101,6 +101,24 @@ const EventMap = ({
 
       markerLayerRef.current = L.layerGroup().addTo(map);
       setIsMapReady(true);
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            if (!mapRef.current || !leafletRef.current) return;
+            const { latitude, longitude } = position.coords;
+            const userIcon = leafletRef.current.divIcon({
+              className: 'judooo-user-location',
+              iconSize: [16, 16],
+              iconAnchor: [8, 8],
+            });
+            leafletRef.current.marker([latitude, longitude], { icon: userIcon, interactive: false }).addTo(map);
+            map.setView([latitude, longitude], 12, { animate: true });
+          },
+          () => { /* permission denied or unavailable — stay at default view */ },
+          { timeout: 8000 },
+        );
+      }
     };
 
     void loadMap();
