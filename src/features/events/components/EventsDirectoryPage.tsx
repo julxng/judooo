@@ -4,7 +4,8 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, Map, Rows3, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, Map, Rows3, Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useAuth, useLanguage } from '@/app/providers';
 import { SiteShell } from '@/components/layout/SiteShell';
 import { Button } from '@/components/ui/Button';
@@ -448,67 +449,91 @@ export const EventsDirectoryPage = ({
               )}
             </div>
           ) : (
-            <div className="relative" style={{ height: 'calc(100vh - 10rem)' }}>
-              <button
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                className="absolute left-3 top-3 z-[1000] flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium shadow-md transition-colors hover:bg-secondary"
-              >
-                <Filter size={14} />
-                {t.filters}
-                {filtersOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-              </button>
+            <div className="flex flex-col gap-2" style={{ height: 'calc(100vh - 10rem)' }}>
+              {/* Smart filter bar — always visible above the map */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    className="h-8 w-36 pl-8 text-xs"
+                    placeholder={t.searchPlaceholderShort}
+                  />
+                </div>
 
-              {filtersOpen && (
-                <Card className="absolute left-3 top-14 z-[1000] max-h-[calc(100%-4rem)] w-72 overflow-y-auto p-4 shadow-lg">
-                  <div className="space-y-3">
-                    <label className="block space-y-1">
-                      <span className="text-xs font-medium">{t.search}</span>
-                      <div className="relative">
-                        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                        <Input value={search} onChange={(event) => setSearch(event.target.value)} className="h-8 pl-8 text-xs" placeholder={t.searchPlaceholderShort} />
-                      </div>
-                    </label>
+                <div className="flex overflow-hidden rounded-lg border border-border">
+                  {([['all', t.timelineAll], ['active', t.timelineCurrent], ['past', t.timelinePast]] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      onClick={() => setTimeline(value)}
+                      className={cn(
+                        'h-8 px-3 text-xs font-medium transition-colors',
+                        timeline === value
+                          ? 'bg-foreground text-background'
+                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
 
-                    <label className="block space-y-1">
-                      <span className="text-xs font-medium">{t.timeline}</span>
-                      <Select className="h-8 text-xs" value={timeline} onChange={(event) => setTimeline(event.target.value as EventTimeline)}>
-                        <option value="all">{t.timelineAll}</option>
-                        <option value="active">{t.timelineCurrent}</option>
-                        <option value="past">{t.timelinePast}</option>
-                      </Select>
-                    </label>
-
-                    {filterSelects.map(({ label, value, onChange, options }) => (
-                      <label key={label} className="block space-y-1">
-                        <span className="text-xs font-medium">{label}</span>
-                        <Select className="h-8 text-xs" value={value} onChange={(event) => onChange(event.target.value)}>
-                          {options.map((option) => (
-                            <option key={option} value={option}>
-                              {option === 'all' ? `${t.allPrefix} ${label.toLowerCase()}` : option}
-                            </option>
-                          ))}
-                        </Select>
-                      </label>
+                {cityOptions.length > 2 && (
+                  <Select className="h-8 text-xs" value={city} onChange={(event) => setCity(event.target.value)}>
+                    {cityOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option === 'all' ? t.city : option}
+                      </option>
                     ))}
+                  </Select>
+                )}
 
-                    <div className="space-y-2 border-t border-border pt-3">
-                      <Checkbox label={t.freeOnlyShort} checked={onlyFree} onChange={(event) => setOnlyFree(event.target.checked)} />
-                      <Checkbox label={t.virtualOnlyShort} checked={onlyVirtual} onChange={(event) => setOnlyVirtual(event.target.checked)} />
-                    </div>
-                  </div>
-                </Card>
-              )}
+                {artMediumOptions.length > 2 && (
+                  <Select className="h-8 text-xs" value={artMedium} onChange={(event) => setArtMedium(event.target.value)}>
+                    {artMediumOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option === 'all' ? t.artMedium : option}
+                      </option>
+                    ))}
+                  </Select>
+                )}
 
-              <div className="absolute bottom-3 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-background/90 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-md backdrop-blur-sm">
-                {t.mapStatus(filteredEvents.length)}
+                <button
+                  onClick={() => setOnlyFree(!onlyFree)}
+                  className={cn(
+                    'h-8 rounded-lg border px-3 text-xs font-medium transition-colors',
+                    onlyFree
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-border bg-background text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {t.freeOnlyShort}
+                </button>
+
+                <div className="ml-auto flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">{t.eventsFound(filteredEvents.length)}</span>
+                  {activeFilterCount > 0 && (
+                    <button
+                      onClick={clearAllFilters}
+                      className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <X size={12} />
+                      {t.clearFilters}
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <EventMap
-                events={filteredEvents}
-                selectedEventId={selectedEventId}
-                onSelectEvent={setSelectedEventId}
-                onEventNavigate={handleEventNavigate}
-              />
+              {/* Map fills remaining height */}
+              <div className="relative min-h-0 flex-1">
+                <EventMap
+                  events={filteredEvents}
+                  selectedEventId={selectedEventId}
+                  onSelectEvent={setSelectedEventId}
+                  onEventNavigate={handleEventNavigate}
+                />
+              </div>
             </div>
           )}
         </section>
