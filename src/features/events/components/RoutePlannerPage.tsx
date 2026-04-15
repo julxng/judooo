@@ -266,11 +266,13 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
       <div
         className="fixed inset-x-0 bottom-0 z-10 flex flex-col rounded-t-2xl border-t border-border bg-background shadow-[0_-4px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden"
         style={{ transform: `translateY(${SNAP_HEIGHTS[snap]})`, height: '100dvh' }}
-        onPointerDown={handleDragStart}
-        onPointerUp={handleDragEnd}
       >
-        {/* Drag handle */}
-        <div className="flex shrink-0 touch-none select-none flex-col items-center gap-2 px-4 pb-2 pt-3">
+        {/* Drag handle — only this zone triggers snap */}
+        <div
+          className="flex shrink-0 touch-none select-none flex-col items-center gap-2 px-4 pb-2 pt-3 cursor-grab active:cursor-grabbing"
+          onPointerDown={handleDragStart}
+          onPointerUp={handleDragEnd}
+        >
           <div className="h-1 w-10 rounded-full bg-border" />
           {snap === 'collapsed' && (
             <div className="flex w-full items-center justify-between">
@@ -281,7 +283,7 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
           <SidebarContent />
         </div>
       </div>
