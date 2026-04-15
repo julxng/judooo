@@ -980,6 +980,12 @@ export const EventModerationView = ({
               pagedEvents.map((event, rowIdx) => {
                 const changed = hasPending(event.id);
                 const saving = savingIds.has(event.id);
+                const stickyBg = cn(
+                  'bg-background',
+                  changed && 'bg-amber-50 dark:bg-amber-950/30',
+                  !changed && filters.selectedIds.has(event.id) && 'bg-blue-50 dark:bg-blue-950/30',
+                  !changed && !filters.selectedIds.has(event.id) && rowIdx % 2 === 1 && 'bg-secondary/10',
+                );
                 return (
                   <tr
                     key={event.id}
@@ -991,7 +997,7 @@ export const EventModerationView = ({
                       !changed && !filters.selectedIds.has(event.id) && 'hover:bg-blue-50/40 dark:hover:bg-blue-950/15',
                     )}
                   >
-                    <td className="sticky left-0 z-[5] border-r border-border/40 bg-inherit px-1.5 py-0">
+                    <td className={cn('sticky left-0 z-[5] border-r border-border/40 px-1.5 py-0', stickyBg)}>
                       <input
                         type="checkbox"
                         checked={filters.selectedIds.has(event.id)}
@@ -999,7 +1005,7 @@ export const EventModerationView = ({
                         className="h-3.5 w-3.5 rounded border-border"
                       />
                     </td>
-                    <td className="sticky left-8 z-[5] border-r border-border/40 bg-inherit px-1 py-0.5">
+                    <td className={cn('sticky left-8 z-[5] border-r border-border/40 px-1 py-0.5', stickyBg)}>
                       {event.imageUrl ? (
                         <img src={event.imageUrl} alt="" className="h-7 w-7 rounded object-cover" />
                       ) : (
@@ -1007,7 +1013,7 @@ export const EventModerationView = ({
                       )}
                     </td>
                     {/* Status — editable dropdown */}
-                    <td className="sticky left-[72px] z-[5] border-r border-border/40 bg-inherit">
+                    <td className={cn('sticky left-[72px] z-[5] border-r border-border/40', stickyBg)}>
                       <StatusCell
                         value={event.moderation_status || 'approved'}
                         eventId={event.id}
@@ -1015,7 +1021,7 @@ export const EventModerationView = ({
                       />
                     </td>
                     {/* Title — frozen */}
-                    <td className="sticky left-[142px] z-[5] border-r border-border/40 bg-inherit p-0">
+                    <td className={cn('sticky left-[142px] z-[5] border-r border-border/40 p-0', stickyBg)}>
                       <div className="overflow-hidden">{renderCell(event, titleCol)}</div>
                     </td>
                     {/* Dynamic cells */}
@@ -1025,7 +1031,7 @@ export const EventModerationView = ({
                       </td>
                     ))}
                     {/* Actions */}
-                    <td className="sticky right-0 z-[5] border-l border-border/40 bg-inherit px-1 py-0">
+                    <td className={cn('sticky right-0 z-[5] border-l border-border/40 px-1 py-0', stickyBg)}>
                       <div className="flex items-center justify-center gap-0.5">
                         {changed && (
                           <button
