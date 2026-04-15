@@ -535,35 +535,39 @@ let lang = 'en', cur = 0;
 const SLIDES = 12;
 
 // ─── FINANCIAL DATA ───────────────────────────────────────
+// Pricing model: Buyer premium 13% on artwork price · Event promo $20/slot
+// Gallery Pro $15/mo · B2B corporate from $500/deal · Artists always free
+// Avg transaction = $250 (≈6M VND, mid-market Vietnamese art)
 const years = ['2026','2027','2028','2029','2030','2031','2032','2033','2034','2035'];
 const revData = {
-  premium:  [0,    8,    35,   90,   180,  300,  480,  650,  850,  1100],
-  promos:   [5,    12,   25,   50,   80,   120,  180,  230,  280,  340],
-  b2b:      [0,    5,    30,   80,   160,  260,  380,  500,  620,  750],
-  subs:     [0,    5,    15,   35,   70,   120,  190,  250,  320,  400],
-  sea:      [0,    0,    0,    20,   80,   200,  400,  650,  950,  1400],
+  premium:  [0,   20,   65,  170,  340,  650, 1050, 1600, 2300, 3200],
+  promos:   [5,   15,   30,   55,  100,  160,  230,  320,  420,  540],
+  b2b:      [0,    0,   40,  100,  220,  420,  670,  930, 1200, 1500],
+  subs:     [0,    5,   20,   55,  100,  160,  230,  300,  400,  520],
+  sea:      [0,    0,    0,   20,  100,  260,  720, 1250, 1980, 3240],
 };
 const revTotals = years.map((_,i) =>
   revData.premium[i]+revData.promos[i]+revData.b2b[i]+revData.subs[i]+revData.sea[i]
 );
+// GMV = premium / 0.13 (13% take rate on marketplace transactions only)
 const finData = [
-  { yr:'2026', gmv:'—',     txns:'—',      avg:'—',    buyers:'—',     artists:'—',    rev:5,    mrr:0.4,  arr:5    },
-  { yr:'2027', gmv:'62',    txns:'500',    avg:'$124', buyers:'300',   artists:'80',   rev:30,   mrr:2.5,  arr:30   },
-  { yr:'2028', gmv:'269',   txns:'1,800',  avg:'$150', buyers:'1,000', artists:'200',  rev:105,  mrr:8.8,  arr:105  },
-  { yr:'2029', gmv:'692',   txns:'4,000',  avg:'$173', buyers:'2,500', artists:'500',  rev:275,  mrr:22.9, arr:275  },
-  { yr:'2030', gmv:'1,385', txns:'8,500',  avg:'$163', buyers:'5,000', artists:'900',  rev:570,  mrr:47.5, arr:570  },
-  { yr:'2031', gmv:'2,308', txns:'13,000', avg:'$177', buyers:'8,000', artists:'1,500',rev:1000, mrr:83.3, arr:1000 },
-  { yr:'2032', gmv:'3,692', txns:'20,000', avg:'$185', buyers:'12,000',artists:'2,500',rev:1630, mrr:135.8,arr:1630 },
-  { yr:'2033', gmv:'5,000', txns:'26,000', avg:'$192', buyers:'16,000',artists:'3,500',rev:2280, mrr:190.0,arr:2280 },
-  { yr:'2034', gmv:'6,538', txns:'33,000', avg:'$198', buyers:'21,000',artists:'4,800',rev:3020, mrr:251.7,arr:3020 },
-  { yr:'2035', gmv:'8,462', txns:'42,000', avg:'$201', buyers:'28,000',artists:'6,500',rev:3990, mrr:332.5,arr:3990 },
+  { yr:'2026', gmv:'—',      txns:'—',      avg:'—',    rev:5,    mrr:0.4,   arr:5    },
+  { yr:'2027', gmv:'154',    txns:'615',    avg:'$250', rev:40,   mrr:3.3,   arr:40   },
+  { yr:'2028', gmv:'500',    txns:'1,800',  avg:'$278', rev:155,  mrr:12.9,  arr:155  },
+  { yr:'2029', gmv:'1,308',  txns:'4,500',  avg:'$291', rev:400,  mrr:33.3,  arr:400  },
+  { yr:'2030', gmv:'2,615',  txns:'8,500',  avg:'$308', rev:860,  mrr:71.7,  arr:860  },
+  { yr:'2031', gmv:'5,000',  txns:'15,000', avg:'$333', rev:1650, mrr:137.5, arr:1650 },
+  { yr:'2032', gmv:'8,077',  txns:'23,000', avg:'$351', rev:2900, mrr:241.7, arr:2900 },
+  { yr:'2033', gmv:'12,308', txns:'33,000', avg:'$373', rev:4400, mrr:366.7, arr:4400 },
+  { yr:'2034', gmv:'17,692', txns:'45,000', avg:'$393', rev:6300, mrr:525.0, arr:6300 },
+  { yr:'2035', gmv:'24,615', txns:'60,000', avg:'$410', rev:9000, mrr:750.0, arr:9000 },
 ];
 const highlightYears = new Set(['2027','2030','2035']);
 
 function finTableRows() {
   return finData.map(r => {
     const hl = highlightYears.has(r.yr) ? ' class="highlight-yr"' : '';
-    return `<tr${hl}><td><strong>${r.yr}</strong></td><td>${r.gmv}</td><td>${r.txns}</td><td>${r.avg}</td><td>${r.buyers}</td><td>${r.artists}</td><td><strong>${r.rev.toLocaleString()}</strong></td><td>${r.mrr.toFixed(1)}</td><td>${r.arr.toLocaleString()}</td></tr>`;
+    return `<tr${hl}><td><strong>${r.yr}</strong></td><td>${r.gmv}</td><td>${r.txns}</td><td>${r.avg}</td><td><strong>${r.rev.toLocaleString()}</strong></td><td>${r.mrr.toFixed(1)}</td><td>${r.arr.toLocaleString()}</td></tr>`;
   }).join('');
 }
 
@@ -906,13 +910,54 @@ const slideHTML = () => `
   <div class="eyebrow">09 — <span class="t" data-key="p8"></span></div>
   <div class="h1 t" data-key="s8title"></div>
   <div class="subhead t" data-key="s8sub"></div>
-  <div class="g4 mb24">
-    <div class="kpi"><div class="kpi-label t" data-key="takeRate"></div><div class="kpi-val orange">13%</div><div class="kpi-sub t" data-key="takeRateNote"></div></div>
-    <div class="kpi"><div class="kpi-label t" data-key="avgCac"></div><div class="kpi-val">$8–15</div><div class="kpi-sub t" data-key="avgCacNote"></div></div>
-    <div class="kpi"><div class="kpi-label t" data-key="avgLtv"></div><div class="kpi-val">$180</div><div class="kpi-sub t" data-key="avgLtvNote"></div></div>
-    <div class="kpi"><div class="kpi-label t" data-key="ltvcac"></div><div class="kpi-val orange">12–22×</div><div class="kpi-sub t" data-key="ltvcacNote"></div></div>
-  </div>
+
+  <!-- Row 1: KPIs + pricing model -->
   <div class="g2 mb16">
+    <div class="card">
+      <div class="section-label t" data-key="unitTitle"></div>
+      <div class="g2 mt16" style="gap:12px;">
+        <div class="kpi" style="padding:14px 16px;">
+          <div class="kpi-label t" data-key="takeRate"></div>
+          <div class="kpi-val orange" style="font-size:26px;">13%</div>
+          <div class="kpi-sub t" data-key="takeRateNote"></div>
+        </div>
+        <div class="kpi" style="padding:14px 16px;">
+          <div class="kpi-label">Avg Transaction</div>
+          <div class="kpi-val" style="font-size:26px;">$250</div>
+          <div class="kpi-sub">~6M VND · mid-market art</div>
+        </div>
+        <div class="kpi" style="padding:14px 16px;">
+          <div class="kpi-label t" data-key="avgCac"></div>
+          <div class="kpi-val" style="font-size:26px;">$10</div>
+          <div class="kpi-sub t" data-key="avgCacNote"></div>
+        </div>
+        <div class="kpi" style="padding:14px 16px;">
+          <div class="kpi-label t" data-key="ltvcac"></div>
+          <div class="kpi-val orange" style="font-size:26px;">18×</div>
+          <div class="kpi-sub">LTV $180 ÷ CAC $10</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">Pricing model — who pays what</div>
+      <table style="margin-top:12px;">
+        <thead><tr><th>Who</th><th>What</th><th>Price</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge b-blue">Buyer</span></td><td>Artwork purchase premium</td><td><strong>13%</strong> on top</td><td>Added at checkout — artist gets 100%</td></tr>
+          <tr><td><span class="badge b-green">Gallery</span></td><td>Featured event slot</td><td><strong>$20</strong> / slot</td><td>~500K VND · promoted in listings</td></tr>
+          <tr><td><span class="badge b-green">Gallery</span></td><td>Pro listing tier</td><td><strong>$15</strong> / mo</td><td>Analytics + priority search + badge</td></tr>
+          <tr><td><span class="badge b-orange">Company</span></td><td>Corporate art package</td><td>From <strong>$500</strong></td><td>Art acquisition + scholarship credit</td></tr>
+          <tr><td><span class="badge b-grey">Artist</span></td><td>List & sell artwork</td><td><strong>Free</strong></td><td>Forever — no commission</td></tr>
+        </tbody>
+      </table>
+      <div class="highlight-box highlight-amber mt16" style="font-size:13px;">
+        <strong>Judooo never charges artists.</strong> Revenue comes entirely from buyers, galleries, and corporates — making the artist welfare mission structurally funded, not aspirational.
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Table + MRR chart -->
+  <div class="g2">
     <div class="card" style="padding:0;overflow:hidden;">
       <table class="fin-table">
         <thead><tr>
@@ -920,8 +965,6 @@ const slideHTML = () => `
           <th class="t" data-key="finGmv"></th>
           <th class="t" data-key="finTxns"></th>
           <th class="t" data-key="finAvg"></th>
-          <th class="t" data-key="finBuyers"></th>
-          <th class="t" data-key="finArtists"></th>
           <th class="t" data-key="finRev"></th>
           <th class="t" data-key="finMrr"></th>
           <th class="t" data-key="finArr"></th>
@@ -932,10 +975,8 @@ const slideHTML = () => `
     <div class="card">
       <div class="chart-title t" data-key="mrrTitle"></div>
       <div class="chart-sub t" data-key="mrrSub"></div>
-      <div class="chart-wrap" style="height:220px;"><canvas id="chartMRR"></canvas></div>
-      <div class="highlight-box highlight-blue mt16">
-        <p class="fn t" data-key="finNote"></p>
-      </div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="chartMRR"></canvas></div>
+      <p class="fn mt16 t" data-key="finNote"></p>
     </div>
   </div>
 </div>
@@ -947,10 +988,10 @@ const slideHTML = () => `
   <div class="subhead t" data-key="s9sub"></div>
   <div class="g5 mb24">
     <div class="kpi"><div class="kpi-label">2026</div><div class="kpi-val" style="font-size:22px;">$5K</div><div class="kpi-sub">Event promos only</div></div>
-    <div class="kpi"><div class="kpi-label">2027</div><div class="kpi-val" style="font-size:22px;">$30K</div><div class="kpi-sub">Marketplace live</div></div>
-    <div class="kpi"><div class="kpi-label">2028</div><div class="kpi-val" style="font-size:22px;">$105K</div><div class="kpi-sub">+B2B program</div></div>
-    <div class="kpi"><div class="kpi-label">2030</div><div class="kpi-val orange" style="font-size:22px;">$570K</div><div class="kpi-sub">SEA expansion starts</div></div>
-    <div class="kpi"><div class="kpi-label">2035</div><div class="kpi-val orange" style="font-size:22px;">$3.99M</div><div class="kpi-sub">SEA market leader</div></div>
+    <div class="kpi"><div class="kpi-label">2027</div><div class="kpi-val" style="font-size:22px;">$40K</div><div class="kpi-sub">Marketplace live</div></div>
+    <div class="kpi"><div class="kpi-label">2028</div><div class="kpi-val" style="font-size:22px;">$155K</div><div class="kpi-sub">+B2B program</div></div>
+    <div class="kpi"><div class="kpi-label">2030</div><div class="kpi-val orange" style="font-size:22px;">$860K</div><div class="kpi-sub">SEA expansion starts</div></div>
+    <div class="kpi"><div class="kpi-label">2035</div><div class="kpi-val orange" style="font-size:22px;">$9M</div><div class="kpi-sub">SEA market leader</div></div>
   </div>
   <div class="g2 mb24">
     <div class="card">
@@ -1061,10 +1102,10 @@ const slideHTML = () => `
   </div>
   <div class="g5 mt16">
     <div class="kpi"><div class="kpi-label">2026</div><div class="kpi-val" style="font-size:18px;">$5K ARR</div><div class="kpi-sub">Events only</div></div>
-    <div class="kpi"><div class="kpi-label">2027</div><div class="kpi-val" style="font-size:18px;">$30K ARR</div><div class="kpi-sub">Marketplace live</div></div>
-    <div class="kpi"><div class="kpi-label">2028</div><div class="kpi-val" style="font-size:18px;">$105K ARR</div><div class="kpi-sub">B2B program</div></div>
-    <div class="kpi"><div class="kpi-label">2029–30</div><div class="kpi-val orange" style="font-size:18px;">$570K ARR</div><div class="kpi-sub">SEA entry</div></div>
-    <div class="kpi"><div class="kpi-label">2035</div><div class="kpi-val orange" style="font-size:18px;">$3.99M ARR</div><div class="kpi-sub">SEA leader</div></div>
+    <div class="kpi"><div class="kpi-label">2027</div><div class="kpi-val" style="font-size:18px;">$40K ARR</div><div class="kpi-sub">Marketplace live</div></div>
+    <div class="kpi"><div class="kpi-label">2028</div><div class="kpi-val" style="font-size:18px;">$155K ARR</div><div class="kpi-sub">B2B program</div></div>
+    <div class="kpi"><div class="kpi-label">2029–30</div><div class="kpi-val orange" style="font-size:18px;">$860K ARR</div><div class="kpi-sub">SEA entry</div></div>
+    <div class="kpi"><div class="kpi-label">2035</div><div class="kpi-val orange" style="font-size:18px;">$9M ARR</div><div class="kpi-sub">SEA leader</div></div>
   </div>
 </div>
 
@@ -1276,11 +1317,11 @@ function initChartsForSlide(n) {
       data:{
         labels: years,
         datasets:[
-          { label:streams[0], data:[0,27,33,33,32,30,28,27,26,28],   backgroundColor:hexToRgba('#eb4422',.85) },
-          { label:streams[1], data:[100,40,24,18,14,12,10,10,9,9],   backgroundColor:hexToRgba('#1a73e8',.75) },
-          { label:streams[2], data:[0,17,29,29,28,26,22,21,19,19],   backgroundColor:hexToRgba('#34a853',.75) },
-          { label:streams[3], data:[0,16,14,13,12,12,11,10,10,10],   backgroundColor:hexToRgba('#fbbc04',.85) },
-          { label:streams[4], data:[0,0,0,7,14,20,29,32,36,35],      backgroundColor:hexToRgba('#9c27b0',.75) },
+          { label:streams[0], data:[0, 50,42,42,40,39,36,36,37,36],  backgroundColor:hexToRgba('#eb4422',.85) },
+          { label:streams[1], data:[100,38,19,14,12,10, 8, 7, 7, 6], backgroundColor:hexToRgba('#1a73e8',.75) },
+          { label:streams[2], data:[0,  0,26,25,26,25,23,21,19,17],  backgroundColor:hexToRgba('#34a853',.75) },
+          { label:streams[3], data:[0, 12,13,14,12,10, 8, 7, 6, 6],  backgroundColor:hexToRgba('#fbbc04',.85) },
+          { label:streams[4], data:[0,  0, 0, 5,12,16,25,28,31,36],  backgroundColor:hexToRgba('#9c27b0',.75) },
         ]
       },
       options:{
