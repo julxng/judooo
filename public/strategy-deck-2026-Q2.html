@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Judooo — Strategy Q2 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --orange: #eb4422;
+  --black: #1a1a1a;
+  --bg: #f5f4f0;
+  --white: #ffffff;
+  --border: #e5e5e0;
+  --muted: #888;
+  --light: #f9f9f7;
+  --nav-h: 60px;
+  --green: #2e7d32;
+  --red: #c62828;
+  --blue: #1565c0;
+  --amber: #f57f17;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--black); font-size: 15px; }
+
+/* NAV */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--nav-h);
+  background: var(--white); border-bottom: 1px solid var(--border);
+  z-index: 200; display: flex; align-items: center; gap: 20px; padding: 0 28px;
+}
+.nav-logo svg { height: 26px; width: auto; display: block; }
+.nav-sep { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+.nav-pills { display: flex; gap: 2px; flex: 1; overflow-x: auto; scrollbar-width: none; }
+.nav-pills::-webkit-scrollbar { display: none; }
+.pill {
+  padding: 5px 11px; border-radius: 6px; font-size: 12px; font-weight: 500;
+  cursor: pointer; color: #666; white-space: nowrap; border: none; background: none;
+  transition: all .15s;
+}
+.pill:hover { background: #f0f0ee; color: var(--black); }
+.pill.active { background: var(--black); color: #fff; }
+.nav-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.lang-btn {
+  padding: 5px 11px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--border); background: var(--white);
+  color: #555; transition: all .15s;
+}
+.lang-btn.active { border-color: var(--orange); color: var(--orange); background: #fff5f3; }
+.slide-counter { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* MAIN */
+.main { padding-top: var(--nav-h); }
+.slide { display: none; min-height: calc(100vh - var(--nav-h)); padding: 48px 64px 88px; max-width: 1280px; margin: 0 auto; }
+.slide.active { display: block; }
+
+/* TYPE */
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.h1 { font-size: 38px; font-weight: 900; letter-spacing: -1.5px; line-height: 1.05; margin-bottom: 8px; }
+.subhead { font-size: 16px; color: #555; line-height: 1.55; margin-bottom: 36px; }
+.section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 14px; }
+p { font-size: 15px; line-height: 1.65; color: #444; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.g5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; }
+
+/* CARDS */
+.card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; }
+.card-dark { background: var(--black); border: none; border-radius: 12px; padding: 24px; color: #fff; }
+
+/* KPI CARDS */
+.kpi { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; }
+.kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 6px; }
+.kpi-val { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; }
+.kpi-val.orange { color: var(--orange); }
+.kpi-sub { font-size: 12px; color: #999; margin-top: 3px; }
+
+/* BADGES */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.b-green { background: #e8f5e9; color: #2e7d32; }
+.b-red { background: #fde8e8; color: #c62828; }
+.b-amber { background: #fff8e1; color: #e65100; }
+.b-blue { background: #e3f2fd; color: #1565c0; }
+.b-grey { background: #f0f0ee; color: #555; }
+.b-orange { background: #fff2ef; color: var(--orange); }
+.b-purple { background: #f3e5f5; color: #6a1b9a; }
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; padding: 10px 13px; background: var(--bg); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); border-bottom: 2px solid var(--border); }
+td { padding: 12px 13px; border-bottom: 1px solid #f2f2f0; vertical-align: top; color: #333; line-height: 1.45; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+td strong { font-weight: 600; color: var(--black); }
+
+/* CHARTS */
+.chart-wrap { position: relative; }
+.chart-title { font-size: 13px; font-weight: 700; color: var(--black); margin-bottom: 4px; }
+.chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+
+/* MISSION */
+.mission-box { background: var(--black); color: #fff; border-radius: 16px; padding: 40px 44px; text-align: center; margin-bottom: 28px; }
+.mission-vn { font-size: 26px; font-weight: 900; letter-spacing: -.5px; line-height: 1.25; margin-bottom: 12px; }
+.mission-en { font-size: 15px; color: #888; font-style: italic; }
+
+/* PHASE TIMELINE */
+.phase-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 0; }
+.phase { padding: 20px 18px; border-right: 1px solid var(--border); }
+.phase:last-child { border-right: none; }
+.phase-year { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+.phase-name { font-size: 15px; font-weight: 800; margin-bottom: 12px; color: var(--black); line-height: 1.2; }
+.phase-rev { font-size: 22px; font-weight: 900; letter-spacing: -1px; color: var(--orange); margin-bottom: 8px; }
+.phase-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.phase-items li { font-size: 12px; color: #555; display: flex; gap: 6px; }
+.phase-items li::before { content: "→"; color: #ccc; flex-shrink: 0; }
+
+/* OKR */
+.okr-block { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 14px; }
+.okr-o { font-size: 14px; font-weight: 800; color: var(--black); margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+.okr-kr { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f5f5f3; font-size: 14px; color: #444; line-height: 1.45; }
+.okr-kr:last-child { border-bottom: none; padding-bottom: 0; }
+.kr-n { font-size: 10px; font-weight: 800; color: #999; background: #f0f0ee; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.kr-target { font-weight: 700; color: var(--black); }
+
+/* COMPETITIVE */
+.matrix-wrap { position: relative; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+
+/* RISK */
+.risk-level { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.risk-high { background: #e53935; }
+.risk-med { background: #fb8c00; }
+.risk-low { background: #43a047; }
+
+/* GANTT */
+.gantt-wrap { overflow-x: auto; }
+.gantt-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.gantt-table th { background: var(--bg); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); padding: 8px 6px; text-align: center; border-bottom: 2px solid var(--border); white-space: nowrap; }
+.gantt-table th.g-label { text-align: left; padding-left: 10px; width: 170px; }
+.gantt-table td { padding: 5px 4px; border-bottom: 1px solid #f0f0ee; height: 38px; }
+.gantt-table td.g-label { font-size: 12px; font-weight: 700; color: var(--black); padding: 0 8px; white-space: nowrap; border-right: 2px solid var(--border); }
+.gantt-table td.g-label .g-sub { font-size: 11px; font-weight: 400; color: var(--muted); display: block; }
+.gbar { height: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+.gbar-green { background: #c8e6c9; color: #1b5e20; }
+.gbar-blue { background: #bbdefb; color: #0d47a1; }
+.gbar-purple { background: #e1bee7; color: #4a148c; }
+.gbar-orange { background: #ffe0b2; color: #bf360c; }
+.gbar-amber { background: #fff9c4; color: #827717; border: 1px solid #f9a825; }
+.gbar-red { background: var(--orange); color: #fff; }
+.gbar-dark { background: #cfd8dc; color: #263238; }
+.gantt-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+.g-leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #555; }
+.g-leg-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* FINANCIAL TABLE */
+.fin-table { font-size: 13px; }
+.fin-table th { font-size: 10px; }
+.fin-table td { padding: 9px 10px; font-variant-numeric: tabular-nums; }
+.fin-table tr.highlight-yr td { background: #fff8f6; font-weight: 700; }
+.fin-table tr.highlight-yr td:first-child { color: var(--orange); }
+
+/* NAV ARROWS */
+.nav-arrows { position: fixed; bottom: 24px; right: 28px; display: flex; gap: 8px; z-index: 100; }
+.arr-btn {
+  width: 40px; height: 40px; border-radius: 50%; background: var(--white);
+  border: 1px solid var(--border); cursor: pointer; font-size: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.1); transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.arr-btn:hover { background: var(--black); color: #fff; border-color: var(--black); }
+
+/* UTIL */
+.divider { height: 1px; background: var(--border); margin: 28px 0; }
+.mt8 { margin-top: 8px; } .mt16 { margin-top: 16px; } .mt24 { margin-top: 24px; } .mt32 { margin-top: 32px; }
+.mb8 { margin-bottom: 8px; } .mb16 { margin-bottom: 16px; } .mb24 { margin-bottom: 24px; }
+.flex { display: flex; } .gap8 { gap: 8px; } .gap12 { gap: 12px; } .items-center { align-items: center; }
+.highlight-box { border-radius: 8px; padding: 14px 16px; }
+.highlight-amber { background: #fff8e1; border-left: 3px solid #ffb300; }
+.highlight-green { background: #e8f5e9; border-left: 3px solid #43a047; }
+.highlight-red { background: #fde8e8; border-left: 3px solid #e53935; }
+.highlight-blue { background: #e3f2fd; border-left: 3px solid #1e88e5; }
+.fn { font-size: 11px; color: var(--muted); font-style: italic; }
+.num { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <svg viewBox="0 0 5776 1600" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#eb4422" d="M1689.103,600v400c0,106.648-86.455,193.103-193.103,193.103-106.648,0-193.103-86.455-193.103-193.103v-400s-206.897,0-206.897,0v406.897c0,217.105,175.998,393.103,393.103,393.103h13.793c217.105,0,393.103-175.998,393.103-393.103v-406.897s-206.897,0-206.897,0Z"/>
+      <path fill="#eb4422" d="M3316,560c-231.96,0-420,188.04-420,420s188.04,420,420,420,420-188.04,420-420-188.04-420-420-420ZM3316,1181.6c-111.341,0-201.6-90.26-201.6-201.6s90.259-201.6,201.6-201.6,201.6,90.259,201.6,201.6-90.259,201.6-201.6,201.6Z"/>
+      <path fill="#eb4422" d="M2597.6,200v411.498c-59.846-32.81-128.535-51.498-201.6-51.498-231.96,0-420,188.04-420,420s188.04,420,420,420,420-188.04,420-420V200h-218.4ZM2396,1181.6c-111.341,0-201.6-90.26-201.6-201.6s90.259-201.6,201.6-201.6,201.6,90.259,201.6,201.6-90.259,201.6-201.6,201.6Z"/>
+      <path fill="#eb4422" d="M4236,560c-231.96,0-420,188.04-420,420s188.04,420,420,420,420-188.04,420-420-188.04-420-420-420ZM4236,1181.6c-111.341,0-201.6-90.26-201.6-201.6s90.259-201.6,201.6-201.6,201.6,90.259,201.6,201.6-90.259,201.6-201.6,201.6Z"/>
+      <path fill="#eb4422" d="M5156,560c-231.96,0-420,188.04-420,420s188.04,420,420,420,420-188.04,420-420-188.04-420-420-420ZM5156,1181.6c-111.341,0-201.6-90.26-201.6-201.6s90.259-201.6,201.6-201.6,201.6,90.259,201.6,201.6-90.259,201.6-201.6,201.6Z"/>
+      <path fill="#eb4422" d="M793.104,600v400c0,106.648-86.455,193.104-193.104,193.104s-193.104-86.456-193.104-193.104h-206.896v6.896c0,217.105,175.999,393.104,393.104,393.104h13.793c217.105,0,393.104-175.999,393.104-393.104v-406.896h-206.896Z"/>
+    </svg>
+  </div>
+  <div class="nav-sep"></div>
+  <div class="nav-pills" id="navPills"></div>
+  <div class="nav-right">
+    <button class="lang-btn active" onclick="setLang('en')" id="btn-en">EN</button>
+    <button class="lang-btn" onclick="setLang('vn')" id="btn-vn">VN</button>
+    <div class="nav-sep"></div>
+    <div class="slide-counter" id="counter">1 / 12</div>
+  </div>
+</nav>
+
+<div class="main" id="slideContainer"></div>
+
+<div class="nav-arrows">
+  <button class="arr-btn" onclick="prev()">←</button>
+  <button class="arr-btn" onclick="next()">→</button>
+</div>
+
+<script>
+// ─── TRANSLATIONS ────────────────────────────────────────
+const T = {
+  en: {
+    s0title:"Where Judooo is today", s0sub:"Pre-traction. The product is built. The audience is not.",
+    s1title:"Why Judooo exists", s1sub:"The mission nobody else can own.",
+    s2title:"Market opportunity", s2sub:"A $57.5B global market. 82% still offline. Fastest growth in Asia-Pacific.",
+    s3title:"Competitive landscape", s3sub:"No platform in Vietnam combines events, marketplace, and artist support.",
+    s4title:"90-day strategic bet", s4sub:"Events-first → traffic → marketplace. One bet, three months.",
+    s5title:"Goals & KPIs", s5sub:"4 goals. Leading + lagging KPI each. Baselines set. Owners assigned.",
+    s6title:"OKRs for Daniel — Q2 2026", s6sub:"May–July 2026. 3 objectives. 9 key results. Digital-only outreach.",
+    s7title:"90-day roadmap", s7sub:"Month-by-month. Julius builds product. Daniel builds audience.",
+    s8title:"Financial model", s8sub:"Unit economics, GMV, MRR/ARR trajectory to 2035.",
+    s9title:"Revenue: 10-year projection", s9sub:"Vietnam → SEA. Events platform → marketplace → data infrastructure.",
+    s10title:"5-year strategic roadmap", s10sub:"From Vietnam's art calendar to Southeast Asia's leading art platform.",
+    s11title:"Risks & open questions", s11sub:"What could break this plan — and the early warning signals.",
+    p0:"Situation", p1:"Mission", p2:"Market", p3:"Competitive",
+    p4:"Strategy", p5:"KPIs", p6:"OKRs", p7:"Roadmap",
+    p8:"Financial", p9:"Revenue", p10:"5-Yr Plan", p11:"Risks",
+    liveEvents:"Live events", monthlyVisitors:"Monthly visitors", galleryPartners:"Gallery partners",
+    juliusHours:"Julius hrs/wk", goal90d:"90-day goal",
+    missionVN:"\"Biến mọi nghệ sĩ đương đại Đông Nam Á có thể kiếm sống từ nghệ thuật.\"",
+    missionEN:"Make every contemporary Southeast Asian artist able to earn a living from their art.",
+    tamLabel:"Global TAM", samLabel:"Vietnam SAM (est.)", somLabel:"Judooo SOM (3yr)", apacLabel:"APAC online CAGR",
+    tamVal:"$57.5B", samVal:"$50–150M", somVal:"$2–5M GMV", apacVal:"9.4%",
+    tamNote:"Total art market — online + offline (Art Basel / UBS 2025)",
+    samNote:"All channels: galleries, auctions, informal Facebook sales",
+    somNote:"5% of Vietnam GMV + early SEA entry by 2029",
+    apacNote:"Fastest growing region globally",
+    onlineNote:"82% of the $57.5B global market is still offline — galleries, auctions, private sales. Judooo's real opportunity is digitizing these transactions, not just capturing existing online art spend.",
+    whyNow:"Why now",
+    why1:"Recovery phase — VN art market recovering from 2025, 20–50% price discounts = buyer accumulation.",
+    why2:"Supply gap — 60+ galleries, 11 auction houses with no centralized digital presence.",
+    why3:"Buyer shift — 80%+ of VN buyers are now Vietnamese. Domestic digital marketing is efficient.",
+    why4:"No dominant platform — Artsy/Saatchi don't serve VN. Local options (Chon, Le) are weak.",
+    why5:"Tax tightening 2025–26 opens corporate art B2B opportunity (Phase 2-3).",
+    compTitle:"Competitive positioning",
+    compNote:"Bubble size = estimated market reach. X = artist-friendliness. Y = Vietnam market depth.",
+    betLabel:"90-day bet",
+    betTitle:"\"Vietnam's Art Calendar\"",
+    betBody:"Become THE authoritative events directory for Vietnamese contemporary art. Traffic + brand credibility before marketplace. When galleries know Judooo = reach art audiences, they self-submit. When art lovers habitually check Judooo, the marketplace follows.",
+    notDoing:"What we're NOT doing in 90 days",
+    nd1:"Wire MoMo/VNPay payment backend — not a priority until traffic exists",
+    nd2:"Recruit artists to list and sell works — marketplace needs audience first",
+    nd3:"Ask Daniel to cold-visit galleries — digital-only (DM + email)",
+    nd4:"Build new product features — stability + content, not code sprint",
+    nd5:"Launch /marketplace publicly — wait for brand credibility",
+    moat:"Tech moat (5 layers)",
+    m1:"Data aggregation (built) — crawler covers RSS, Google News, Facebook, NAF. Goal: 100% VN event coverage.",
+    m2:"Artist data layer (Year 2) — transaction history per artist. Artsy took 10yr globally; Judooo owns VN first.",
+    m3:"Route planner (built) — unique, habit-forming. No competitor has it.",
+    m4:"Gallery self-submit (Month 2) — once in workflow, switching cost is high.",
+    m5:"Artist tier system (Year 2) — switching = losing tier history + support eligibility.",
+    goalAud:"Audience", goalSup:"Supply", goalBrand:"Brand", goalExec:"Execution",
+    kpiAud1:"Posts/week", kpiAud2:"Monthly website visitors",
+    kpiSup1:"Events in DB (active)", kpiSup2:"Galleries self-submitting",
+    kpiBrand1:"Galleries contacted (DM/email)", kpiBrand2:"Gallery content on Judooo",
+    kpiExec1:"Calendar filled 2wks ahead", kpiExec2:"Julius hrs directing Daniel",
+    base:"Baseline", t90:"90-day", t12m:"12-month", owner:"Owner",
+    aud90:"3 posts/wk → 500 visitors/mo", aud12:"5 posts/wk → 5,000 visitors/mo",
+    sup90:"50+ events, 3 galleries", sup12:"60+ events/mo, 15+ galleries",
+    brand90:"10 contacted, 2 featured", brand12:"20+ self-submitting",
+    exec90:"Full calendar, biweekly reports", exec12:"Fully autonomous",
+    okrNote:"All outreach is digital-only (DM + email). Julius writes templates. Daniel executes volume.",
+    o1:"Establish Judooo as Vietnam's art content brand online",
+    kr1a:"Publish min. 3 posts/week on Facebook + Instagram — zero misses, 12 consecutive weeks",
+    kr1b:"Launch \"Tuần này có gì?\" (What's On This Week) by Week 2 May — every Monday",
+    kr1c:"Every post has a clear CTA linking back to judooo.art",
+    kr1d:"Reach 200 Facebook + 100 Instagram followers by end of May (Day 30)",
+    o2:"Seed gallery partnership pipeline",
+    kr2a:"Build list of 15 target galleries (HCMC + Hanoi) with IG + email by Day 14",
+    kr2b:"Send outreach to 10 galleries via DM or email by Day 60 — Julius writes the templates",
+    kr2c:"2 galleries agree to be featured or submit events directly to Judooo by Day 90",
+    o3:"Build measurement habit",
+    kr3a:"Content calendar filled 2 weeks in advance — always",
+    kr3b:"Track reach, saves, link clicks per post in a shared Google Sheet — weekly",
+    kr3c:"Send Julius a biweekly 1-page update: what's working / what's not",
+    rmMo1:"May 2026", rmMo2:"Jun 2026", rmMo3:"Jul 2026",
+    // Financial
+    takeRate:"Buyer take rate", takeRateNote:"Buyer premium on top of artist price",
+    avgCac:"Avg. buyer CAC", avgCacNote:"Social/organic acquisition cost",
+    avgLtv:"Buyer LTV", avgLtvNote:"9 transactions × ~$20 rev × 1-yr lifecycle",
+    ltvcac:"LTV : CAC", ltvcacNote:"Healthy unit economics threshold ≥ 3×",
+    finYear:"Year", finGmv:"GMV ($K)", finTxns:"Transactions", finAvg:"Avg Value",
+    finBuyers:"Buyers", finArtists:"Artists", finRev:"Revenue ($K)", finMrr:"MRR ($K)", finArr:"ARR ($K)",
+    mrrTitle:"MRR trajectory 2026–2035",
+    mrrSub:"Monthly Recurring Revenue = Annual Revenue ÷ 12 (marketplace + all streams)",
+    unitTitle:"Unit economics",
+    finNote:"GMV = gross merchandise value. Take rate applied only to marketplace transactions. Event promos, B2B, and subscriptions add incremental revenue on top.",
+    // Revenue
+    revTitle:"Revenue projection 2026–2035",
+    revNote:"Streams: buyer premium (marketplace) + event promotions + B2B corporate + collector subscriptions + SEA.",
+    revenueStreams:["Buyer Premium","Event Promos","B2B Corporate","Subscriptions","SEA Expansion"],
+    phaseGate:"Phase-gate logic",
+    // 5yr roadmap
+    ganttTitle:"Initiative timeline 2026–2030",
+    ganttSub:"Color = owner/theme. Each bar shows when work starts and scales.",
+    g_events:"Vietnam Events Calendar", g_events_sub:"Crawler → gallery self-submit",
+    g_social:"Social & Partnerships", g_social_sub:"Daniel's growth program",
+    g_payment:"Payment Integration", g_payment_sub:"MoMo, VNPay, Stripe",
+    g_market:"Marketplace Launch", g_market_sub:"Buyer premium live",
+    g_artist:"Artist Dashboard + Tier", g_artist_sub:"Transaction history & tiers",
+    g_b2b:"B2B Corporate Program", g_b2b_sub:"Corporate art + scholarship",
+    g_support:"Artist Support Services", g_support_sub:"Grants, photography, logistics",
+    g_sea_r:"SEA Research & Planning", g_sea_r_sub:"Cambodia, Thailand",
+    g_sea_x:"SEA Expansion", g_sea_x_sub:"2 pilot markets",
+    g_data:"Data Infrastructure", g_data_sub:"\"Bloomberg for SEA Art\"",
+    ganttLegJulius:"Julius — Product", ganttLegDaniel:"Daniel — Growth",
+    ganttLegPlatform:"Platform feature", ganttLegB2B:"B2B / Revenue", ganttLegSEA:"SEA Expansion",
+    // Risks
+    riskAssump:"Assumption", riskRisk:"Risk if wrong", riskSignal:"Early warning", riskLevel:"Level",
+    r1a:"Daniel publishes consistently", r1b:"No traction built", r1c:"Week 2: no Monday post",
+    r2a:"Event crawler stays fresh", r2b:"14 events → site looks dead", r2c:"Events < 25 after 4 weeks",
+    r3a:"Galleries respond to DMs", r3b:"No partnership supply", r3c:"Day 45: 0 responses from 5+ outreach",
+    r4a:"Events-first builds marketplace audience", r4b:"Traffic but no buyer intent", r4c:"Month 6: 0 /marketplace clicks",
+    r5a:"4h/week is enough for Julius", r5b:"Product stagnates", r5c:"Gallery submit form not live by June",
+    openQ:"Open questions",
+    oq1:"Who is the public-facing community lead? Julius doesn't want the role. Daniel can't do it. Decision: Month 3.",
+    oq2:"What's the exact buyer premium rate? PRD recommends 12%. Test sensitivity at first real transactions.",
+    oq3:"Can Julius increase to 6–8h/week once roadmap is set? Month 2 gallery form may need more bandwidth.",
+  },
+  vn: {
+    s0title:"Judooo đang ở đâu", s0sub:"Chưa có traction. Product đã build xong. Audience thì chưa.",
+    s1title:"Judooo tồn tại để làm gì", s1sub:"Mission không ai cạnh tranh được.",
+    s2title:"Cơ hội thị trường", s2sub:"Thị trường toàn cầu $57.5 tỷ. 82% vẫn là offline. Tăng trưởng nhanh nhất châu Á.",
+    s3title:"Landscape cạnh tranh", s3sub:"Không có platform nào ở VN kết hợp events + marketplace + hỗ trợ nghệ sĩ.",
+    s4title:"Cược chiến lược 90 ngày", s4sub:"Events trước → traffic → marketplace. Một cược, ba tháng.",
+    s5title:"Goals & KPIs", s5sub:"4 mục tiêu. Mỗi mục có leading + lagging KPI. Có owner cụ thể.",
+    s6title:"OKRs của Daniel — Q2 2026", s6sub:"Tháng 5–7/2026. 3 objectives. 9 key results. Chỉ outreach digital.",
+    s7title:"Roadmap 90 ngày", s7sub:"Theo tháng. Julius build product. Daniel build audience.",
+    s8title:"Mô hình tài chính", s8sub:"Unit economics, GMV, lộ trình MRR/ARR đến 2035.",
+    s9title:"Doanh thu: Dự báo 10 năm", s9sub:"Việt Nam → ĐNA. Events platform → marketplace → data infrastructure.",
+    s10title:"Roadmap chiến lược 5 năm", s10sub:"Từ lịch nghệ thuật VN đến platform nghệ thuật hàng đầu Đông Nam Á.",
+    s11title:"Rủi ro & câu hỏi mở", s11sub:"Những gì có thể phá vỡ kế hoạch — và tín hiệu cảnh báo sớm.",
+    p0:"Tình hình", p1:"Mission", p2:"Thị trường", p3:"Cạnh tranh",
+    p4:"Chiến lược", p5:"KPIs", p6:"OKRs", p7:"Roadmap",
+    p8:"Tài chính", p9:"Doanh thu", p10:"Kế hoạch 5 năm", p11:"Rủi ro",
+    liveEvents:"Events đang live", monthlyVisitors:"Visitors/tháng", galleryPartners:"Gallery partners",
+    juliusHours:"Julius giờ/tuần", goal90d:"Mục tiêu 90 ngày",
+    missionVN:"\"Biến mọi nghệ sĩ đương đại Đông Nam Á có thể kiếm sống từ nghệ thuật.\"",
+    missionEN:"Make every contemporary Southeast Asian artist able to earn a living from their art.",
+    tamLabel:"Global TAM", samLabel:"SAM Việt Nam (ước tính)", somLabel:"SOM Judooo (3 năm)", apacLabel:"CAGR APAC online",
+    tamVal:"$57.5 tỷ", samVal:"$50–150 triệu", somVal:"$2–5 triệu GMV", apacVal:"9.4%",
+    tamNote:"Toàn bộ thị trường nghệ thuật — online + offline (Art Basel / UBS 2025)",
+    samNote:"Tất cả kênh: gallery, đấu giá, bán qua Facebook",
+    somNote:"5% GMV Việt Nam + vào ĐNA từ 2029",
+    apacNote:"Tăng trưởng nhanh nhất thế giới",
+    onlineNote:"82% của $57.5 tỷ thị trường toàn cầu vẫn là offline — gallery, đấu giá, giao dịch cá nhân. Cơ hội thực sự của Judooo là số hóa những giao dịch này, không chỉ chiếm phần online đang có.",
+    whyNow:"Tại sao là lúc này",
+    why1:"Giai đoạn phục hồi — thị trường art VN phục hồi từ 2025, giá giảm 20–50% = người mua đang tích lũy.",
+    why2:"Khoảng trống supply — 60+ gallery, 11 nhà đấu giá nhưng không có kênh số tập trung.",
+    why3:"Buyer shift — 80%+ người mua VN hiện là người Việt. Digital marketing nội địa hiệu quả, rẻ.",
+    why4:"Không có platform thống trị — Artsy/Saatchi không phục vụ VN. Sản phẩm địa phương (Chon, Le) yếu.",
+    why5:"Siết thuế 2025–26 mở ra cơ hội B2B corporate art program (Phase 2-3).",
+    compTitle:"Định vị cạnh tranh",
+    compNote:"Kích thước bong bóng = ước tính độ phủ thị trường. Trục X = mức độ thân thiện nghệ sĩ. Trục Y = độ sâu thị trường VN.",
+    betLabel:"Cược 90 ngày",
+    betTitle:"\"Lịch nghệ thuật Việt Nam\"",
+    betBody:"Trở thành THE nơi tra cứu events nghệ thuật đương đại ở VN. Traffic + uy tín brand trước marketplace. Khi gallery biết Judooo = reach audience nghệ thuật, họ sẽ tự submit. Khi người yêu art có thói quen check Judooo, marketplace tự nhiên follow.",
+    notDoing:"Chúng ta KHÔNG làm trong 90 ngày này",
+    nd1:"Nối MoMo/VNPay backend — chưa cần, chưa có traffic",
+    nd2:"Tuyển artist post tranh — marketplace cần audience trước",
+    nd3:"Yêu cầu Daniel gặp mặt gallery trực tiếp — chỉ DM và email",
+    nd4:"Build tính năng mới — ổn định + content, không phải code sprint",
+    nd5:"Mở /marketplace công khai — đợi uy tín brand",
+    moat:"Moat công nghệ (5 lớp)",
+    m1:"Data aggregation (đã build) — crawler bao gồm RSS, Google News, Facebook, NAF. Mục tiêu: 100% events VN.",
+    m2:"Artist data layer (Năm 2) — lịch sử giao dịch theo nghệ sĩ. Artsy mất 10 năm; Judooo chiếm VN trước.",
+    m3:"Route planner (đã build) — độc đáo, tạo thói quen. Không đối thủ nào có.",
+    m4:"Gallery self-submit (Tháng 2) — đã vào quy trình làm việc, switching cost cao.",
+    m5:"Artist tier system (Năm 2) — chuyển đi = mất tier history + quyền lợi hỗ trợ.",
+    goalAud:"Audience", goalSup:"Supply", goalBrand:"Brand", goalExec:"Execution",
+    kpiAud1:"Posts/tuần", kpiAud2:"Visitors/tháng",
+    kpiSup1:"Events trong DB", kpiSup2:"Gallery tự submit",
+    kpiBrand1:"Gallery đã liên hệ", kpiBrand2:"Content từ gallery trên Judooo",
+    kpiExec1:"Calendar điền trước 2 tuần", kpiExec2:"Julius giờ hướng dẫn Daniel",
+    base:"Baseline", t90:"90 ngày", t12m:"12 tháng", owner:"Owner",
+    aud90:"3 posts/tuần → 500 visitors/tháng", aud12:"5 posts/tuần → 5.000 visitors/tháng",
+    sup90:"50+ events, 3 gallery", sup12:"60+ events/tháng, 15+ gallery",
+    brand90:"10 liên hệ, 2 featured", brand12:"20+ tự submit",
+    exec90:"Calendar đầy, báo cáo 2 tuần/lần", exec12:"Tự chạy hoàn toàn",
+    okrNote:"Toàn bộ outreach là digital (DM + email). Julius viết template. Daniel thực hiện volume.",
+    o1:"Xây dựng Judooo thành brand content nghệ thuật của Việt Nam",
+    kr1a:"Post tối thiểu 3 lần/tuần trên Facebook + Instagram — không miss tuần nào, 12 tuần liên tục",
+    kr1b:"Launch \"Tuần này có gì?\" trước Tuần 2 tháng 5 — mỗi thứ Hai",
+    kr1c:"Mỗi post có CTA rõ ràng link về judooo.art",
+    kr1d:"Đạt 200 FB + 100 IG followers trước cuối tháng 5 (Ngày 30)",
+    o2:"Xây dựng pipeline partnership với gallery",
+    kr2a:"List 15 gallery mục tiêu (HCMC + Hà Nội) kèm IG + email trước Ngày 14",
+    kr2b:"Reach out 10 gallery qua DM hoặc email trước Ngày 60 — Julius viết template",
+    kr2c:"2 gallery đồng ý featured hoặc submit events trực tiếp lên Judooo trước Ngày 90",
+    o3:"Xây dựng thói quen đo lường",
+    kr3a:"Content calendar điền trước 2 tuần — luôn luôn",
+    kr3b:"Track reach, saves, link clicks mỗi post trong Google Sheet chung — hàng tuần",
+    kr3c:"Gửi Julius báo cáo 1 trang 2 tuần/lần: cái gì hiệu quả / cái gì không",
+    rmMo1:"Tháng 5/2026", rmMo2:"Tháng 6/2026", rmMo3:"Tháng 7/2026",
+    // Financial
+    takeRate:"Tỷ lệ buyer premium", takeRateNote:"Phí mua trên giá nghệ sĩ",
+    avgCac:"CAC trung bình", avgCacNote:"Chi phí thu hút 1 người mua (social/organic)",
+    avgLtv:"LTV người mua", avgLtvNote:"9 giao dịch × ~$20 rev × 1 năm vòng đời",
+    ltvcac:"LTV : CAC", ltvcacNote:"Ngưỡng lành mạnh ≥ 3×",
+    finYear:"Năm", finGmv:"GMV ($K)", finTxns:"Giao dịch", finAvg:"Giá trung bình",
+    finBuyers:"Người mua", finArtists:"Nghệ sĩ", finRev:"Doanh thu ($K)", finMrr:"MRR ($K)", finArr:"ARR ($K)",
+    mrrTitle:"Lộ trình MRR 2026–2035",
+    mrrSub:"MRR = Doanh thu năm ÷ 12 (marketplace + tất cả nguồn)",
+    unitTitle:"Unit economics",
+    finNote:"GMV = tổng giá trị giao dịch. Take rate chỉ áp dụng với giao dịch marketplace. Event promos, B2B, và subscriptions là doanh thu bổ sung.",
+    // Revenue
+    revTitle:"Dự báo doanh thu 2026–2035",
+    revNote:"Nguồn: buyer premium (marketplace) + event promotion + B2B corporate + subscription + ĐNA.",
+    revenueStreams:["Buyer Premium","Event Promo","B2B Corporate","Subscription","ĐNA Expansion"],
+    phaseGate:"Phase-gate logic",
+    // 5yr roadmap
+    ganttTitle:"Lộ trình sáng kiến 2026–2030",
+    ganttSub:"Màu sắc = owner/chủ đề. Mỗi thanh cho thấy khi nào bắt đầu và scale.",
+    g_events:"Lịch Events Việt Nam", g_events_sub:"Crawler → gallery tự submit",
+    g_social:"Social & Partnerships", g_social_sub:"Chương trình tăng trưởng của Daniel",
+    g_payment:"Tích hợp thanh toán", g_payment_sub:"MoMo, VNPay, Stripe",
+    g_market:"Ra mắt Marketplace", g_market_sub:"Buyer premium live",
+    g_artist:"Dashboard & Tier Nghệ sĩ", g_artist_sub:"Lịch sử giao dịch & cấp độ",
+    g_b2b:"Chương trình B2B Corporate", g_b2b_sub:"Art doanh nghiệp + học bổng",
+    g_support:"Dịch vụ hỗ trợ Nghệ sĩ", g_support_sub:"Grants, photography, logistics",
+    g_sea_r:"Nghiên cứu ĐNA", g_sea_r_sub:"Cambodia, Thailand",
+    g_sea_x:"Mở rộng ĐNA", g_sea_x_sub:"2 thị trường pilot",
+    g_data:"Hạ tầng Data", g_data_sub:"\"Bloomberg nghệ thuật ĐNA\"",
+    ganttLegJulius:"Julius — Product", ganttLegDaniel:"Daniel — Tăng trưởng",
+    ganttLegPlatform:"Tính năng Platform", ganttLegB2B:"B2B / Doanh thu", ganttLegSEA:"Mở rộng ĐNA",
+    // Risks
+    riskAssump:"Giả định", riskRisk:"Rủi ro nếu sai", riskSignal:"Tín hiệu cảnh báo", riskLevel:"Mức độ",
+    r1a:"Daniel post đều đặn", r1b:"Không build được traction", r1c:"Tuần 2: không có bài thứ Hai",
+    r2a:"Crawler giữ events tươi", r2b:"14 events → site trông chết", r2c:"Events < 25 sau 4 tuần",
+    r3a:"Gallery phản hồi DM", r3b:"Không có supply partnership", r3c:"Ngày 45: 0 phản hồi từ 5+ outreach",
+    r4a:"Events-first build audience cho marketplace", r4b:"Traffic nhưng không có buyer intent", r4c:"Tháng 6: 0 click /marketplace",
+    r5a:"Julius 4h/tuần là đủ", r5b:"Product đứng yên", r5c:"Gallery submit form chưa live cuối tháng 6",
+    openQ:"Câu hỏi còn mở",
+    oq1:"Ai là người public-facing lead? Julius không muốn. Daniel không phù hợp. Deadline quyết định: Tháng 7.",
+    oq2:"Tỷ lệ buyer premium chính xác là bao nhiêu? PRD gợi ý 12%. Cần test với giao dịch thực đầu tiên.",
+    oq3:"Julius có thể tăng lên 6–8h/tuần sau khi roadmap rõ không? Gallery form tháng 6 có thể cần nhiều bandwidth hơn.",
+  }
+};
+
+let lang = 'en', cur = 0;
+const SLIDES = 12;
+
+// ─── FINANCIAL DATA ───────────────────────────────────────
+const years = ['2026','2027','2028','2029','2030','2031','2032','2033','2034','2035'];
+const revData = {
+  premium:  [0,    8,    35,   90,   180,  300,  480,  650,  850,  1100],
+  promos:   [5,    12,   25,   50,   80,   120,  180,  230,  280,  340],
+  b2b:      [0,    5,    30,   80,   160,  260,  380,  500,  620,  750],
+  subs:     [0,    5,    15,   35,   70,   120,  190,  250,  320,  400],
+  sea:      [0,    0,    0,    20,   80,   200,  400,  650,  950,  1400],
+};
+const revTotals = years.map((_,i) =>
+  revData.premium[i]+revData.promos[i]+revData.b2b[i]+revData.subs[i]+revData.sea[i]
+);
+const finData = [
+  { yr:'2026', gmv:'—',     txns:'—',      avg:'—',    buyers:'—',     artists:'—',    rev:5,    mrr:0.4,  arr:5    },
+  { yr:'2027', gmv:'62',    txns:'500',    avg:'$124', buyers:'300',   artists:'80',   rev:30,   mrr:2.5,  arr:30   },
+  { yr:'2028', gmv:'269',   txns:'1,800',  avg:'$150', buyers:'1,000', artists:'200',  rev:105,  mrr:8.8,  arr:105  },
+  { yr:'2029', gmv:'692',   txns:'4,000',  avg:'$173', buyers:'2,500', artists:'500',  rev:275,  mrr:22.9, arr:275  },
+  { yr:'2030', gmv:'1,385', txns:'8,500',  avg:'$163', buyers:'5,000', artists:'900',  rev:570,  mrr:47.5, arr:570  },
+  { yr:'2031', gmv:'2,308', txns:'13,000', avg:'$177', buyers:'8,000', artists:'1,500',rev:1000, mrr:83.3, arr:1000 },
+  { yr:'2032', gmv:'3,692', txns:'20,000', avg:'$185', buyers:'12,000',artists:'2,500',rev:1630, mrr:135.8,arr:1630 },
+  { yr:'2033', gmv:'5,000', txns:'26,000', avg:'$192', buyers:'16,000',artists:'3,500',rev:2280, mrr:190.0,arr:2280 },
+  { yr:'2034', gmv:'6,538', txns:'33,000', avg:'$198', buyers:'21,000',artists:'4,800',rev:3020, mrr:251.7,arr:3020 },
+  { yr:'2035', gmv:'8,462', txns:'42,000', avg:'$201', buyers:'28,000',artists:'6,500',rev:3990, mrr:332.5,arr:3990 },
+];
+const highlightYears = new Set(['2027','2030','2035']);
+
+function finTableRows() {
+  return finData.map(r => {
+    const hl = highlightYears.has(r.yr) ? ' class="highlight-yr"' : '';
+    return `<tr${hl}><td><strong>${r.yr}</strong></td><td>${r.gmv}</td><td>${r.txns}</td><td>${r.avg}</td><td>${r.buyers}</td><td>${r.artists}</td><td><strong>${r.rev.toLocaleString()}</strong></td><td>${r.mrr.toFixed(1)}</td><td>${r.arr.toLocaleString()}</td></tr>`;
+  }).join('');
+}
+
+// ─── SLIDES HTML ─────────────────────────────────────────
+const slideHTML = () => `
+<!-- S0: SITUATION -->
+<div class="slide active" id="slide-0">
+  <div class="eyebrow">01 — <span class="t" data-key="p0"></span></div>
+  <div class="h1 t" data-key="s0title"></div>
+  <div class="subhead t" data-key="s0sub"></div>
+  <div class="g4 mb16">
+    <div class="kpi"><div class="kpi-label t" data-key="liveEvents"></div><div class="kpi-val orange">14</div><div class="kpi-sub">→ 50+ <span class="t" data-key="goal90d"></span></div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="monthlyVisitors"></div><div class="kpi-val">~0</div><div class="kpi-sub">Goal: 500+</div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="galleryPartners"></div><div class="kpi-val">0</div><div class="kpi-sub">Goal: 3</div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="juliusHours"></div><div class="kpi-val">4h</div><div class="kpi-sub">Neglected</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="section-label">What's built ✓</div>
+      <table><tbody>
+        <tr><td>Events browsing + filters</td><td><span class="badge b-green">Stable</span></td></tr>
+        <tr><td>Artwork marketplace (CRUD, bids, checkout)</td><td><span class="badge b-green">Stable</span></td></tr>
+        <tr><td>Route planner (save + optimize)</td><td><span class="badge b-green">Stable</span></td></tr>
+        <tr><td>Event crawler (RSS, News, Facebook)</td><td><span class="badge b-green">Mature</span></td></tr>
+        <tr><td>Bilingual auto-translation</td><td><span class="badge b-green">Stable</span></td></tr>
+        <tr><td>Admin moderation queue</td><td><span class="badge b-blue">~90%</span></td></tr>
+        <tr><td>Payment routes (MoMo/VNPay)</td><td><span class="badge b-amber">Scaffolded</span></td></tr>
+        <tr><td>Artist dashboard (user-facing)</td><td><span class="badge b-red">Not built</span></td></tr>
+      </tbody></table>
+    </div>
+    <div>
+      <div class="highlight-box highlight-amber mb8">
+        <strong style="font-size:14px;">Marketplace invisible to users</strong>
+        <p class="mt8" style="font-size:14px;">Buy/sell art is fully built in code but not surfaced on judooo.art. First-time visitors see an events site. This is intentional — traffic first.</p>
+      </div>
+      <div class="highlight-box highlight-red mb8">
+        <strong style="font-size:14px;">No roadmap → no focus</strong>
+        <p class="mt8" style="font-size:14px;">"Chưa có roadmap rõ nên người làm cũng không tập trung." — Julius. This deck fixes that.</p>
+      </div>
+      <div class="highlight-box highlight-green">
+        <strong style="font-size:14px;">Product is ready. Audience is not.</strong>
+        <p class="mt8" style="font-size:14px;">153 commits, TypeScript strict, clean architecture. The gap is content, brand, and traffic — not code.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S1: MISSION -->
+<div class="slide" id="slide-1">
+  <div class="eyebrow">02 — <span class="t" data-key="p1"></span></div>
+  <div class="h1 t" data-key="s1title"></div>
+  <div class="subhead t" data-key="s1sub"></div>
+  <div class="mission-box">
+    <div class="mission-vn t" data-key="missionVN"></div>
+    <div class="mission-en t" data-key="missionEN"></div>
+  </div>
+  <div class="g3">
+    <div class="card">
+      <div class="section-label">How we make money</div>
+      <p class="mb16">Buyers pay a <strong>10–15% premium</strong> on top of artist price. This IS platform revenue. A ring-fenced portion funds artist support.</p>
+      <div style="background:#f9f9f7;border-radius:8px;padding:14px;font-family:monospace;font-size:12px;line-height:1.9;color:#333;">
+        Artist price:&nbsp;&nbsp;&nbsp;&nbsp;500,000₫<br>
+        Buyer premium (13%): +65,000₫<br>
+        ─────────────────────<br>
+        <strong>Buyer total:&nbsp;&nbsp;&nbsp;565,000₫</strong><br>
+        <span style="color:#999;font-size:10px;">~40K → artist welfare fund · ~25K → platform margin</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">vs Artsy / Saatchi</div>
+      <table><thead><tr><th></th><th>Artsy/Saatchi</th><th>Judooo</th></tr></thead>
+      <tbody>
+        <tr><td>Artist commission</td><td>30–60%</td><td><strong>Zero</strong></td></tr>
+        <tr><td>Who pays premium</td><td>Artists + buyers</td><td>Buyers only</td></tr>
+        <tr><td>Premium goes to</td><td>Platform only</td><td>Platform + artist fund</td></tr>
+        <tr><td>Artist services</td><td>None</td><td>Photo, logistics, grants</td></tr>
+        <tr><td>VN market focus</td><td>❌</td><td>✅ VN-first bilingual</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="section-label">B2B angle — Phase 2–3</div>
+      <p class="mb16" style="font-size:14px;">Vietnam CIT tightening 2025–26 opens opportunity:</p>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
+        <div class="flex gap8 items-center"><span class="badge b-green">✓</span> Art ≥30M VND → fixed asset (depreciable)</div>
+        <div class="flex gap8 items-center"><span class="badge b-green">✓</span> Art student scholarship → deductible as "educational"</div>
+        <div class="flex gap8 items-center"><span class="badge b-red">✕</span> Office decoration → NOT deductible (Circular 78/2014)</div>
+        <div class="flex gap8 items-center"><span class="badge b-red">✕</span> Art event sponsorship → not in 4 approved categories</div>
+      </div>
+      <div class="highlight-box highlight-amber mt16">
+        <strong style="font-size:13px;">Corporate Art Program</strong><br>
+        <span style="font-size:13px;color:#666;">Fixed asset booking + named scholarship component. B2B deal >> B2C. Needs legal review.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: MARKET -->
+<div class="slide" id="slide-2">
+  <div class="eyebrow">03 — <span class="t" data-key="p2"></span></div>
+  <div class="h1 t" data-key="s2title"></div>
+  <div class="subhead t" data-key="s2sub"></div>
+  <div class="g4 mb24">
+    <div class="kpi"><div class="kpi-label t" data-key="tamLabel"></div><div class="kpi-val orange t" data-key="tamVal"></div><div class="kpi-sub t" data-key="tamNote"></div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="samLabel"></div><div class="kpi-val t" data-key="samVal"></div><div class="kpi-sub t" data-key="samNote"></div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="somLabel"></div><div class="kpi-val t" data-key="somVal"></div><div class="kpi-sub t" data-key="somNote"></div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="apacLabel"></div><div class="kpi-val orange t" data-key="apacVal"></div><div class="kpi-sub t" data-key="apacNote"></div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="chart-title">Market composition — Global art market $57.5B</div>
+      <div class="chart-sub">Online vs offline split (Art Basel/UBS 2025)</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="chartMarketSplit"></canvas></div>
+      <div class="highlight-box highlight-blue mt16"><p class="t" data-key="onlineNote"></p></div>
+    </div>
+    <div class="card">
+      <div class="section-label t" data-key="whyNow"></div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+        <div style="display:flex;gap:10px;font-size:14px;"><span style="background:var(--orange);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">1</span><span class="t" data-key="why1"></span></div>
+        <div style="display:flex;gap:10px;font-size:14px;"><span style="background:var(--orange);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">2</span><span class="t" data-key="why2"></span></div>
+        <div style="display:flex;gap:10px;font-size:14px;"><span style="background:var(--orange);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">3</span><span class="t" data-key="why3"></span></div>
+        <div style="display:flex;gap:10px;font-size:14px;"><span style="background:var(--orange);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">4</span><span class="t" data-key="why4"></span></div>
+        <div style="display:flex;gap:10px;font-size:14px;"><span style="background:var(--orange);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">5</span><span class="t" data-key="why5"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S3: COMPETITIVE -->
+<div class="slide" id="slide-3">
+  <div class="eyebrow">04 — <span class="t" data-key="p3"></span></div>
+  <div class="h1 t" data-key="s3title"></div>
+  <div class="subhead t" data-key="s3sub"></div>
+  <div class="g2">
+    <div class="card">
+      <div class="chart-title t" data-key="compTitle"></div>
+      <div class="chart-sub t" data-key="compNote"></div>
+      <div class="chart-wrap" style="height:320px;"><canvas id="chartCompetitive"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-label">Competitor analysis</div>
+      <table><thead><tr><th>Platform</th><th>Strength</th><th>Weakness vs Judooo</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Le Auction House</strong></td><td>High-end heritage</td><td>Excludes emerging artists, no events</td></tr>
+        <tr><td><strong>Chon Auction</strong></td><td>Facebook reach</td><td>Informal, no discovery, no artist support</td></tr>
+        <tr><td><strong>Artsy</strong></td><td>$275M funded, global</td><td>English-first, no VN focus, high artist fees</td></tr>
+        <tr><td><strong>Saatchi Art</strong></td><td>60K+ artists, acquired</td><td>Not VN, no events, 30–40% commission</td></tr>
+        <tr><td><strong>Manzi Art Space</strong></td><td>Strongest offline brand</td><td>Physical only — complement, not compete</td></tr>
+        <tr><td><strong style="color:var(--orange);">Judooo</strong></td><td>Events + marketplace + support</td><td>—</td></tr>
+      </tbody></table>
+      <div class="highlight-box highlight-green mt16">
+        <strong style="font-size:13px;">Unique combination nobody else has:</strong><br>
+        <span style="font-size:13px;color:#555;">Events calendar + art marketplace + artist welfare fund + bilingual VN/EN + route planner</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S4: STRATEGY -->
+<div class="slide" id="slide-4">
+  <div class="eyebrow">05 — <span class="t" data-key="p4"></span></div>
+  <div class="h1 t" data-key="s4title"></div>
+  <div class="subhead t" data-key="s4sub"></div>
+  <div class="card-dark mb16">
+    <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:8px;" class="t" data-key="betLabel"></div>
+    <div style="font-size:24px;font-weight:900;letter-spacing:-.5px;margin-bottom:12px;color:#fff;" class="t" data-key="betTitle"></div>
+    <div style="font-size:15px;color:#aaa;line-height:1.65;" class="t" data-key="betBody"></div>
+  </div>
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="section-label t" data-key="notDoing"></div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:8px;">
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:#e53935;font-weight:800;flex-shrink:0;">✕</span><span class="t" data-key="nd1"></span></div>
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:#e53935;font-weight:800;flex-shrink:0;">✕</span><span class="t" data-key="nd2"></span></div>
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:#e53935;font-weight:800;flex-shrink:0;">✕</span><span class="t" data-key="nd3"></span></div>
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:#e53935;font-weight:800;flex-shrink:0;">✕</span><span class="t" data-key="nd4"></span></div>
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:#e53935;font-weight:800;flex-shrink:0;">✕</span><span class="t" data-key="nd5"></span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label t" data-key="moat"></div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:8px;">
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:var(--orange);font-weight:800;flex-shrink:0;">1</span><span class="t" data-key="m1"></span></div>
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:var(--orange);font-weight:800;flex-shrink:0;">2</span><span class="t" data-key="m2"></span></div>
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:var(--orange);font-weight:800;flex-shrink:0;">3</span><span class="t" data-key="m3"></span></div>
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:var(--orange);font-weight:800;flex-shrink:0;">4</span><span class="t" data-key="m4"></span></div>
+        <div style="display:flex;gap:8px;font-size:14px;"><span style="color:var(--orange);font-weight:800;flex-shrink:0;">5</span><span class="t" data-key="m5"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S5: KPIs -->
+<div class="slide" id="slide-5">
+  <div class="eyebrow">06 — <span class="t" data-key="p5"></span></div>
+  <div class="h1 t" data-key="s5title"></div>
+  <div class="subhead t" data-key="s5sub"></div>
+  <div class="card mb16">
+    <table><thead><tr>
+      <th>Goal</th><th>Leading KPI</th><th>Lagging KPI</th>
+      <th class="t" data-key="base"></th><th class="t" data-key="t90"></th>
+      <th class="t" data-key="t12m"></th><th class="t" data-key="owner"></th>
+    </tr></thead><tbody>
+      <tr>
+        <td><strong class="t" data-key="goalAud"></strong></td>
+        <td class="t" data-key="kpiAud1"></td><td class="t" data-key="kpiAud2"></td>
+        <td>0 / ~0</td><td class="t" data-key="aud90"></td><td class="t" data-key="aud12"></td>
+        <td><span class="badge b-blue">Daniel</span></td>
+      </tr>
+      <tr>
+        <td><strong class="t" data-key="goalSup"></strong></td>
+        <td class="t" data-key="kpiSup1"></td><td class="t" data-key="kpiSup2"></td>
+        <td>14 / 0</td><td class="t" data-key="sup90"></td><td class="t" data-key="sup12"></td>
+        <td><span class="badge b-grey">Both</span></td>
+      </tr>
+      <tr>
+        <td><strong class="t" data-key="goalBrand"></strong></td>
+        <td class="t" data-key="kpiBrand1"></td><td class="t" data-key="kpiBrand2"></td>
+        <td>0</td><td class="t" data-key="brand90"></td><td class="t" data-key="brand12"></td>
+        <td><span class="badge b-blue">Daniel</span></td>
+      </tr>
+      <tr>
+        <td><strong class="t" data-key="goalExec"></strong></td>
+        <td class="t" data-key="kpiExec1"></td><td class="t" data-key="kpiExec2"></td>
+        <td>—</td><td class="t" data-key="exec90"></td><td class="t" data-key="exec12"></td>
+        <td><span class="badge b-blue">Daniel</span></td>
+      </tr>
+    </tbody></table>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="chart-title">KPI tracking: events inventory</div>
+      <div class="chart-sub">Actual baseline → 90-day → 12-month targets</div>
+      <div class="chart-wrap" style="height:180px;"><canvas id="chartKpiEvents"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-title">KPI tracking: monthly visitors</div>
+      <div class="chart-sub">Social traffic build over 12 months</div>
+      <div class="chart-wrap" style="height:180px;"><canvas id="chartKpiVisitors"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- S6: OKRs -->
+<div class="slide" id="slide-6">
+  <div class="eyebrow">07 — <span class="t" data-key="p6"></span></div>
+  <div class="h1 t" data-key="s6title"></div>
+  <div class="subhead t" data-key="s6sub"></div>
+  <div class="highlight-box highlight-blue mb16"><p class="t" data-key="okrNote"></p></div>
+  <div class="okr-block">
+    <div class="okr-o"><span class="badge b-blue">O1</span><span class="t" data-key="o1"></span></div>
+    <div class="okr-kr"><span class="kr-n">1</span><span><span class="t" data-key="kr1a"></span> <span class="kr-target">→ 36 posts min.</span></span></div>
+    <div class="okr-kr"><span class="kr-n">2</span><span><span class="t" data-key="kr1b"></span> <span class="kr-target">→ Monday series</span></span></div>
+    <div class="okr-kr"><span class="kr-n">3</span><span class="t" data-key="kr1c"></span></div>
+    <div class="okr-kr"><span class="kr-n">4</span><span><span class="t" data-key="kr1d"></span> <span class="kr-target">→ 300 combined</span></span></div>
+  </div>
+  <div class="okr-block">
+    <div class="okr-o"><span class="badge b-green">O2</span><span class="t" data-key="o2"></span></div>
+    <div class="okr-kr"><span class="kr-n">1</span><span><span class="t" data-key="kr2a"></span> <span class="kr-target">→ Spreadsheet with name, city, IG, email, status</span></span></div>
+    <div class="okr-kr"><span class="kr-n">2</span><span class="t" data-key="kr2b"></span></div>
+    <div class="okr-kr"><span class="kr-n">3</span><span class="t" data-key="kr2c"></span></div>
+  </div>
+  <div class="okr-block">
+    <div class="okr-o"><span class="badge b-orange">O3</span><span class="t" data-key="o3"></span></div>
+    <div class="okr-kr"><span class="kr-n">1</span><span class="t" data-key="kr3a"></span></div>
+    <div class="okr-kr"><span class="kr-n">2</span><span class="t" data-key="kr3b"></span></div>
+    <div class="okr-kr"><span class="kr-n">3</span><span class="t" data-key="kr3c"></span></div>
+  </div>
+</div>
+
+<!-- S7: 90-DAY ROADMAP -->
+<div class="slide" id="slide-7">
+  <div class="eyebrow">08 — <span class="t" data-key="p7"></span></div>
+  <div class="h1 t" data-key="s7title"></div>
+  <div class="subhead t" data-key="s7sub"></div>
+  <div class="card mb16" style="padding:0;overflow:hidden;">
+    <div style="overflow-x:auto;">
+      <table style="min-width:700px;table-layout:fixed;">
+        <thead><tr>
+          <th style="width:90px;">Lane</th>
+          <th style="width:200px;" class="t" data-key="rmMo1"></th>
+          <th style="width:200px;" class="t" data-key="rmMo2"></th>
+          <th style="width:200px;" class="t" data-key="rmMo3"></th>
+        </tr></thead>
+        <tbody>
+          <tr style="background:#e8f5e9;">
+            <td style="font-size:11px;font-weight:800;color:#2e7d32;border-right:2px solid #c8e6c9;">JULIUS</td>
+            <td style="font-size:13px;border-right:1px solid #c8e6c9;vertical-align:top;padding:14px;">
+              <div style="margin-bottom:7px;">📊 Monitor crawler → 30+ events in DB</div>
+              <div style="margin-bottom:7px;">🏠 Fix homepage (events this week section)</div>
+              <div>📋 Build Daniel's gallery list (15 contacts)</div>
+            </td>
+            <td style="font-size:13px;border-right:1px solid #c8e6c9;vertical-align:top;padding:14px;">
+              <div style="margin-bottom:7px;">📝 Build gallery self-submit form</div>
+              <div style="margin-bottom:7px;">✉️ Write outreach templates for Daniel</div>
+              <div>📈 Mid-cycle content review with Daniel</div>
+            </td>
+            <td style="font-size:13px;vertical-align:top;padding:14px;">
+              <div style="margin-bottom:7px;">✅ Review: 500 visitors? 50+ events? 3 galleries?</div>
+              <div style="margin-bottom:7px;">🚀 If yes → surface /marketplace in nav</div>
+              <div>👤 Decide public-facing lead</div>
+            </td>
+          </tr>
+          <tr style="background:#e3f2fd;">
+            <td style="font-size:11px;font-weight:800;color:#1565c0;border-right:2px solid #bbdefb;">DANIEL</td>
+            <td style="font-size:13px;border-right:1px solid #bbdefb;vertical-align:top;padding:14px;">
+              <div style="margin-bottom:7px;">📱 Set up FB + IG accounts</div>
+              <div style="margin-bottom:7px;">📅 Launch "Tuần này có gì?" — Week 2</div>
+              <div>🎯 3 posts/week — never miss</div>
+            </td>
+            <td style="font-size:13px;border-right:1px solid #bbdefb;vertical-align:top;padding:14px;">
+              <div style="margin-bottom:7px;">📨 Begin gallery outreach — 5 by mid-June</div>
+              <div style="margin-bottom:7px;">🖼️ 2 artist/gallery spotlights</div>
+              <div>📊 First biweekly metrics report</div>
+            </td>
+            <td style="font-size:13px;vertical-align:top;padding:14px;">
+              <div style="margin-bottom:7px;">📨 Complete 10 gallery outreach</div>
+              <div style="margin-bottom:7px;">🤝 Close 2 gallery agreements</div>
+              <div>📊 Final 90-day report to Julius</div>
+            </td>
+          </tr>
+          <tr style="background:#fff8e1;">
+            <td style="font-size:11px;font-weight:800;color:#f57f17;border-right:2px solid #ffe082;">MILESTONE</td>
+            <td style="font-size:13px;border-right:1px solid #ffe082;vertical-align:top;padding:14px;font-weight:700;color:#e65100;">Plausible social tracking live</td>
+            <td style="font-size:13px;border-right:1px solid #ffe082;vertical-align:top;padding:14px;font-weight:700;color:#e65100;">Gallery self-submit form live</td>
+            <td style="font-size:13px;vertical-align:top;padding:14px;font-weight:700;color:#e65100;">Decision gate: marketplace green-light?</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="g3">
+    <div class="kpi"><div class="kpi-label">Month 1 goal</div><div class="kpi-val" style="font-size:22px;">30+</div><div class="kpi-sub">Events in DB</div></div>
+    <div class="kpi"><div class="kpi-label">Month 2 goal</div><div class="kpi-val" style="font-size:22px;">5</div><div class="kpi-sub">Galleries contacted</div></div>
+    <div class="kpi"><div class="kpi-label">Month 3 gate</div><div class="kpi-val orange" style="font-size:22px;">500</div><div class="kpi-sub">Visitors/mo to proceed</div></div>
+  </div>
+</div>
+
+<!-- S8: FINANCIAL MODEL (NEW) -->
+<div class="slide" id="slide-8">
+  <div class="eyebrow">09 — <span class="t" data-key="p8"></span></div>
+  <div class="h1 t" data-key="s8title"></div>
+  <div class="subhead t" data-key="s8sub"></div>
+  <div class="g4 mb24">
+    <div class="kpi"><div class="kpi-label t" data-key="takeRate"></div><div class="kpi-val orange">13%</div><div class="kpi-sub t" data-key="takeRateNote"></div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="avgCac"></div><div class="kpi-val">$8–15</div><div class="kpi-sub t" data-key="avgCacNote"></div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="avgLtv"></div><div class="kpi-val">$180</div><div class="kpi-sub t" data-key="avgLtvNote"></div></div>
+    <div class="kpi"><div class="kpi-label t" data-key="ltvcac"></div><div class="kpi-val orange">12–22×</div><div class="kpi-sub t" data-key="ltvcacNote"></div></div>
+  </div>
+  <div class="g2 mb16">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="fin-table">
+        <thead><tr>
+          <th class="t" data-key="finYear"></th>
+          <th class="t" data-key="finGmv"></th>
+          <th class="t" data-key="finTxns"></th>
+          <th class="t" data-key="finAvg"></th>
+          <th class="t" data-key="finBuyers"></th>
+          <th class="t" data-key="finArtists"></th>
+          <th class="t" data-key="finRev"></th>
+          <th class="t" data-key="finMrr"></th>
+          <th class="t" data-key="finArr"></th>
+        </tr></thead>
+        <tbody id="finTableBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="chart-title t" data-key="mrrTitle"></div>
+      <div class="chart-sub t" data-key="mrrSub"></div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="chartMRR"></canvas></div>
+      <div class="highlight-box highlight-blue mt16">
+        <p class="fn t" data-key="finNote"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S9: REVENUE 10YR -->
+<div class="slide" id="slide-9">
+  <div class="eyebrow">10 — <span class="t" data-key="p9"></span></div>
+  <div class="h1 t" data-key="s9title"></div>
+  <div class="subhead t" data-key="s9sub"></div>
+  <div class="g5 mb24">
+    <div class="kpi"><div class="kpi-label">2026</div><div class="kpi-val" style="font-size:22px;">$5K</div><div class="kpi-sub">Event promos only</div></div>
+    <div class="kpi"><div class="kpi-label">2027</div><div class="kpi-val" style="font-size:22px;">$30K</div><div class="kpi-sub">Marketplace live</div></div>
+    <div class="kpi"><div class="kpi-label">2028</div><div class="kpi-val" style="font-size:22px;">$105K</div><div class="kpi-sub">+B2B program</div></div>
+    <div class="kpi"><div class="kpi-label">2030</div><div class="kpi-val orange" style="font-size:22px;">$570K</div><div class="kpi-sub">SEA expansion starts</div></div>
+    <div class="kpi"><div class="kpi-label">2035</div><div class="kpi-val orange" style="font-size:22px;">$3.99M</div><div class="kpi-sub">SEA market leader</div></div>
+  </div>
+  <div class="g2 mb24">
+    <div class="card">
+      <div class="chart-title t" data-key="revTitle"></div>
+      <div class="chart-sub t" data-key="revNote"></div>
+      <div class="chart-wrap" style="height:280px;"><canvas id="chartRevenue"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-label t" data-key="phaseGate"></div>
+      <table style="margin-top:8px;"><thead><tr><th>Phase</th><th>Years</th><th>Revenue driver</th><th>Gate condition</th></tr></thead>
+      <tbody>
+        <tr><td><strong>I — Calendar</strong></td><td>2026</td><td>Event promos</td><td>50+ events, 500 visitors/mo</td></tr>
+        <tr><td><strong>II — Marketplace</strong></td><td>2027</td><td>Buyer premium</td><td>100+ sales, validated</td></tr>
+        <tr><td><strong>III — Services</strong></td><td>2028</td><td>B2B + subscriptions</td><td>First grant, 10+ corporate</td></tr>
+        <tr><td><strong>IV — Regional</strong></td><td>2029–30</td><td>SEA expansion</td><td>Vietnam profitable</td></tr>
+        <tr><td><strong>V — Data infra</strong></td><td>2032+</td><td>Data/API licensing</td><td>500K+ data points</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chart-title">Revenue mix evolution — 2026 → 2035</div>
+    <div class="chart-sub">How revenue streams shift as platform matures</div>
+    <div class="chart-wrap" style="height:160px;"><canvas id="chartRevMix"></canvas></div>
+  </div>
+</div>
+
+<!-- S10: 5-YEAR ROADMAP (NEW) -->
+<div class="slide" id="slide-10">
+  <div class="eyebrow">11 — <span class="t" data-key="p10"></span></div>
+  <div class="h1 t" data-key="s10title"></div>
+  <div class="subhead t" data-key="s10sub"></div>
+  <div class="card" style="padding:20px 20px 16px;">
+    <div class="gantt-wrap">
+      <table class="gantt-table">
+        <thead>
+          <tr>
+            <th class="g-label">Initiative</th>
+            <th>Q2 '26</th><th>Q3 '26</th><th>Q4 '26</th>
+            <th>Q1 '27</th><th>Q2 '27</th><th>Q3 '27</th><th>Q4 '27</th>
+            <th>2028</th><th>2029</th><th>2030</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_events"></span><span class="g-sub t" data-key="g_events_sub"></span></td>
+            <td colspan="10"><div class="gbar gbar-green"><span class="t" data-key="g_events"></span></div></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_social"></span><span class="g-sub t" data-key="g_social_sub"></span></td>
+            <td colspan="3"><div class="gbar gbar-blue"><span class="t" data-key="g_social"></span></div></td>
+            <td colspan="7"></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_payment"></span><span class="g-sub t" data-key="g_payment_sub"></span></td>
+            <td></td>
+            <td colspan="3"><div class="gbar gbar-dark"><span class="t" data-key="g_payment"></span></div></td>
+            <td colspan="6"></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_market"></span><span class="g-sub t" data-key="g_market_sub"></span></td>
+            <td colspan="2"></td>
+            <td colspan="4"><div class="gbar gbar-purple"><span class="t" data-key="g_market"></span></div></td>
+            <td colspan="4"></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_artist"></span><span class="g-sub t" data-key="g_artist_sub"></span></td>
+            <td colspan="4"></td>
+            <td colspan="4"><div class="gbar gbar-purple"><span class="t" data-key="g_artist"></span></div></td>
+            <td colspan="2"></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_b2b"></span><span class="g-sub t" data-key="g_b2b_sub"></span></td>
+            <td colspan="5"></td>
+            <td colspan="4"><div class="gbar gbar-orange"><span class="t" data-key="g_b2b"></span></div></td>
+            <td colspan="1"></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_support"></span><span class="g-sub t" data-key="g_support_sub"></span></td>
+            <td colspan="6"></td>
+            <td colspan="4"><div class="gbar gbar-amber"><span class="t" data-key="g_support"></span></div></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_sea_r"></span><span class="g-sub t" data-key="g_sea_r_sub"></span></td>
+            <td colspan="4"></td>
+            <td colspan="3"><div class="gbar gbar-green"><span class="t" data-key="g_sea_r"></span></div></td>
+            <td colspan="3"></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_sea_x"></span><span class="g-sub t" data-key="g_sea_x_sub"></span></td>
+            <td colspan="7"></td>
+            <td colspan="3"><div class="gbar gbar-red"><span class="t" data-key="g_sea_x"></span></div></td>
+          </tr>
+          <tr>
+            <td class="g-label"><span class="t" data-key="g_data"></span><span class="g-sub t" data-key="g_data_sub"></span></td>
+            <td colspan="6"></td>
+            <td colspan="4"><div class="gbar gbar-dark"><span class="t" data-key="g_data"></span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="gantt-legend">
+      <div class="g-leg-item"><div class="g-leg-dot" style="background:#c8e6c9;"></div><span class="t" data-key="ganttLegJulius"></span></div>
+      <div class="g-leg-item"><div class="g-leg-dot" style="background:#bbdefb;"></div><span class="t" data-key="ganttLegDaniel"></span></div>
+      <div class="g-leg-item"><div class="g-leg-dot" style="background:#e1bee7;"></div><span class="t" data-key="ganttLegPlatform"></span></div>
+      <div class="g-leg-item"><div class="g-leg-dot" style="background:#ffe0b2;"></div><span class="t" data-key="ganttLegB2B"></span></div>
+      <div class="g-leg-item"><div class="g-leg-dot" style="background:#eb4422;"></div><span class="t" data-key="ganttLegSEA"></span></div>
+    </div>
+  </div>
+  <div class="g5 mt16">
+    <div class="kpi"><div class="kpi-label">2026</div><div class="kpi-val" style="font-size:18px;">$5K ARR</div><div class="kpi-sub">Events only</div></div>
+    <div class="kpi"><div class="kpi-label">2027</div><div class="kpi-val" style="font-size:18px;">$30K ARR</div><div class="kpi-sub">Marketplace live</div></div>
+    <div class="kpi"><div class="kpi-label">2028</div><div class="kpi-val" style="font-size:18px;">$105K ARR</div><div class="kpi-sub">B2B program</div></div>
+    <div class="kpi"><div class="kpi-label">2029–30</div><div class="kpi-val orange" style="font-size:18px;">$570K ARR</div><div class="kpi-sub">SEA entry</div></div>
+    <div class="kpi"><div class="kpi-label">2035</div><div class="kpi-val orange" style="font-size:18px;">$3.99M ARR</div><div class="kpi-sub">SEA leader</div></div>
+  </div>
+</div>
+
+<!-- S11: RISKS -->
+<div class="slide" id="slide-11">
+  <div class="eyebrow">12 — <span class="t" data-key="p11"></span></div>
+  <div class="h1 t" data-key="s11title"></div>
+  <div class="subhead t" data-key="s11sub"></div>
+  <div class="card mb16">
+    <table><thead><tr>
+      <th class="t" data-key="riskAssump"></th><th class="t" data-key="riskRisk"></th>
+      <th class="t" data-key="riskSignal"></th><th class="t" data-key="riskLevel"></th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="t" data-key="r1a"></td><td class="t" data-key="r1b"></td><td class="t" data-key="r1c"></td><td><span class="risk-level risk-high"></span>High</td></tr>
+      <tr><td class="t" data-key="r2a"></td><td class="t" data-key="r2b"></td><td class="t" data-key="r2c"></td><td><span class="risk-level risk-med"></span>Med</td></tr>
+      <tr><td class="t" data-key="r3a"></td><td class="t" data-key="r3b"></td><td class="t" data-key="r3c"></td><td><span class="risk-level risk-med"></span>Med</td></tr>
+      <tr><td class="t" data-key="r4a"></td><td class="t" data-key="r4b"></td><td class="t" data-key="r4c"></td><td><span class="risk-level risk-med"></span>Med</td></tr>
+      <tr><td class="t" data-key="r5a"></td><td class="t" data-key="r5b"></td><td class="t" data-key="r5c"></td><td><span class="risk-level risk-low"></span>Low</td></tr>
+    </tbody></table>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="section-label t" data-key="openQ"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+        <div class="highlight-box highlight-red"><p class="t" data-key="oq1"></p></div>
+        <div class="highlight-box highlight-amber"><p class="t" data-key="oq2"></p></div>
+        <div class="highlight-box highlight-blue"><p class="t" data-key="oq3"></p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Risk severity × likelihood matrix</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="chartRisk"></canvas></div>
+    </div>
+  </div>
+</div>
+`;
+
+// ─── BUILD SLIDES ─────────────────────────────────────────
+document.getElementById('slideContainer').innerHTML = slideHTML();
+document.getElementById('finTableBody').innerHTML = finTableRows();
+
+// ─── PILLS ────────────────────────────────────────────────
+function buildPills() {
+  const t = T[lang];
+  const keys = ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11'];
+  document.getElementById('navPills').innerHTML = keys.map((k,i) =>
+    `<button class="pill${i===cur?' active':''}" onclick="goTo(${i})">${t[k]}</button>`
+  ).join('');
+}
+
+// ─── TRANSLATE ────────────────────────────────────────────
+function applyLang() {
+  const t = T[lang];
+  document.querySelectorAll('.t[data-key]').forEach(el => {
+    const v = t[el.dataset.key];
+    if (v !== undefined) el.textContent = v;
+  });
+  document.getElementById('btn-en').className = 'lang-btn'+(lang==='en'?' active':'');
+  document.getElementById('btn-vn').className = 'lang-btn'+(lang==='vn'?' active':'');
+  buildPills();
+}
+function setLang(l) { lang = l; applyLang(); }
+
+// ─── NAVIGATION ───────────────────────────────────────────
+function goTo(n) {
+  document.getElementById('slide-'+cur)?.classList.remove('active');
+  cur = Math.max(0, Math.min(SLIDES-1, n));
+  document.getElementById('slide-'+cur)?.classList.add('active');
+  buildPills();
+  document.getElementById('counter').textContent = (cur+1)+' / '+SLIDES;
+  window.scrollTo({top:0,behavior:'smooth'});
+  initChartsForSlide(cur);
+}
+function next() { goTo(cur+1); }
+function prev() { goTo(cur-1); }
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') next();
+  if (e.key==='ArrowLeft'||e.key==='ArrowUp') prev();
+});
+
+// ─── CHARTS ───────────────────────────────────────────────
+const chartInstances = {};
+function makeChart(id, config) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); }
+  const el = document.getElementById(id);
+  if (!el) return;
+  chartInstances[id] = new Chart(el, config);
+}
+const COLORS = ['#eb4422','#1a73e8','#34a853','#fbbc04','#9c27b0'];
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function initChartsForSlide(n) {
+  if (n === 2) {
+    makeChart('chartMarketSplit', {
+      type:'doughnut',
+      data:{
+        labels:['Offline (galleries, auctions, private)','Online ($10.5B)'],
+        datasets:[{ data:[47,10.5], backgroundColor:['#eb4422','#e8e8e4'], borderWidth:0 }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'right', labels:{ font:{size:12}, boxWidth:12 } },
+          tooltip:{ callbacks:{ label: ctx => ` $${ctx.raw}B` } } }
+      }
+    });
+  }
+  if (n === 3) {
+    makeChart('chartCompetitive', {
+      type:'bubble',
+      data:{
+        datasets:[
+          { label:'Judooo',      data:[{x:9,y:9,r:16}], backgroundColor:hexToRgba('#eb4422',.85) },
+          { label:'Artsy',       data:[{x:4,y:2,r:22}], backgroundColor:hexToRgba('#1a73e8',.7)  },
+          { label:'Saatchi Art', data:[{x:5,y:1,r:18}], backgroundColor:hexToRgba('#34a853',.7)  },
+          { label:'Le Auction',  data:[{x:2,y:6,r:8}],  backgroundColor:hexToRgba('#fbbc04',.9)  },
+          { label:'Chon',        data:[{x:3,y:4,r:7}],  backgroundColor:hexToRgba('#9c27b0',.7)  },
+          { label:'Manzi',       data:[{x:7,y:7,r:10}], backgroundColor:hexToRgba('#00897b',.8)  },
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        scales:{
+          x:{ min:0, max:10, title:{ display:true, text:'Artist-friendliness', font:{size:11} } },
+          y:{ min:0, max:10, title:{ display:true, text:'Vietnam market depth', font:{size:11} } }
+        },
+        plugins:{ legend:{ position:'right', labels:{ font:{size:11}, boxWidth:10 } } }
+      }
+    });
+  }
+  if (n === 5) {
+    const eventsData    = [14,22,35,50,55,60,65,70,75,80,85,90];
+    const visitorsData  = [0,50,120,240,350,500,650,900,1200,1800,2800,5000];
+    const months = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+    makeChart('chartKpiEvents', {
+      type:'bar',
+      data:{ labels:months, datasets:[{ label:'Events', data:eventsData,
+        backgroundColor: months.map((_,i)=>i<4?'#eb4422':'#f5c6bc'), borderRadius:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false} },
+        scales:{ y:{ beginAtZero:true, grid:{color:'#f0f0ee'} }, x:{ grid:{display:false} } }
+      }
+    });
+    makeChart('chartKpiVisitors', {
+      type:'line',
+      data:{ labels:months, datasets:[{ label:'Monthly Visitors', data:visitorsData,
+        borderColor:'#eb4422', backgroundColor:hexToRgba('#eb4422',.1),
+        fill:true, tension:.4, pointRadius:3 }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false} },
+        scales:{ y:{ beginAtZero:true, grid:{color:'#f0f0ee'} }, x:{ grid:{display:false} } }
+      }
+    });
+  }
+  if (n === 8) {
+    const mrrVals = finData.map(r => r.mrr);
+    makeChart('chartMRR', {
+      type:'line',
+      data:{
+        labels: years,
+        datasets:[
+          { label:'MRR ($K)', data:mrrVals, borderColor:'#eb4422',
+            backgroundColor:hexToRgba('#eb4422',.1), fill:true, tension:.4, pointRadius:4,
+            pointBackgroundColor:'#eb4422' }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ callbacks:{ label: ctx => ` MRR: $${ctx.raw}K/mo` } } },
+        scales:{
+          y:{ beginAtZero:true, grid:{color:'#f0f0ee'}, ticks:{ callback: v => '$'+v+'K' } },
+          x:{ grid:{display:false} }
+        }
+      }
+    });
+  }
+  if (n === 9) {
+    const streams = T[lang].revenueStreams;
+    makeChart('chartRevenue', {
+      type:'bar',
+      data:{
+        labels: years,
+        datasets:[
+          { label:streams[0], data:revData.premium, backgroundColor:hexToRgba('#eb4422',.85) },
+          { label:streams[1], data:revData.promos,  backgroundColor:hexToRgba('#1a73e8',.75) },
+          { label:streams[2], data:revData.b2b,     backgroundColor:hexToRgba('#34a853',.75) },
+          { label:streams[3], data:revData.subs,    backgroundColor:hexToRgba('#fbbc04',.85) },
+          { label:streams[4], data:revData.sea,     backgroundColor:hexToRgba('#9c27b0',.75) },
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        scales:{
+          x:{ stacked:true, grid:{display:false} },
+          y:{ stacked:true, grid:{color:'#f0f0ee'}, ticks:{ callback: v => '$'+v+'K' } }
+        },
+        plugins:{
+          legend:{ position:'bottom', labels:{font:{size:11}, boxWidth:10} },
+          tooltip:{ callbacks:{ label: ctx => ` ${ctx.dataset.label}: $${ctx.raw}K` } }
+        }
+      }
+    });
+    makeChart('chartRevMix', {
+      type:'bar',
+      data:{
+        labels: years,
+        datasets:[
+          { label:streams[0], data:[0,27,33,33,32,30,28,27,26,28],   backgroundColor:hexToRgba('#eb4422',.85) },
+          { label:streams[1], data:[100,40,24,18,14,12,10,10,9,9],   backgroundColor:hexToRgba('#1a73e8',.75) },
+          { label:streams[2], data:[0,17,29,29,28,26,22,21,19,19],   backgroundColor:hexToRgba('#34a853',.75) },
+          { label:streams[3], data:[0,16,14,13,12,12,11,10,10,10],   backgroundColor:hexToRgba('#fbbc04',.85) },
+          { label:streams[4], data:[0,0,0,7,14,20,29,32,36,35],      backgroundColor:hexToRgba('#9c27b0',.75) },
+        ]
+      },
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        scales:{
+          x:{ stacked:true, max:100, ticks:{ callback: v=>v+'%' }, grid:{color:'#f0f0ee'} },
+          y:{ stacked:true, grid:{display:false} }
+        },
+        plugins:{ legend:{display:false},
+          tooltip:{ callbacks:{ label: ctx=>` ${ctx.dataset.label}: ${ctx.raw}%` } } }
+      }
+    });
+  }
+  if (n === 11) {
+    makeChart('chartRisk', {
+      type:'bubble',
+      data:{
+        datasets:[
+          { label:'Daniel consistency', data:[{x:8,y:9,r:12}], backgroundColor:hexToRgba('#e53935',.75) },
+          { label:'Crawler freshness',  data:[{x:5,y:6,r:9}],  backgroundColor:hexToRgba('#fb8c00',.75) },
+          { label:'Gallery DM response',data:[{x:6,y:7,r:10}], backgroundColor:hexToRgba('#fb8c00',.75) },
+          { label:'Buyer intent',       data:[{x:4,y:5,r:8}],  backgroundColor:hexToRgba('#fb8c00',.75) },
+          { label:'Julius bandwidth',   data:[{x:3,y:4,r:7}],  backgroundColor:hexToRgba('#43a047',.75) },
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        scales:{
+          x:{ min:0, max:10, title:{display:true,text:'Likelihood',font:{size:11}} },
+          y:{ min:0, max:10, title:{display:true,text:'Severity',font:{size:11}} }
+        },
+        plugins:{ legend:{ position:'right', labels:{font:{size:11}, boxWidth:10} } }
+      }
+    });
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+buildPills();
+applyLang();
+initChartsForSlide(0);
+</script>
+</body>
+</html>
