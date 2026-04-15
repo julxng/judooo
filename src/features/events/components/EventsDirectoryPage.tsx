@@ -451,8 +451,8 @@ export const EventsDirectoryPage = ({
           ) : (
             <div className="flex flex-col gap-2" style={{ height: 'calc(100vh - 10rem)' }}>
               {/* Smart filter bar — always visible above the map */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
+              <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+                <div className="relative shrink-0">
                   <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={search}
@@ -462,7 +462,7 @@ export const EventsDirectoryPage = ({
                   />
                 </div>
 
-                <div className="flex overflow-hidden rounded-lg border border-border">
+                <div className="flex shrink-0 overflow-hidden rounded-lg border border-border">
                   {([['all', t.timelineAll], ['active', t.timelineCurrent], ['past', t.timelinePast]] as const).map(([value, label]) => (
                     <button
                       key={value}
@@ -480,7 +480,7 @@ export const EventsDirectoryPage = ({
                 </div>
 
                 {cityOptions.length > 2 && (
-                  <Select className="h-8 text-xs" value={city} onChange={(event) => setCity(event.target.value)}>
+                  <Select className="h-8 w-auto shrink-0 text-xs" value={city} onChange={(event) => setCity(event.target.value)}>
                     {cityOptions.map((option) => (
                       <option key={option} value={option}>
                         {option === 'all' ? t.city : option}
@@ -490,7 +490,7 @@ export const EventsDirectoryPage = ({
                 )}
 
                 {artMediumOptions.length > 2 && (
-                  <Select className="h-8 text-xs" value={artMedium} onChange={(event) => setArtMedium(event.target.value)}>
+                  <Select className="h-8 w-auto shrink-0 text-xs" value={artMedium} onChange={(event) => setArtMedium(event.target.value)}>
                     {artMediumOptions.map((option) => (
                       <option key={option} value={option}>
                         {option === 'all' ? t.artMedium : option}
@@ -502,7 +502,7 @@ export const EventsDirectoryPage = ({
                 <button
                   onClick={() => setOnlyFree(!onlyFree)}
                   className={cn(
-                    'h-8 rounded-lg border px-3 text-xs font-medium transition-colors',
+                    'h-8 shrink-0 rounded-lg border px-3 text-xs font-medium transition-colors',
                     onlyFree
                       ? 'border-foreground bg-foreground text-background'
                       : 'border-border bg-background text-muted-foreground hover:text-foreground',
