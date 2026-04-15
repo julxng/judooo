@@ -331,25 +331,14 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
             </div>
 
             <div className="hidden items-center gap-2 md:flex lg:gap-3">
-              <div
-                className="inline-flex items-center gap-1 rounded-md border border-border p-1"
+              <button
+                type="button"
+                className="rounded px-2 py-1 text-xs font-semibold tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
                 aria-label={copy.languageLabel}
+                onClick={() => setLanguage(language === 'en' ? 'vi' : 'en')}
               >
-                {languageOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={cn(
-                      'rounded-sm px-2.5 py-1 text-xs font-semibold tracking-[0.16em] text-muted-foreground transition-colors',
-                      language === option.value ? 'bg-foreground text-background' : 'hover:text-foreground',
-                    )}
-                    onClick={() => setLanguage(option.value)}
-                    aria-pressed={language === option.value}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+                {language === 'en' ? 'VN' : 'EN'}
+              </button>
 
               {currentUser ? (
                 <>
@@ -442,22 +431,13 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   {copy.languageLabel}
                 </span>
-                <div className="inline-flex items-center gap-1 rounded-md border border-border p-1">
-                  {languageOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={cn(
-                        'rounded-sm px-2.5 py-1 text-xs font-semibold tracking-[0.16em] text-muted-foreground transition-colors',
-                        language === option.value ? 'bg-foreground text-background' : 'hover:text-foreground',
-                      )}
-                      onClick={() => setLanguage(option.value)}
-                      aria-pressed={language === option.value}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  className="rounded px-2 py-1 text-xs font-semibold tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => setLanguage(language === 'en' ? 'vi' : 'en')}
+                >
+                  {language === 'en' ? 'VN' : 'EN'}
+                </button>
               </div>
 
               <div className="flex items-center gap-3 border-t border-border pt-4">
