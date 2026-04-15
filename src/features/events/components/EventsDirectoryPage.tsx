@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, Map, Rows3, Search, X } from 'lucide-react';
 import { useAuth, useLanguage } from '@/app/providers';
@@ -285,6 +285,8 @@ export const EventsDirectoryPage = ({
     setRegistrationRequired(false);
   };
 
+  const handleEventNavigate = useCallback((slug: string) => router.push(`/events/${slug}`), [router]);
+
   const filterSelects: FilterSelectConfig[] = [
     { label: t.city, value: city, onChange: setCity, options: cityOptions },
     { label: t.district, value: district, onChange: setDistrict, options: districtOptions },
@@ -505,7 +507,7 @@ export const EventsDirectoryPage = ({
                 events={filteredEvents}
                 selectedEventId={selectedEventId}
                 onSelectEvent={setSelectedEventId}
-                onEventNavigate={(slug) => router.push(`/events/${slug}`)}
+                onEventNavigate={handleEventNavigate}
               />
             </div>
           )}

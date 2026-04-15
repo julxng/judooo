@@ -15,12 +15,12 @@ interface EventMapProps {
   onEventNavigate?: (slug: string) => void;
 }
 
-const buildPopupNode = (event: ArtEvent, language: 'en' | 'vi', onNavigate?: () => void) => {
+const buildPopupNode = (event: ArtEvent, language: 'en' | 'vi', onNavigateRef: { current?: ((slug: string) => void) | undefined }, slug: string) => {
   const root = document.createElement('div');
   root.className = 'map-popup';
-  if (onNavigate) {
+  if (onNavigateRef.current) {
     root.style.cursor = 'pointer';
-    root.addEventListener('click', onNavigate);
+    root.addEventListener('click', () => onNavigateRef.current?.(slug));
   }
 
   const image = document.createElement('img');
@@ -59,8 +59,16 @@ const EventMap = ({
   const leafletRef = useRef<any>(null);
   const markerLayerRef = useRef<any>(null);
   const routeLayerRef = useRef<any>(null);
+  const markersRef = useRef<Map<string, any>>(new Map());
+  const onEventNavigateRef = useRef(onEventNavigate);
   const [isMapReady, setIsMapReady] = useState(false);
 
+  // Keep the navigate ref current without triggering marker rebuilds
+  useEffect(() => {
+    onEventNavigateRef.current = onEventNavigate;
+  }, [onEventNavigate]);
+
+  // Effect 1: Initialize the map once
   useEffect(() => {
     let mounted = true;
 
@@ -105,11 +113,13 @@ const EventMap = ({
         markerLayerRef.current = null;
         routeLayerRef.current = null;
         leafletRef.current = null;
+        markersRef.current.clear();
         setIsMapReady(false);
       }
     };
   }, []);
 
+  // Effect 2: Rebuild markers when events/language/select handler changes (NOT selectedEventId)
   useEffect(() => {
     const L = leafletRef.current;
     const map = mapRef.current;
@@ -120,6 +130,8 @@ const EventMap = ({
     }
 
     markerLayer.clearLayers();
+    markersRef.current.clear();
+
     if (routeLayerRef.current) {
       routeLayerRef.current.remove();
       routeLayerRef.current = null;
@@ -131,31 +143,25 @@ const EventMap = ({
 
     const geoEvents = events.filter((event) => typeof event.lat === 'number' && typeof event.lng === 'number');
 
-    let selectedMarker: any = null;
-
     geoEvents.forEach((event) => {
-      const isSelected = selectedEventId === event.id;
       const marker = L.divIcon({
-        className: `judooo-map-pin ${isSelected ? 'judooo-map-pin--active' : ''}`,
-        iconSize: isSelected ? [18, 18] : [12, 12],
+        className: 'judooo-map-pin',
+        iconSize: [14, 14],
       });
 
       const point = L.marker([event.lat, event.lng], { icon: marker })
         .addTo(markerLayer)
-        .bindPopup(buildPopupNode(event, language, onEventNavigate ? () => onEventNavigate(event.slug) : undefined), { closeButton: false, className: 'map-popup-wrapper' });
+        .bindPopup(
+          buildPopupNode(event, language, onEventNavigateRef, event.slug),
+          { closeButton: false, className: 'map-popup-wrapper' },
+        );
 
       point.on('click', () => {
         onSelectEvent?.(event.id);
       });
 
-      if (isSelected) {
-        selectedMarker = point;
-      }
+      markersRef.current.set(event.id, point);
     });
-
-    if (selectedMarker) {
-      selectedMarker.openPopup();
-    }
 
     if (routeIds && routeIds.length > 1) {
       const routePoints = routeIds
@@ -179,7 +185,18 @@ const EventMap = ({
       const bounds = L.latLngBounds(geoEvents.map((event) => [event.lat, event.lng]));
       map.fitBounds(bounds, { padding: [32, 32] });
     }
-  }, [events, isMapReady, language, onEventNavigate, onSelectEvent, routeIds, selectedEventId]);
+  }, [events, isMapReady, language, onSelectEvent, routeIds]);
+
+  // Effect 3: Open popup and pan to selected marker without full rebuild
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current) return;
+
+    const marker = selectedEventId ? markersRef.current.get(selectedEventId) : null;
+    if (marker) {
+      marker.openPopup();
+      mapRef.current.panTo(marker.getLatLng(), { animate: true });
+    }
+  }, [selectedEventId, isMapReady]);
 
   const showHeader = !onEventNavigate;
 
