@@ -11,8 +11,8 @@ export default async function SearchPage({
 }) {
   const params = await searchParams;
   const [initialArtworks, initialEvents] = await Promise.all([
-    getInitialArtworks(undefined, { skipCache: true }),
-    getInitialEvents({ skipCache: true }),
+    getInitialArtworks(),
+    getInitialEvents(),
   ]);
 
   return (
