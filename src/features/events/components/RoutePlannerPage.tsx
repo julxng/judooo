@@ -250,6 +250,15 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
           className="relative h-full flex-1"
           style={{ paddingBottom: 'var(--route-sheet-peek, 0px)' }}
         >
+          {/* Mobile back button — floating over map, hidden on desktop */}
+          <div className="absolute left-4 top-4 z-20 md:hidden" style={{ top: 'max(16px, env(safe-area-inset-top))' }}>
+            <Link
+              href="/events"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background shadow-md transition-colors hover:bg-secondary"
+            >
+              <ArrowLeft size={16} />
+            </Link>
+          </div>
           <EventMap
             bare
             events={mapEvents}
@@ -283,7 +292,7 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
           <SidebarContent />
         </div>
       </div>

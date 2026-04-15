@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Inter } from "next/font/google";
 import "@/app/globals.css";
@@ -16,12 +16,37 @@ const interDisplay = Inter({
   variable: "--font-display",
 });
 
+export const viewport: Viewport = {
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   title: "Judooo",
   description: "Judooo is an art map for discovering and planning art events across Vietnam.",
   icons: {
     icon: "/judooo_Favicon.svg",
     shortcut: "/judooo_Favicon.svg",
+  },
+  openGraph: {
+    title: "Judooo",
+    description: "Judooo is an art map for discovering and planning art events across Vietnam.",
+    url: "https://www.judooo.art",
+    siteName: "Judooo",
+    images: [
+      {
+        url: "https://www.judooo.art/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Judooo — Art Map for Vietnam",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Judooo",
+    description: "Judooo is an art map for discovering and planning art events across Vietnam.",
+    images: ["https://www.judooo.art/og-image.png"],
   },
 };
 
