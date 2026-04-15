@@ -17,6 +17,7 @@ import {
   getRoleLabel,
   hasCreatorWorkspaceAccess,
 } from '@/features/auth/utils/roles';
+import { FeedbackWidget } from '@/components/shared/FeedbackWidget';
 
 const shellCopy: Record<
   Locale,
@@ -547,6 +548,8 @@ export const SiteShell = ({ children }: PropsWithChildren) => {
           </div>
         </Container>
       </footer>
+
+      <FeedbackWidget />
     </div>
   );
 };
