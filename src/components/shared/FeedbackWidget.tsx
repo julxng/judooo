@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, type FormEvent } from 'react';
-import { MessageSquarePlus, X, ChevronDown } from 'lucide-react';
+import { MessageSquarePlus, X, ChevronDown, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type FeedbackType = 'feature' | 'bug' | 'feedback';
@@ -17,6 +17,8 @@ export const FeedbackWidget = () => {
   const [type, setType] = useState<FeedbackType>('feedback');
   const [title, setTitle] = useState('');
   const [details, setDetails] = useState('');
+  const [includeScreenshot, setIncludeScreenshot] = useState(true);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -31,11 +33,27 @@ export const FeedbackWidget = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const captureScreenshot = async (): Promise<string | null> => {
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(document.body, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 0.5,
+        logging: false,
+      });
+      return canvas.toDataURL('image/jpeg', 0.7);
+    } catch {
+      return null;
+    }
+  };
+
   const reset = () => {
     setTitle('');
     setDetails('');
     setType('feedback');
     setStatus('idle');
+    setScreenshotPreview(null);
   };
 
   const handleClose = () => {
@@ -48,6 +66,10 @@ export const FeedbackWidget = () => {
     if (!title.trim() || status === 'loading') return;
     setStatus('loading');
     try {
+      let screenshot: string | null = null;
+      if (includeScreenshot) {
+        screenshot = screenshotPreview ?? await captureScreenshot();
+      }
       const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,6 +78,7 @@ export const FeedbackWidget = () => {
           title: title.trim(),
           details: details.trim() || undefined,
           pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+          screenshot: screenshot ?? undefined,
         }),
       });
       if (!res.ok) throw new Error('Failed');
@@ -132,6 +155,25 @@ export const FeedbackWidget = () => {
                 className="w-full resize-none rounded-md border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-foreground/20"
               />
 
+              {/* Screenshot toggle */}
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={includeScreenshot}
+                  onChange={(e) => setIncludeScreenshot(e.target.checked)}
+                  className="h-3.5 w-3.5 accent-foreground"
+                />
+                <Camera size={12} className="text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Include screenshot</span>
+                {screenshotPreview && includeScreenshot && (
+                  <img
+                    src={screenshotPreview}
+                    alt="screenshot preview"
+                    className="ml-auto h-8 w-12 rounded border border-border object-cover"
+                  />
+                )}
+              </label>
+
               {status === 'error' && (
                 <p className="text-xs text-red-500">Something went wrong. Try again.</p>
               )}
@@ -155,7 +197,14 @@ export const FeedbackWidget = () => {
       {/* Trigger button */}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={async () => {
+          if (!open) {
+            // Capture screenshot before the panel opens
+            const shot = await captureScreenshot();
+            setScreenshotPreview(shot);
+          }
+          setOpen((v) => !v);
+        }}
         className={cn(
           'flex items-center gap-2 rounded-full border border-border bg-white px-3.5 py-2.5 shadow-md transition-all hover:shadow-lg',
           open && 'ring-1 ring-foreground/10',

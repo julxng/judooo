@@ -8,7 +8,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 export async function POST(request: Request) {
   try {
-    const { type, title, details, pageUrl } = await request.json();
+    const { type, title, details, pageUrl, screenshot } = await request.json();
 
     if (!type || !title?.trim()) {
       return NextResponse.json({ error: 'type and title are required' }, { status: 400 });
@@ -68,7 +68,29 @@ export async function POST(request: Request) {
     }
 
     const data = await res.json() as { key: string };
-    return NextResponse.json({ success: true, issueKey: data.key });
+    const issueKey = data.key;
+
+    // Attach screenshot if provided
+    if (screenshot && typeof screenshot === 'string' && screenshot.startsWith('data:')) {
+      try {
+        const base64Data = screenshot.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const form = new FormData();
+        form.append('file', new Blob([buffer], { type: 'image/jpeg' }), 'screenshot.jpg');
+        await fetch(`${baseUrl}/rest/api/3/issue/${issueKey}/attachments`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${auth}`,
+            'X-Atlassian-Token': 'no-check',
+          },
+          body: form,
+        });
+      } catch {
+        // Non-fatal — issue was created, screenshot attachment failed
+      }
+    }
+
+    return NextResponse.json({ success: true, issueKey });
   } catch (error) {
     console.error('Feedback API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
