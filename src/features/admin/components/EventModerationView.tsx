@@ -913,9 +913,9 @@ export const EventModerationView = ({
         style={{ maxHeight: isFullscreen ? 'calc(100vh - 140px)' : 'calc(100vh - 220px)' }}
       >
         <table className="text-xs" style={{ tableLayout: 'fixed', width: `${tableWidth}px`, borderCollapse: 'separate', borderSpacing: 0 }}>
-          <thead className="sticky top-0 z-10 bg-secondary/80 backdrop-blur">
+          <thead className="sticky top-0 z-10 bg-gray-100">
             <tr>
-              <th className="sticky left-0 z-20 w-8 border-b border-r border-border bg-secondary/80 px-1.5 py-2 backdrop-blur">
+              <th className="sticky left-0 z-20 w-8 border-b border-r border-border bg-gray-100 px-1.5 py-2">
                 <input
                   type="checkbox"
                   checked={filteredIds.length > 0 && filteredIds.every((id) => filters.selectedIds.has(id))}
@@ -923,12 +923,12 @@ export const EventModerationView = ({
                   className="h-3.5 w-3.5 rounded border-border"
                 />
               </th>
-              <th className="sticky left-8 z-20 w-10 border-b border-r border-border bg-secondary/80 px-1 py-2 backdrop-blur" />
-              <th className="sticky left-[72px] z-20 w-[70px] border-b border-r border-border bg-secondary/80 px-1.5 py-2 text-left backdrop-blur">
+              <th className="sticky left-8 z-20 w-10 border-b border-r border-border bg-gray-100 px-1 py-2" />
+              <th className="sticky left-[72px] z-20 w-[70px] border-b border-r border-border bg-gray-100 px-1.5 py-2 text-left">
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Status</span>
               </th>
               <th
-                className="sticky left-[142px] z-20 border-b border-r border-border bg-secondary/80 px-1.5 py-2 text-left backdrop-blur"
+                className="sticky left-[142px] z-20 border-b border-r border-border bg-gray-100 px-1.5 py-2 text-left"
                 style={{ width: '220px', minWidth: '220px', maxWidth: '220px' }}
               >
                 <button
@@ -964,7 +964,7 @@ export const EventModerationView = ({
                   </button>
                 </th>
               ))}
-              <th className="sticky right-0 z-20 w-[90px] border-b border-l border-border bg-secondary/80 px-1 py-2 text-center backdrop-blur">
+              <th className="sticky right-0 z-20 w-[90px] border-b border-l border-border bg-gray-100 px-1 py-2 text-center">
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Actions</span>
               </th>
             </tr>
@@ -981,10 +981,10 @@ export const EventModerationView = ({
                 const changed = hasPending(event.id);
                 const saving = savingIds.has(event.id);
                 const stickyBg = cn(
-                  'bg-background',
-                  changed && 'bg-amber-50 dark:bg-amber-950/30',
-                  !changed && filters.selectedIds.has(event.id) && 'bg-blue-50 dark:bg-blue-950/30',
-                  !changed && !filters.selectedIds.has(event.id) && rowIdx % 2 === 1 && 'bg-secondary/10',
+                  'bg-white',
+                  changed && 'bg-amber-50',
+                  !changed && filters.selectedIds.has(event.id) && 'bg-blue-50',
+                  !changed && !filters.selectedIds.has(event.id) && rowIdx % 2 === 1 && 'bg-gray-50',
                 );
                 return (
                   <tr
