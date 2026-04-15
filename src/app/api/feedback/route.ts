@@ -17,8 +17,8 @@ export async function POST(request: Request) {
     const baseUrl = process.env.JIRA_BASE_URL;
     const email = process.env.JIRA_EMAIL;
     const token = process.env.JIRA_API_TOKEN;
-    const projectKey = process.env.JIRA_PROJECT_KEY ?? 'NPT';
-    const issueTypeId = process.env.JIRA_ISSUE_TYPE_ID ?? '10083';
+    const projectKey = process.env.JIRA_PROJECT_KEY ?? 'TONS';
+    const issueTypeId = process.env.JIRA_ISSUE_TYPE_ID ?? '10081';
 
     if (!baseUrl || !email || !token) {
       return NextResponse.json({ error: 'Jira not configured' }, { status: 500 });
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     if (!res.ok) {
       const err = await res.text();
       console.error('Jira create issue error:', err);
-      return NextResponse.json({ error: 'Failed to create Jira issue', jiraError: err, projectKey, issueTypeId }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create Jira issue' }, { status: 500 });
     }
 
     const data = await res.json() as { key: string };
