@@ -14,7 +14,7 @@ const TYPES: { value: FeedbackType; label: string; emoji: string }[] = [
 
 export const FeedbackWidget = () => {
   const [open, setOpen] = useState(false);
-  const [type, setType] = useState<FeedbackType>('feedback');
+  const [type, setType] = useState<FeedbackType>('bug');
   const [title, setTitle] = useState('');
   const [details, setDetails] = useState('');
   const [includeScreenshot, setIncludeScreenshot] = useState(true);
@@ -51,7 +51,7 @@ export const FeedbackWidget = () => {
   const reset = () => {
     setTitle('');
     setDetails('');
-    setType('feedback');
+    setType('bug');
     setStatus('idle');
     setScreenshotPreview(null);
   };

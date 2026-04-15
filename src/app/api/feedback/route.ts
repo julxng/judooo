@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -5,6 +6,32 @@ const TYPE_LABELS: Record<string, string> = {
   bug: '🐛 Bug Report',
   feedback: '💬 Feedback',
 };
+
+async function uploadScreenshotToSupabase(base64Data: string): Promise<string | null> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) return null;
+
+  try {
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const buffer = Buffer.from(base64Data, 'base64');
+    const fileName = `feedback/${Date.now()}.jpg`;
+
+    // Ensure bucket exists (ignore error if it already exists)
+    await supabase.storage.createBucket('feedback-screenshots', { public: true }).catch(() => {});
+
+    const { error } = await supabase.storage
+      .from('feedback-screenshots')
+      .upload(fileName, buffer, { contentType: 'image/jpeg', upsert: false });
+
+    if (error) return null;
+
+    const { data } = supabase.storage.from('feedback-screenshots').getPublicUrl(fileName);
+    return data.publicUrl ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -27,10 +54,18 @@ export async function POST(request: Request) {
     const auth = Buffer.from(`${email}:${token}`).toString('base64');
     const typeLabel = TYPE_LABELS[type] ?? type;
 
+    // Upload screenshot to Supabase Storage if provided
+    let screenshotUrl: string | null = null;
+    if (screenshot && typeof screenshot === 'string' && screenshot.startsWith('data:')) {
+      const base64Data = screenshot.replace(/^data:image\/\w+;base64,/, '');
+      screenshotUrl = await uploadScreenshotToSupabase(base64Data);
+    }
+
     const descriptionParts: string[] = [];
     if (details?.trim()) descriptionParts.push(details.trim());
     if (pageUrl) descriptionParts.push(`Page: ${pageUrl}`);
-    descriptionParts.push(`Submitted via judooo feedback widget`);
+    if (screenshotUrl) descriptionParts.push(`Screenshot: ${screenshotUrl}`);
+    descriptionParts.push(`Submitted via Judooo feedback widget`);
 
     const body = {
       fields: {
@@ -47,7 +82,7 @@ export async function POST(request: Request) {
             },
           ],
         },
-        labels: [type],
+        labels: [type, 'Judooo'],
       },
     };
 
@@ -69,26 +104,6 @@ export async function POST(request: Request) {
 
     const data = await res.json() as { key: string };
     const issueKey = data.key;
-
-    // Attach screenshot if provided
-    if (screenshot && typeof screenshot === 'string' && screenshot.startsWith('data:')) {
-      try {
-        const base64Data = screenshot.replace(/^data:image\/\w+;base64,/, '');
-        const buffer = Buffer.from(base64Data, 'base64');
-        const form = new FormData();
-        form.append('file', new Blob([buffer], { type: 'image/jpeg' }), 'screenshot.jpg');
-        await fetch(`${baseUrl}/rest/api/3/issue/${issueKey}/attachments`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Basic ${auth}`,
-            'X-Atlassian-Token': 'no-check',
-          },
-          body: form,
-        });
-      } catch {
-        // Non-fatal — issue was created, screenshot attachment failed
-      }
-    }
 
     return NextResponse.json({ success: true, issueKey });
   } catch (error) {
