@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     if (!res.ok) {
       const err = await res.text();
       console.error('Jira create issue error:', err);
-      return NextResponse.json({ error: 'Failed to create Jira issue' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create Jira issue', _j: err, _p: projectKey, _it: issueTypeId, _url: `${baseUrl}/rest/api/3/issue` }, { status: 500 });
     }
 
     const data = await res.json() as { key: string };
