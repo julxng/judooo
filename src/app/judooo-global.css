@@ -2168,3 +2168,10 @@ img {
     align-items: start;
   }
 }
+
+/* ── Route planner: mobile sheet peek offset ── */
+@media (max-width: 767px) {
+  :root {
+    --route-sheet-peek: 45dvh;
+  }
+}
