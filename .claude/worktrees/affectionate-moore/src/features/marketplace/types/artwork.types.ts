@@ -1,0 +1,56 @@
+export type SaleType = 'fixed' | 'auction';
+export type ArtworkModerationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface Artwork {
+  id: string;
+  title: string;
+  title_vie?: string;
+  title_en?: string;
+  artist: string;
+  price: number;
+  currentBid?: number;
+  bidCount?: number;
+  saleType: SaleType;
+  imageUrl: string;
+  medium: string;
+  medium_vie?: string;
+  medium_en?: string;
+  dimensions: string;
+  description: string;
+  description_vie?: string;
+  description_en?: string;
+  available: boolean;
+  endTime?: string;
+  createdBy?: string;
+  eventId?: string;
+  yearCreated?: number;
+  style?: string;
+  style_vie?: string;
+  style_en?: string;
+  city?: string;
+  city_vie?: string;
+  city_en?: string;
+  country?: string;
+  country_vie?: string;
+  country_en?: string;
+  provenance?: string;
+  provenance_vie?: string;
+  provenance_en?: string;
+  authenticity?: string;
+  authenticity_vie?: string;
+  authenticity_en?: string;
+  conditionReport?: string;
+  conditionReport_vie?: string;
+  conditionReport_en?: string;
+  story?: string;
+  story_vie?: string;
+  story_en?: string;
+  sourceUrl?: string;
+  sourceItemUrl?: string;
+  importedAt?: string;
+  imageGallery?: string[];
+  moderation_status?: ArtworkModerationStatus;
+}
+
+export type ArtworkPriceFilter = 'all' | 'high' | 'low';
+export type ArtworkSaleFilter = SaleType | 'all';
