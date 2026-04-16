@@ -41,6 +41,14 @@ const SNAP_HEIGHTS: Record<SnapState, string> = {
   full: '10dvh',
 };
 
+// Visible portion of the sheet (= 100dvh - translateY). Used to cap the content
+// scroll area so it actually scrolls instead of extending into the off-screen half.
+const SHEET_VISIBLE: Record<SnapState, string> = {
+  collapsed: '80px',
+  half: '45dvh',
+  full: '90dvh',
+};
+
 const SNAP_ORDER: SnapState[] = ['collapsed', 'half', 'full'];
 
 export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) => {
@@ -295,8 +303,14 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
           )}
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+        {/* Scrollable content — maxHeight caps at visible sheet portion so overflow-y-auto actually triggers */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain"
+          style={{
+            maxHeight: `calc(${SHEET_VISIBLE[snap]} - 44px)`,
+            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+          }}
+        >
           <SidebarContent inSheet />
         </div>
       </div>
