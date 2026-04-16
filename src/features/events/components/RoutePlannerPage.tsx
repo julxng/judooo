@@ -88,7 +88,8 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
   };
 
   // Shared sidebar content rendered in both desktop aside and mobile sheet
-  const SidebarContent = () => (
+  // inSheet=true: drops maxHeight/flex-1 constraints so the outer sheet handles scrolling as one list
+  const SidebarContent = ({ inSheet = false }: { inSheet?: boolean }) => (
     <>
       {/* Route header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -118,7 +119,10 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
       </div>
 
       {/* Route stops */}
-      <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '40%' }}>
+      <div
+        className={inSheet ? '' : 'shrink-0 overflow-y-auto'}
+        style={inSheet ? undefined : { maxHeight: '40%' }}
+      >
         {routeEvents.length === 0 ? (
           <p className="px-4 py-3 text-xs text-muted-foreground">{t.emptyRouteMessage}</p>
         ) : (
@@ -175,7 +179,7 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
       </div>
 
       {/* Saved events list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={inSheet ? '' : 'flex-1 overflow-y-auto'}>
         {!currentUser ? (
           <div className="p-4">
             <p className="mb-3 text-xs text-muted-foreground">{t.signInPrompt}</p>
@@ -293,7 +297,7 @@ export const RoutePlannerPage = ({ initialEvents = [] }: RoutePlannerPageProps) 
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-          <SidebarContent />
+          <SidebarContent inSheet />
         </div>
       </div>
 
